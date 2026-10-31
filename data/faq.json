@@ -1,0 +1,292 @@
+{
+  "title": "Câu hỏi thường gặp về quy trình, điều kiện và hồ sơ vay mua nhà",
+  "disclaimer": "Thông tin chỉ mang tính tham khảo, vui lòng xác nhận trực tiếp với ngân hàng.",
+  "faqs": [
+    {
+      "id": "FAQ-01",
+      "category": "DIEU_KIEN_VAY",
+      "question": "Theo quy định pháp luật hiện hành, khách hàng cá nhân cần đáp ứng những điều kiện chung nào để được xem xét cho vay mua nhà?",
+      "answer": "Theo Điều 7 Thông tư số 39/2016/TT-NHNN (theo nội dung hiện hành đã được sửa đổi, bổ sung, bao gồm Thông tư 06/2023/TT-NHNN, Thông tư 12/2024/TT-NHNN và Thông tư 52/2025/TT-NHNN), tổ chức tín dụng xem xét cho vay khi khách hàng đáp ứng các điều kiện: (1) Về năng lực pháp lý: Là cá nhân từ đủ 18 tuổi trở lên có năng lực hành vi dân sự đầy đủ, hoặc từ đủ 15 tuổi đến chưa đủ 18 tuổi không bị mất hoặc hạn chế năng lực hành vi dân sự theo quy định của pháp luật; (2) Nhu cầu vay vốn để sử dụng vào mục đích hợp pháp; (3) Có phương án sử dụng vốn khả thi; (4) Có khả năng tài chính để trả nợ.",
+      "applicable_scope": "Quy định pháp luật chung cho hoạt động cho vay của tổ chức tín dụng tại Việt Nam",
+      "source_name": "Thông tư 39/2016/TT-NHNN (văn bản hợp nhất/hiệu lực hiện hành đến Thông tư 52/2025/TT-NHNN)",
+      "source_url": "https://vbpl.vn/",
+      "additional_sources": [
+        "https://vbpl.vn/nganhangnhanuoc/Pages/vbpq-thuoctinh.aspx?ItemID=185228&dvid=326"
+      ],
+      "last_updated": "2026-10-31"
+    },
+    {
+      "id": "FAQ-02",
+      "category": "DIEU_KIEN_VAY",
+      "question": "Tại sao pháp luật cho phép xem xét người từ đủ 15 tuổi đến dưới 18 tuổi nhưng các sản phẩm vay mua nhà của ngân hàng thường ghi từ 18 tuổi?",
+      "answer": "Cần phân biệt rõ giữa quy định pháp luật chung và điều kiện sản phẩm cụ thể của từng ngân hàng: Điều 7 Thông tư 39/2016/TT-NHNN quy định khung pháp lý chung cho phép xem xét cá nhân từ đủ 15 tuổi đến chưa đủ 18 tuổi đáp ứng điều kiện năng lực hành vi dân sự tương ứng. Tuy nhiên, khi thiết kế sản phẩm vay mua nhà cụ thể, từng ngân hàng có quyền quy định tiêu chí độ tuổi riêng phù hợp với khẩu vị rủi ro của sản phẩm đó (ví dụ: trang sản phẩm Vay mua nhà ở, đất ở của Vietcombank quy định khách hàng từ 18 tuổi đến không quá 75 tuổi khi kết thúc khoản vay; trang sản phẩm Vay mua BĐS có GCN của Techcombank quy định từ đủ 18 tuổi đến không quá 70 tuổi tại thời điểm vay).",
+      "applicable_scope": "Phân biệt khung pháp lý (Thông tư 39) và điều kiện sản phẩm riêng của Vietcombank, Techcombank",
+      "source_name": "Thông tư 39/2016/TT-NHNN, Vietcombank & Techcombank",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-03",
+      "category": "DIEU_KIEN_VAY",
+      "question": "Chỉ cần có thẻ Căn cước/CCCD hoặc Hộ chiếu còn hiệu lực là đủ điều kiện được ngân hàng duyệt vay mua nhà phải không?",
+      "answer": "Không đúng. Thẻ Căn cước/CCCD còn giá trị sử dụng hoặc hộ chiếu hợp lệ chỉ là một loại giấy tờ chứng minh nhân thân nằm trong bộ hồ sơ vay vốn, không tự động tạo ra quyền được duyệt vay. Để được cấp tín dụng, khách hàng còn phải đáp ứng đồng thời các điều kiện về độ tuổi của sản phẩm, mục đích vay hợp pháp, chứng minh được nguồn thu nhập trả nợ, đáp ứng yêu cầu tài sản bảo đảm nếu sản phẩm yêu cầu, cùng các tiêu chí thẩm định tín dụng của ngân hàng.",
+      "applicable_scope": "Vietcombank, BIDV và Techcombank (theo sản phẩm và điều kiện được nguồn dẫn xác nhận)",
+      "source_name": "Vietcombank & Techcombank - Điều kiện và hồ sơ vay mua nhà",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-04",
+      "category": "DIEU_KIEN_VAY",
+      "question": "Tôi có thể vay vốn để mua nhà ở, đất ở cho người thân (bố mẹ, vợ chồng, con) được không?",
+      "answer": "Tùy theo quy định sản phẩm của từng ngân hàng. Tại Vietcombank (sản phẩm Vay mua nhà ở, đất ở), ngân hàng công bố khách hàng có thể vay vốn để mua nhà ở, đất ở cho người thân là vợ, chồng, bố, mẹ hoặc con của khách hàng, kèm theo giấy khai sinh hoặc văn bản xác nhận quan hệ thân nhân theo quy định của ngân hàng. Với các ngân hàng khác, khách hàng cần kiểm tra điều kiện sản phẩm cụ thể tại thời điểm vay.",
+      "applicable_scope": "Vietcombank - Sản phẩm Vay mua nhà ở, đất ở",
+      "source_name": "Vietcombank - Câu hỏi thường gặp sản phẩm Vay mua nhà ở, đất ở",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-05",
+      "category": "DIEU_KIEN_VAY",
+      "question": "Lịch sử tín dụng tại CIC đóng vai trò gì trong quá trình ngân hàng xét duyệt khoản vay mua nhà?",
+      "answer": "Trong bước thẩm định, ngân hàng sử dụng hệ thống thông tin nội bộ kết hợp với báo cáo thông tin tín dụng từ Trung tâm Thông tin Tín dụng Quốc gia Việt Nam (CIC) để kiểm tra dư nợ hiện tại, lịch sử trả nợ thẻ tín dụng và nợ xấu của người vay. Công cụ tư vấn không thay thế việc tra cứu CIC chính thức của ngân hàng; kết quả đánh giá lịch sử tín dụng chính thức hoàn toàn do ngân hàng thực hiện khi thẩm định hồ sơ.",
+      "applicable_scope": "Quy trình thẩm định tín dụng tại các ngân hàng thương mại",
+      "source_name": "Trung tâm Thông tin Tín dụng Quốc gia Việt Nam (CIC) & Techcombank",
+      "source_url": "https://techcombank.com/thong-tin/blog/thu-tuc-vay-ngan-hang-mua-nha",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-06",
+      "category": "DIEU_KIEN_VAY",
+      "question": "Điều kiện áp dụng cụ thể của gói vay ưu đãi 'Ngôi nhà đầu tiên' tại BIDV là gì?",
+      "answer": "Theo thông báo chương trình của BIDV, gói vay ưu đãi 'Ngôi nhà đầu tiên' áp dụng cho khách hàng cá nhân không có khoản vay mục đích mua nhà ở tại BIDV tại thời điểm vay. Mỗi khách hàng chỉ được áp dụng tối đa 01 khoản vay ưu đãi theo chương trình này (tính chung cho cả vợ và chồng) và phải đáp ứng điều kiện về thời hạn vay tối thiểu tương ứng với từng phương án lãi suất. BIDV đăng thông tin chương trình ngày 01/06/2026 và nêu các mức lãi suất cập nhật tại ngày 17/09/2026. Trang thông báo được đối chiếu không công bố ngày kết thúc chương trình; vì vậy không thể suy ra chương trình chắc chắn còn nhận hồ sơ mới. Khách hàng cần xác nhận tình trạng triển khai và điều kiện áp dụng trực tiếp với BIDV.",
+      "applicable_scope": "BIDV - Chương trình Gói vay ưu đãi Ngôi nhà đầu tiên",
+      "source_name": "BIDV - Thông báo triển khai gói vay ưu đãi Ngôi nhà đầu tiên",
+      "source_url": "https://bidv.com.vn/bidv/ca-nhan/khuyen-mai/san-pham-vay/bidv-trien-khai-goi-vay-uu-dai-ngoi-nha-dau-tien-danh-cho-khach-hang-ca-nhan",
+      "last_updated": "2026-10-31",
+      "additional_sources": [],
+      "program_published_at": "2026-06-01",
+      "rate_updated_at": "2026-09-17",
+      "program_end_date": null
+    },
+    {
+      "id": "FAQ-07",
+      "category": "HO_SO_PHAP_LY",
+      "question": "Một bộ hồ sơ vay mua nhà tiêu chuẩn tại ngân hàng gồm những nhóm giấy tờ nào?",
+      "answer": "Theo danh mục công bố trên trang sản phẩm của Vietcombank, BIDV và Techcombank, bộ hồ sơ vay mua nhà gồm 5 nhóm chính: (1) Giấy đề nghị vay vốn kiêm phương án trả nợ theo mẫu của ngân hàng; (2) Hồ sơ pháp lý nhân thân của khách hàng và bên bảo đảm; (3) Hồ sơ chứng minh mục đích sử dụng vốn vay; (4) Hồ sơ chứng minh nguồn thu nhập trả nợ; và (5) Hồ sơ tài sản bảo đảm.",
+      "applicable_scope": "Vietcombank, BIDV, Techcombank",
+      "source_name": "BIDV & Vietcombank - Danh mục hồ sơ vay nhu cầu nhà ở",
+      "source_url": "https://bidv.com.vn/bidv/privatecustomer/dichvunganhang/tindung/vaynhucaunhao",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-08",
+      "category": "HO_SO_PHAP_LY",
+      "question": "Hồ sơ nhân thân khi đăng ký vay mua nhà bao gồm những giấy tờ gì?",
+      "answer": "Hồ sơ nhân thân thông thường bao gồm: Thẻ Căn cước, thẻ CCCD còn giá trị sử dụng hoặc hộ chiếu hợp lệ (CMND hết giá trị từ 01/01/2025); thông tin hoặc giấy tờ xác nhận cư trú theo quy định; Giấy đăng ký kết hôn hoặc Giấy xác nhận tình trạng hôn nhân (độc thân). Trường hợp có người thân cùng tham gia trả nợ hoặc bảo đảm bằng tài sản của người thân (như tại Vietcombank), cần bổ sung giấy tờ chứng minh quan hệ nhân thân theo yêu cầu của ngân hàng.",
+      "applicable_scope": "Vietcombank, BIDV, Techcombank",
+      "source_name": "Vietcombank - Hồ sơ sản phẩm Vay mua nhà ở, đất ở",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-09",
+      "category": "HO_SO_PHAP_LY",
+      "question": "Khách hàng cần chuẩn bị tài liệu gì để chứng minh nguồn thu nhập trả nợ?",
+      "answer": "Tùy theo nguồn thu thực tế và quy định của từng ngân hàng, tài liệu chứng minh thu nhập bao gồm: (1) Thu nhập từ tiền lương: Hợp đồng lao động/quyết định công tác, sao kê tài khoản nhận lương hoặc bảng lương/xác nhận lương của đơn vị; (2) Thu nhập từ cho thuê tài sản: Hợp đồng cho thuê, giấy tờ quyền sở hữu tài sản cho thuê và chứng từ thể hiện việc nhận tiền thuê theo số kỳ ngân hàng yêu cầu (ví dụ tài liệu hướng dẫn của Techcombank nêu chứng từ nhận tiền thuê 3 kỳ gần nhất); (3) Thu nhập từ kinh doanh: Hồ sơ pháp lý kinh doanh và chứng từ chứng minh doanh thu, lợi nhuận.",
+      "applicable_scope": "Hướng dẫn chung; số kỳ sao kê/chứng từ cụ thể áp dụng theo quy định từng ngân hàng",
+      "source_name": "Vietcombank, BIDV & Techcombank",
+      "source_url": "https://techcombank.com/thong-tin/blog/thu-tuc-vay-ngan-hang-mua-nha",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-10",
+      "category": "HO_SO_PHAP_LY",
+      "question": "Hồ sơ chứng minh mục đích vay và hồ sơ tài sản bảo đảm gồm những giấy tờ nào?",
+      "answer": "Hồ sơ chứng minh mục đích vay gồm: Hợp đồng đặt cọc, Hợp đồng mua bán nhà ở hoặc Hợp đồng chuyển nhượng quyền sử dụng đất, chứng từ đã thanh toán vốn tự có và giấy tờ pháp lý của bất động sản dự định mua. Hồ sơ tài sản bảo đảm gồm: Giấy chứng nhận quyền sử dụng đất, quyền sở hữu tài sản gắn liền với đất (Sổ đỏ/Sổ hồng), hoặc Hợp đồng mua bán nhà ở dự án, hoặc giấy tờ có giá/thẻ tiết kiệm được ngân hàng chấp nhận thế chấp, cầm cố.",
+      "applicable_scope": "Vietcombank, BIDV, Techcombank",
+      "source_name": "Vietcombank & BIDV - Hồ sơ vay mua nhà",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-11",
+      "category": "LAI_SUAT",
+      "question": "Lãi suất ưu đãi, lãi suất cố định và lãi suất thả nổi khác nhau như thế nào?",
+      "answer": "Lãi suất ưu đãi là mức hoặc chính sách lãi suất dành cho đối tượng và thời kỳ nhất định; lãi suất cố định không đổi trong thời gian thỏa thuận; lãi suất thả nổi có thể được điều chỉnh theo cơ chế tại hợp đồng. Sau khi hết ưu đãi/cố định, mức lãi tiếp theo phải căn cứ hợp đồng, không mặc định mọi khoản vay chuyển sang thả nổi.",
+      "applicable_scope": "Khái niệm nghiệp vụ ngân hàng chung; kỳ cố định và chu kỳ điều chỉnh cụ thể theo từng hợp đồng",
+      "source_name": "Techcombank - Giải thích lãi suất cố định và lãi suất thả nổi",
+      "source_url": "https://techcombank.com/thong-tin/blog/lai-suat-tha-noi-la-gi",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-12",
+      "category": "LAI_SUAT",
+      "question": "Cụm từ 'lãi suất chỉ từ 3,99%/năm' hay 'từ 5,2%/năm' trên thông tin sản phẩm cần được hiểu như thế nào?",
+      "answer": "Cụm từ 'từ 3,99%/năm' (trên trang sản phẩm Techcombank) hay 'từ 5,2%/năm' (trên trang sản phẩm Nhà Mới Thành Đạt của Vietcombank) là mức lãi suất khởi điểm dành cho gói vay hoặc nhóm khách hàng đáp ứng đầy đủ các điều kiện áp dụng cụ thể trong giai đoạn đầu. Đây không phải là mức lãi suất áp dụng mặc định cho mọi khách hàng và không phải là mức lãi suất cố định cho toàn bộ thời hạn vay 20-45 năm.",
+      "applicable_scope": "Techcombank, Vietcombank và các chương trình ưu đãi ngân hàng",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận; Vietcombank – Nhà Mới Thành Đạt",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": [
+        "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Nha-moi-thanh-dat"
+      ]
+    },
+    {
+      "id": "FAQ-13",
+      "category": "LAI_SUAT",
+      "question": "Hai phương thức trả nợ: 'Gốc đều, lãi tính theo dư nợ giảm dần' và 'Niên kim (gốc và lãi trả đều)' khác nhau ra sao?",
+      "answer": "(1) Phương thức Gốc đều, lãi theo dư nợ giảm dần: Tiền gốc trả mỗi kỳ thường bằng nhau (Tổng dư nợ chia cho số kỳ trả gốc), còn tiền lãi được tính trên số dư nợ gốc thực tế còn lại; do đó tổng số tiền phải trả mỗi kỳ giảm dần theo thời gian nếu lãi suất không đổi. (2) Phương thức Niên kim chuẩn (Annuity/EMI): Tổng số tiền gốc và lãi được thiết kế bằng nhau ở mỗi kỳ trong điều kiện lãi suất không đổi, trong đó phần tiền gốc tăng dần và phần tiền lãi giảm dần theo thời gian. Lưu ý: Trên trang sản phẩm Techcombank, công thức minh họa là gốc chia đều cho số kỳ và lãi tính theo dư nợ thực tế (không phải công thức niên kim chuẩn), nên khách hàng cần xem kỹ cách tính cụ thể trong hợp đồng.",
+      "applicable_scope": "Phân biệt công thức tính lịch trả nợ tại Techcombank và BIDV",
+      "source_name": "Techcombank & BIDV",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-14",
+      "category": "LAI_SUAT",
+      "question": "Công thức tính tiền lãi theo số ngày thực tế trên trang sản phẩm của Techcombank được quy định như thế nào?",
+      "answer": "Trên trang sản phẩm Vay mua bất động sản có Giấy chứng nhận của Techcombank, tiền lãi hàng kỳ được tính trên dư nợ thực tế theo cơ sở một năm có 365 ngày: Lãi phải trả hàng tháng = Lãi suất năm x Dư nợ thực tế / 365 x Số ngày thực tế trong kỳ. Do số ngày thực tế giữa các tháng có thể là 28, 29, 30 hoặc 31 ngày nên số tiền lãi thực tế sẽ chênh lệch nhẹ so với cách tính ước lượng lấy lãi suất năm chia đều cho 12 tháng.",
+      "applicable_scope": "Techcombank - Sản phẩm Vay mua bất động sản có Giấy chứng nhận",
+      "source_name": "Techcombank - Công thức tính gốc và lãi vay mua nhà",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-15",
+      "category": "LAI_SUAT",
+      "question": "Ân hạn nợ gốc là gì và trong thời gian ân hạn gốc khách hàng có phải trả tiền lãi không?",
+      "answer": "Ân hạn nợ gốc là thời gian chưa phải thanh toán gốc theo lịch thỏa thuận. Ân hạn gốc không có nghĩa miễn lãi: lãi có thể vẫn phát sinh, còn thời điểm thanh toán và bên chi trả (ví dụ có chương trình chủ đầu tư hỗ trợ) phụ thuộc hợp đồng và chương trình áp dụng.",
+      "applicable_scope": "Áp dụng cho các gói vay có chính sách ân hạn nợ gốc",
+      "source_name": "Techcombank & Vietcombank",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-16",
+      "category": "PHI_TRA_TRUOC_HAN",
+      "question": "Phí trả nợ trước hạn là gì và vì sao không được lấy biểu phí của một ngân hàng áp dụng chung cho mọi ngân hàng?",
+      "answer": "Phí trả nợ trước hạn là khoản phí phát sinh khi người vay trả một phần hoặc toàn bộ nợ gốc sớm hơn lịch trả nợ đã thỏa thuận trong hợp đồng tín dụng. Mỗi ngân hàng, mỗi sản phẩm và mỗi gói lãi suất ưu đãi có biểu phí trả nợ trước hạn khác nhau theo từng thời kỳ; do đó khách hàng phải đối chiếu biểu phí cụ thể của đúng sản phẩm và hợp đồng tín dụng mà mình tham gia.",
+      "applicable_scope": "Áp dụng chung khi so sánh phí giữa các ngân hàng",
+      "source_name": "Thông tư 39/2016/TT-NHNN & Quy định sản phẩm của các ngân hàng",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-17",
+      "category": "PHI_TRA_TRUOC_HAN",
+      "question": "Chính sách phí trả nợ trước hạn trên trang sản phẩm Vay mua bất động sản có Giấy chứng nhận của Techcombank được công bố như thế nào?",
+      "answer": "Trên trang giới thiệu sản phẩm Vay mua bất động sản có Giấy chứng nhận của Techcombank, ngân hàng công bố mức phí trả nợ trước hạn chỉ từ 1% trên số dư nợ trả trước và miễn phí (0%) từ năm thứ 6 trở đi. Cần lưu ý cụm từ 'chỉ từ 1%' là mức khởi điểm được giới thiệu cho sản phẩm, mức phí cụ thể áp dụng cho từng khoản vay sẽ được quy định chi tiết trong hợp đồng tín dụng của khách hàng.",
+      "applicable_scope": "Techcombank - Sản phẩm Vay mua bất động sản có Giấy chứng nhận",
+      "source_name": "Techcombank - Vay mua bất động sản có Giấy chứng nhận",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-18",
+      "category": "BAO_HIEM_KHOAN_VAY",
+      "question": "Ngân hàng có được phép bắt buộc khách hàng mua bảo hiểm nhân thọ hoặc bảo hiểm không bắt buộc khi vay mua nhà không?",
+      "answer": "Không. Theo Khoản 5 Điều 15 Luật Các tổ chức tín dụng số 32/2024/QH15, pháp luật nghiêm cấm tổ chức tín dụng, chi nhánh ngân hàng nước ngoài, người quản lý, người điều hành, nhân viên của tổ chức tín dụng, chi nhánh ngân hàng nước ngoài gắn việc bán sản phẩm bảo hiểm không bắt buộc với việc cung ứng sản phẩm, dịch vụ ngân hàng dưới mọi hình thức. Do đó, không được suy luận rằng mọi khoản vay mua nhà đều bắt buộc phải mua bảo hiểm nhân thọ.",
+      "applicable_scope": "Quy định pháp luật bắt buộc đối với mọi tổ chức tín dụng tại Việt Nam",
+      "source_name": "Khoản 5 Điều 15 Luật Các tổ chức tín dụng số 32/2024/QH15",
+      "source_url": "https://vbpl.vn/",
+      "additional_sources": [
+        "https://vanban.chinhphu.vn/?classid=1&docid=211190&orggroupid=1&pageid=27160"
+      ],
+      "last_updated": "2026-10-31"
+    },
+    {
+      "id": "FAQ-19",
+      "category": "BAO_HIEM_KHOAN_VAY",
+      "question": "Bảo hiểm đối với tài sản bảo đảm (như bảo hiểm cháy nổ căn hộ) khác gì với bảo hiểm nhân thọ tự nguyện?",
+      "answer": "Cần phân biệt rõ: Bảo hiểm nhân thọ là sản phẩm bảo hiểm đối với con người và không bắt buộc khi vay vốn. Ngược lại, bảo hiểm đối với tài sản bảo đảm (như bảo hiểm cháy, nổ đối với căn hộ chung cư) nhằm bảo vệ chính tài sản thế chấp theo quy định pháp luật và thỏa thuận tại hợp đồng thế chấp. Ví dụ, trên trang sản phẩm của Techcombank quy định đối với tài sản thế chấp là căn hộ đã hình thành, khách hàng cần mua bảo hiểm cháy nổ trước khi giải ngân và duy trì bảo hiểm trong suốt thời gian vay với Techcombank là bên thụ hưởng.",
+      "applicable_scope": "Phân biệt bảo hiểm tài sản bảo đảm (Techcombank) và bảo hiểm không bắt buộc (Luật Các TCTD 2024)",
+      "source_name": "Techcombank & Luật Các tổ chức tín dụng số 32/2024/QH15",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-20",
+      "category": "HAN_MUC_THOI_HAN",
+      "question": "Hạn mức cho vay và thời hạn vay tối đa của sản phẩm vay mua nhà tại Vietcombank, BIDV và Techcombank được công bố thế nào?",
+      "answer": "Theo thông tin trên trang sản phẩm chính thức của từng ngân hàng: (1) Vietcombank (Vay mua nhà ở, đất ở): Mức vay lên tới 100% giá trị Hợp đồng mua bán/chuyển nhượng, tối đa 50 tỷ đồng/khoản vay (tùy thuộc tài sản bảo đảm), thời hạn vay tối đa 30 năm. (2) BIDV (Vay nhu cầu nhà ở): Mức vay tối đa 100% giá trị hợp đồng mua bán/phương án vay, thời hạn tối đa 30 năm. (3) Techcombank (chương trình vay mua BĐS thổ cư trong trang sản phẩm): Tỷ lệ cho vay đến 80% giá trị tài sản bảo đảm, thời hạn vay lên đến 45 năm.",
+      "applicable_scope": "Vietcombank (Vay mua nhà ở, đất ở), BIDV (Vay nhu cầu nhà ở), Techcombank (Vay mua BĐS có GCN)",
+      "source_name": "Trang sản phẩm chính thức của Vietcombank, BIDV, Techcombank",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-21",
+      "category": "HAN_MUC_THOI_HAN",
+      "question": "Tỷ lệ LTV là gì và tại sao tỷ lệ LTV sơ bộ trên Chatbot có thể khác với kết quả xét duyệt thực tế của ngân hàng?",
+      "answer": "LTV (Loan-to-Value) là tỷ lệ giữa số tiền vay so với giá trị tài sản dùng làm cơ sở tính hạn mức. Trên Chatbot, tỷ lệ LTV sơ bộ được tính tạm thời dựa trên 'giá trị nhà dự kiến' do người dùng tự nhập. Trong thực tế, ngân hàng có thể áp dụng giá trị tài sản bảo đảm được thẩm định cùng các giới hạn tài trợ khác do ngân hàng hoặc đơn vị thẩm định giá xác định, nên hạn mức được duyệt thực tế có thể khác với con số ước tính ban đầu.",
+      "applicable_scope": "Nguyên tắc tính toán hạn mức trên Chatbot và thực tế thẩm định ngân hàng",
+      "source_name": "Techcombank & Vietcombank",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-22",
+      "category": "QUY_TRINH_VAY",
+      "question": "Thời gian xử lý hồ sơ vay mua nhà tại BIDV được công bố là bao lâu?",
+      "answer": "BIDV công bố mốc xử lý tối đa 05 ngày làm việc kể từ khi nhận đủ hồ sơ hợp lệ; áp dụng cho khoản vay thuộc thẩm quyền phê duyệt tín dụng của chi nhánh và khi hệ thống công nghệ thông suốt, không bao gồm thời gian đăng ký biện pháp bảo đảm; một số ngoại lệ theo quy định của BIDV từng thời kỳ. Không cam kết mọi khoản vay được phê duyệt trong 5 ngày.",
+      "applicable_scope": "BIDV - Sản phẩm Vay nhu cầu nhà ở (áp dụng theo điều kiện sản phẩm)",
+      "source_name": "BIDV - Vay nhu cầu nhà ở",
+      "source_url": "https://bidv.com.vn/bidv/privatecustomer/dichvunganhang/tindung/vaynhucaunhao",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-23",
+      "category": "QUY_TRINH_VAY",
+      "question": "Sau khi tất toán toàn bộ khoản vay tại Techcombank, mất bao lâu để nhận lại giấy tờ tài sản bảo đảm và xóa thế chấp?",
+      "answer": "Trên trang sản phẩm của Techcombank, ngân hàng công bố thời gian để khách hàng nhận lại giấy tờ tài sản bảo đảm tại Techcombank là khoảng 02 ngày làm việc kể từ ngày khách hàng gửi yêu cầu và đã thanh toán hết toàn bộ dư nợ. Tuy nhiên, khách hàng cần lưu ý thời gian khoảng 2 ngày làm việc này là thời gian xử lý trao trả giấy tờ tại ngân hàng, chưa bao gồm thời gian cơ quan đăng ký đất đai thực hiện thủ tục hành chính xóa đăng ký biện pháp bảo đảm trên Giấy chứng nhận.",
+      "applicable_scope": "Techcombank - Sản phẩm Vay mua bất động sản có Giấy chứng nhận",
+      "source_name": "Techcombank - Câu hỏi thường gặp Vay mua bất động sản có Giấy chứng nhận",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-24",
+      "category": "TINH_TOAN_DONG_TIEN",
+      "question": "Việc Chatbot đánh giá dòng tiền 'đủ khả năng chi trả sơ bộ' có đồng nghĩa với việc chắc chắn được ngân hàng phê duyệt vay không?",
+      "answer": "Hoàn toàn không. Đánh giá của Chatbot chỉ là phép tính dòng tiền sơ bộ dựa trên số liệu thu nhập, chi phí và khoản vay do khách hàng tự cung cấp. Quyết định phê duyệt tín dụng chính thức thuộc thẩm quyền riêng của ngân hàng sau khi đã kiểm tra chứng từ gốc, lịch sử tín dụng CIC, định giá thực địa tài sản bảo đảm và xét duyệt theo khẩu vị rủi ro nội bộ tại thời điểm vay.",
+      "applicable_scope": "Nguyên tắc giới hạn trách nhiệm tư vấn trên toàn hệ thống Chatbot",
+      "source_name": "Quy định thẩm định tín dụng ngân hàng & Yêu cầu hệ thống Chatbot",
+      "source_url": "https://bidv.com.vn/bidv/privatecustomer/dichvunganhang/tindung/vaynhucaunhao",
+      "last_updated": "2026-10-31",
+      "additional_sources": []
+    },
+    {
+      "id": "FAQ-25",
+      "category": "BAO_MAT_VA_THAM_KHAO",
+      "question": "Chatbot áp dụng những nguyên tắc nào để bảo vệ dữ liệu cá nhân của khách hàng theo Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15?",
+      "answer": "Tuân thủ Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 (có hiệu lực từ ngày 01/01/2026), Chatbot thực hiện 4 nguyên tắc: (1) Không yêu cầu người dùng nhập số CCCD, số hộ chiếu, số tài khoản, mật khẩu, mã OTP hoặc tải lên giấy tờ nhân thân ở khung chat tư vấn thông thường; (2) Nếu người dùng tự gửi thông tin nhạy cảm, hệ thống cần được triển khai và kiểm thử để che/ẩn và không lặp lại toàn bộ nội dung đó trong câu trả lời; (3) Khuyến nghị khách hàng chủ động bảo vệ thông tin cá nhân trên môi trường mạng; (4) Chỉ sử dụng các thông số tài chính cơ bản do khách hàng cung cấp để tính toán tham khảo sơ bộ.",
+      "applicable_scope": "Toàn bộ các phiên hội thoại trên hệ thống Chatbot",
+      "source_name": "Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15",
+      "source_url": "https://vbpl.vn/",
+      "additional_sources": [
+        "https://vanban.chinhphu.vn/?classid=1&docid=214590&pageid=27160&typegroup="
+      ],
+      "last_updated": "2026-10-31"
+    }
+  ]
+}
