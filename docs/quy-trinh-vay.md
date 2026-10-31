@@ -1,14 +1,8 @@
 # Quy trình vay mua nhà tại các ngân hàng thương mại Việt Nam
 
-<<<<<<< HEAD
 ## 1. Cơ sở pháp lý và nguồn tham khảo
 
 1. **Cơ sở dữ liệu quốc gia về văn bản pháp luật (VBPL)** ([tra cứu văn bản](https://vbpl.vn/)) — truy cập ngày 31/10/2026:
-=======
-## 1. Cơ sở pháp lý và tài liệu tham khảo
-
-1. **Cơ sở dữ liệu quốc gia về văn bản pháp luật (VBPL):**
->>>>>>> 314f41b (docs: cập nhật quy-trinh-vay.md và faq.json)
    * **Thông tư số 39/2016/TT-NHNN** quy định về hoạt động cho vay của tổ chức tín dụng, chi nhánh ngân hàng nước ngoài đối với khách hàng (áp dụng theo nội dung hiện hành đã được sửa đổi, bổ sung, bao gồm Thông tư 06/2023/TT-NHNN, Thông tư 12/2024/TT-NHNN có hiệu lực từ 01/07/2024 và Thông tư 52/2025/TT-NHNN có hiệu lực từ 25/12/2025 kèm quyết định đính chính kỹ thuật).
    * **Luật Các tổ chức tín dụng số 32/2024/QH15** (Khoản 5 Điều 15 về nghiêm cấm gắn việc bán sản phẩm bảo hiểm không bắt buộc với việc cung ứng sản phẩm, dịch vụ ngân hàng). [Văn bản chính thức](https://vanban.chinhphu.vn/?classid=1&docid=211190&orggroupid=1&pageid=27160).
    * **Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15** (hiệu lực từ ngày 01/01/2026).
@@ -116,20 +110,6 @@ Khách hàng thanh toán nợ gốc và lãi theo lịch trả nợ đã thỏa 
 
 ## 3. Lưu ý khi vận dụng quy trình
 
-<<<<<<< HEAD
 **Thông tin chỉ mang tính tham khảo.** Điều kiện hồ sơ, thời hạn thẩm định, lãi suất, phí và cách thức giải ngân phụ thuộc vào ngân hàng, sản phẩm và thỏa thuận cụ thể. Các tỷ lệ hoặc thời hạn tối đa nêu trong tài liệu là thông tin công bố về sản phẩm, không đồng nghĩa khách hàng chắc chắn được phê duyệt. Khi cần làm thủ tục chính thức, người vay nên liên hệ ngân hàng để nhận danh mục hồ sơ và điều kiện áp dụng.
 
 Vì lý do bảo mật, không nên cung cấp số định danh cá nhân, số tài khoản, mật khẩu hoặc mã OTP qua các kênh tư vấn không được xác thực.
-=======
-Điều kiện hồ sơ, thời hạn thẩm định, lãi suất, phí và cách thức giải ngân phụ thuộc vào ngân hàng, sản phẩm và thỏa thuận cụ thể. Các tỷ lệ hoặc thời hạn tối đa nêu trong tài liệu là thông tin công bố về sản phẩm, không đồng nghĩa khách hàng chắc chắn được phê duyệt. Khi cần làm thủ tục chính thức, người vay nên liên hệ ngân hàng để nhận danh mục hồ sơ và điều kiện áp dụng.
-
-Vì lý do bảo mật, không nên cung cấp số định danh cá nhân, số tài khoản, mật khẩu hoặc mã OTP qua các kênh tư vấn không được xác thực.
-
-## 4. Tài liệu tham khảo
-
-1. Ngân hàng Nhà nước Việt Nam, *Thông tư 39/2016/TT-NHNN* và các văn bản sửa đổi, bổ sung: [Cơ sở dữ liệu văn bản pháp luật](https://vbpl.vn/).
-2. Quốc hội, *Luật Các tổ chức tín dụng số 32/2024/QH15*: [Cổng văn bản Chính phủ](https://vanban.chinhphu.vn/?classid=1&docid=211190&orggroupid=1&pageid=27160).
-3. Vietcombank, [Vay mua nhà ở, đất ở](https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat).
-4. BIDV, [Vay nhu cầu nhà ở](https://bidv.com.vn/bidv/privatecustomer/dichvunganhang/tindung/vaynhucaunhao).
-5. Techcombank, [Vay mua bất động sản có Giấy chứng nhận](https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o).
->>>>>>> 314f41b (docs: cập nhật quy-trinh-vay.md và faq.json)
