@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-ink: #161816;
+  --color-muted: #6b6f6a;
+  --color-faint: #9a9c98;
+  --color-line: #e4e7e2;
+  --color-soft: #f4f6f2;
+  --color-mint: #f3f8ec;
+  --color-brand: #1e6b58;
+}
+
+html, body, #root { height: 100%; }
+body { margin: 0; font-family: var(--font-sans); color: var(--color-ink); background: #e8f6e2; }
+
+/* Lưới chấm nền của khung chat */
+.dots {
+  background-image: radial-gradient(#d9ddd6 1.3px, transparent 1.4px);
+  background-size: 22px 22px;
+  background-position: 16px 16px;
+}
+/* Quả cầu avatar AI */
+.orb { background: linear-gradient(135deg, #e8f77f, #4fc47a); border-radius: 9999px; flex: none; }
+.orb-glow { box-shadow: 0 8px 28px rgba(184, 235, 90, 0.55); }
+
+@keyframes dot { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .typing-dot { animation: dot 1.2s infinite both; }
+}
