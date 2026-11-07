@@ -4,15 +4,31 @@ from collections.abc import AsyncIterator
 from uuid import uuid4
 
 import httpx
-import pytest
 from fastapi import FastAPI
 
 from app.application.use_cases.stream_chat import StreamChatUseCase
-from app.core.config import get_settings
-from app.domain.ports.chat_completion import ChatCompletionPort
-from app.infrastructure.llm.openai_chat_adapter import ChatProviderUnavailable, OpenAIChatAdapter
+from app.domain.entities.chat_request import ChatClaim, ChatCommit, ChatRequest, ChatSnapshot
+from app.domain.entities.knowledge_evidence import GroundedContext, KnowledgeEvidence
+from app.domain.ports.chat_completion import ChatCompletionPort, ChatProviderUnavailable
+from app.domain.ports.chat_turn_repository import ChatTurnRepository
+from app.infrastructure.llm.openai_chat_adapter import OpenAIChatAdapter
+from app.infrastructure.prompts.loader import get_prompt_catalog
 from app.presentation.api.chat_dependencies import get_stream_chat_use_case
-from app.presentation.api.v1.endpoints.chat import router
+from app.presentation.api.v1.endpoints.route_chat import router
+
+
+class FakeRepository(ChatTurnRepository):
+    async def get_conversation_status(self, conversation_id):
+        return "active"
+
+    async def claim(self, request: ChatRequest, request_hash: str) -> ChatClaim:
+        return ChatClaim("claimed", ChatSnapshot(0, (), uuid4(), uuid4()))
+
+    async def commit(self, request: ChatRequest, *, request_id, lease_token, snapshot_version, answer, state_update=None) -> ChatCommit:
+        return ChatCommit({"status": "completed"}, 200, uuid4(), uuid4(), snapshot_version + 1)
+
+    async def fail(self, request: ChatRequest, *, request_id, lease_token, error_code, response_status, retryable) -> bool:
+        return True
 
 
 class FakeCompletion(ChatCompletionPort):
@@ -20,13 +36,30 @@ class FakeCompletion(ChatCompletionPort):
         self.fragments = fragments or []
         self.fail = fail
         self.received_text: str | None = None
+        self.received_history: tuple[tuple[str, str], ...] = ()
+        self.received_guidance = ""
+        self.received_knowledge_context = ""
 
-    async def stream_reply(self, text: str) -> AsyncIterator[str]:
+    async def stream_reply(
+        self, text: str, *, history=(), guidance="", knowledge_context=""
+    ) -> AsyncIterator[str]:
         self.received_text = text
+        self.received_history = history
+        self.received_guidance = guidance
+        self.received_knowledge_context = knowledge_context
         if self.fail:
             raise ChatProviderUnavailable("private provider details")
         for fragment in self.fragments:
             yield fragment
+
+
+class FakeRetrieval:
+    async def retrieve(self, text):
+        item = KnowledgeEvidence(
+            chunk_id=uuid4(), document_id=uuid4(), title="Hồ sơ", source_url=None,
+            body="Cần giấy tờ.", score=0.9,
+        )
+        return GroundedContext((item,), "Cần giấy tờ.", ())
 
 
 def make_app(use_case: StreamChatUseCase) -> FastAPI:
@@ -38,12 +71,9 @@ def make_app(use_case: StreamChatUseCase) -> FastAPI:
 
 def test_endpoint_streams_sse_deltas_and_never_echoes_conversation_id(monkeypatch):
     completion = FakeCompletion(["Xin chào", " bạn"])
-    monkeypatch.setattr("app.presentation.api.v1.endpoints.chat.get_settings", lambda: get_settings().model_copy(update={
-        "llm_base_url": "http://provider.test/v1", "llm_api_key": "test-key"
-    }))
 
     async def run():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(StreamChatUseCase(completion))),
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog()))),
                                      base_url="http://test") as client:
             conversation_id = uuid4()
             response = await client.post(f"/api/v1/conversations/{conversation_id}/messages", json={
@@ -52,50 +82,61 @@ def test_endpoint_streams_sse_deltas_and_never_echoes_conversation_id(monkeypatc
             assert response.status_code == 200
             assert response.headers["content-type"].startswith("text/event-stream")
             assert response.headers["cache-control"] == "no-store"
-            assert 'event: delta\ndata: {"text": "Xin chào"}' in response.text
-            assert 'event: delta\ndata: {"text": " bạn"}' in response.text
+            assert 'event: delta\ndata: {"text": "Xin chào!' in response.text
             assert 'event: done\ndata: {"status": "completed"}' in response.text
             assert str(conversation_id) not in response.text
-            assert completion.received_text == "Xin chào"
+        assert completion.received_text is None
 
     asyncio.run(run())
 
 
-def test_endpoint_rejects_extra_fields_and_missing_provider_configuration(monkeypatch):
+def test_endpoint_rejects_extra_fields(monkeypatch):
     completion = FakeCompletion(["ok"])
-    monkeypatch.setattr("app.presentation.api.v1.endpoints.chat.get_settings", lambda: get_settings().model_copy(update={
-        "llm_base_url": "", "llm_api_key": ""
-    }))
 
     async def run():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(StreamChatUseCase(completion))),
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog()))),
                                      base_url="http://test") as client:
             path = f"/api/v1/conversations/{uuid4()}/messages"
             invalid = await client.post(path, json={"client_request_id": str(uuid4()), "text": "hi", "unknown": 1})
-            missing_config = await client.post(path, json={"client_request_id": str(uuid4()), "text": "hi"})
             assert invalid.status_code == 422
-            assert missing_config.status_code == 503
-            assert missing_config.json()["detail"] == "MODEL_UNAVAILABLE"
 
     asyncio.run(run())
 
 
 def test_provider_error_is_sanitized_in_stream(monkeypatch):
     completion = FakeCompletion(fail=True)
-    monkeypatch.setattr("app.presentation.api.v1.endpoints.chat.get_settings", lambda: get_settings().model_copy(update={
-        "llm_base_url": "http://provider.test/v1", "llm_api_key": "test-key"
-    }))
+    use_case = StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog(), retrieval=FakeRetrieval())
 
     async def run():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(StreamChatUseCase(completion))),
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(use_case)),
                                      base_url="http://test") as client:
             response = await client.post(f"/api/v1/conversations/{uuid4()}/messages", json={
-                "client_request_id": str(uuid4()), "text": "hi",
+                "client_request_id": str(uuid4()), "text": "Hồ sơ vay cần gì?",
             })
             assert response.status_code == 200
             assert '"code": "MODEL_UNAVAILABLE"' in response.text
             assert "private provider details" not in response.text
             assert "event: done" not in response.text
+
+    asyncio.run(run())
+
+
+def test_retrieval_endpoint_streams_model_fragments_and_commits(monkeypatch):
+    completion = FakeCompletion(["Theo tài liệu", ", cần giấy tờ."])
+    use_case = StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog(), retrieval=FakeRetrieval())
+
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(use_case)),
+                                     base_url="http://test") as client:
+            response = await client.post(f"/api/v1/conversations/{uuid4()}/messages", json={
+                "client_request_id": str(uuid4()), "text": "Chào bạn, hồ sơ vay cần gì?",
+            })
+            assert response.status_code == 200
+            assert 'event: delta\ndata: {"text": "Theo tài liệu"}' in response.text
+            assert 'event: delta\ndata: {"text": ", cần giấy tờ."}' in response.text
+            assert response.text.index("event: done") > response.text.rindex("event: delta")
+            assert completion.received_text == "Chào bạn, hồ sơ vay cần gì?"
+            assert completion.received_knowledge_context == "Cần giấy tờ."
 
     asyncio.run(run())
 
@@ -109,7 +150,8 @@ def test_openai_adapter_calls_compatible_endpoint_and_yields_real_http_sse_chunk
         body = json.loads(request.content)
         assert body["model"] == "cx/gpt-5.6-sol"
         assert body["stream"] is True
-        assert body["messages"][-1] == {"role": "user", "content": "Xin chào"}
+        assert body["messages"][0]["role"] == "system"
+        assert body["messages"][1:] == [{"role": "user", "content": "Xin chào"}]
         return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=(
             b'data: {"choices":[{"delta":{"content":"Xin"}}]}\n\n'
             + 'data: {"choices":[{"delta":{"content":" chào"}}]}\n\n'.encode("utf-8")

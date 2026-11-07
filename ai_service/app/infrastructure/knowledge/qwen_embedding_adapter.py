@@ -3,8 +3,13 @@ import math
 from openai import APIError, AsyncOpenAI
 
 
-class EmbeddingUnavailable(RuntimeError):
-    pass
+from app.domain.errors import RetrievalError
+
+
+class EmbeddingUnavailable(RetrievalError):
+    def __init__(self, message: str, *, code: str = "EMBEDDING_UNAVAILABLE", retryable: bool = True) -> None:
+        super().__init__(code, stage="embedding", retryable=retryable)
+        self.args = (message,)
 
 
 class QwenEmbeddingAdapter:
@@ -22,6 +27,8 @@ class QwenEmbeddingAdapter:
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
+        if not self._base_url or not self._api_key:
+            raise EmbeddingUnavailable("embedding provider is not configured", code="EMBEDDING_NOT_CONFIGURED", retryable=False)
         vectors: list[list[float]] = []
         try:
             async with AsyncOpenAI(

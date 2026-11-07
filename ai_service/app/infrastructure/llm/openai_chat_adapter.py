@@ -1,10 +1,10 @@
 from collections.abc import AsyncIterator
 
-from openai import APIError, AsyncOpenAI
+from openai import APIError, APIStatusError, APITimeoutError, AsyncOpenAI
 
-
-class ChatProviderUnavailable(RuntimeError):
-    """Raised when the configured chat provider cannot complete a stream."""
+from app.domain.ports.chat_completion import ChatProviderUnavailable
+from app.domain.ports.prompt_catalog import PromptCatalog, PromptName
+from app.infrastructure.prompts.loader import get_prompt_catalog
 
 
 class OpenAIChatAdapter:
@@ -15,15 +15,30 @@ class OpenAIChatAdapter:
         api_key: str,
         model: str,
         timeout_seconds: float = 45.0,
+        prompts: PromptCatalog | None = None,
     ) -> None:
         self._base_url = base_url
         self._api_key = api_key
         self._model = model
         self._timeout = timeout_seconds
+        self._prompts = prompts if prompts is not None else get_prompt_catalog()
 
-    async def stream_reply(self, text: str) -> AsyncIterator[str]:
+    async def stream_reply(
+        self,
+        text: str,
+        *,
+        history: tuple[tuple[str, str], ...] = (),
+        guidance: str = "",
+        knowledge_context: str = "",
+    ) -> AsyncIterator[str]:
         if not self._base_url or not self._api_key:
-            raise ChatProviderUnavailable("chat provider is not configured")
+            raise ChatProviderUnavailable(code="MODEL_NOT_CONFIGURED", retryable=False)
+
+        system_parts = [self._prompts.get(PromptName.CHAT_SYSTEM)]
+        if guidance:
+            system_parts.append(self._prompts.get(PromptName.TURN_GUIDANCE).format(guidance=guidance))
+        if knowledge_context:
+            system_parts.append(self._prompts.get(PromptName.GROUNDING).format(knowledge_context=knowledge_context))
 
         try:
             async with AsyncOpenAI(
@@ -37,15 +52,13 @@ class OpenAIChatAdapter:
                     messages=[
                         {
                             "role": "system",
-                            "content": (
-                                "Bạn là trợ lý AI cung cấp thông tin tham khảo về vay mua nhà tại Việt Nam. "
-                                "Trả lời bằng tiếng Việt, rõ ràng, lịch sự. Không phê duyệt khoản vay, không "
-                                "cam kết lãi suất/điều kiện, không bịa dữ liệu ngân hàng hay nguồn. Không tự "
-                                "tính số tiền trả nợ; nếu thiếu dữ liệu đã xác minh, hãy nêu rõ giới hạn và hỏi "
-                                "thêm. Thông tin chỉ mang tính tham khảo; người dùng cần xác nhận trực tiếp "
-                                "với ngân hàng trước quyết định."
-                            ),
+                            "content": "\n\n".join(system_parts),
                         },
+                        *[
+                            {"role": role, "content": content}
+                            for role, content in history[-20:]
+                            if role in {"user", "assistant"}
+                        ],
                         {"role": "user", "content": text},
                     ],
                     stream=True,
@@ -56,5 +69,17 @@ class OpenAIChatAdapter:
                     content = chunk.choices[0].delta.content
                     if isinstance(content, str) and content:
                         yield content
+        except APITimeoutError as exc:
+            raise ChatProviderUnavailable(code="MODEL_TIMEOUT") from exc
+        except APIStatusError as exc:
+            if exc.status_code in {401, 403}:
+                error = ChatProviderUnavailable(code="MODEL_AUTHENTICATION_FAILED", retryable=False)
+            elif exc.status_code == 429:
+                error = ChatProviderUnavailable(code="MODEL_RATE_LIMITED")
+            elif exc.status_code < 500:
+                error = ChatProviderUnavailable(code="MODEL_REQUEST_REJECTED", retryable=False)
+            else:
+                error = ChatProviderUnavailable()
+            raise error from exc
         except APIError as exc:
-            raise ChatProviderUnavailable("chat provider unavailable or rejected request") from exc
+            raise ChatProviderUnavailable() from exc

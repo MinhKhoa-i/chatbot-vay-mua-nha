@@ -5,6 +5,7 @@ from uuid import UUID
 
 from app.domain.entities.knowledge_chunk import KnowledgeChunk
 from app.domain.entities.knowledge_document import StoredDocument, VerifiedDocumentMetadata
+from app.domain.entities.knowledge_evidence import KnowledgeEvidence, KnowledgeSearchQuery
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,10 +69,12 @@ class KnowledgeRepository(Protocol):
 
     async def fail_ingestion(self, job: IngestionJob, error_code: str) -> None: ...
 
-
-class DocumentExtractor(Protocol):
-    def extract(self, snapshot_path: str, media_type: str) -> list[tuple[int | None, str]]: ...
+    async def search_approved(self, query: KnowledgeSearchQuery) -> tuple[KnowledgeEvidence, ...]: ...
 
 
 class TextEmbedder(Protocol):
     async def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
+
+
+class DocumentExtractor(Protocol):
+    def extract(self, snapshot_path: str, media_type: str) -> list[tuple[int | None, str]]: ...

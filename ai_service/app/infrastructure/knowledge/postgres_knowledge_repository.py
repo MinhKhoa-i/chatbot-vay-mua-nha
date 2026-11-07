@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.domain.entities.knowledge_document import IngestionStatus, StoredDocument, VerifiedDocumentMetadata
+from app.domain.entities.knowledge_evidence import KnowledgeEvidence, KnowledgeSearchQuery
 from app.domain.ports.knowledge_ingestion import IngestionJob, KnowledgeChunk, Snapshot, UploadResult
 
 
@@ -190,6 +191,45 @@ class PostgresKnowledgeRepository:
                 UPDATE ingestion_runs SET status = 'published', finished_at = now()
                 WHERE id = :id AND status = 'processing'
             """), {"id": job.id})
+
+    async def search_approved(self, query: KnowledgeSearchQuery) -> tuple[KnowledgeEvidence, ...]:
+        if not query.text.strip() or not query.embedding or query.limit < 1:
+            return ()
+        vector_literal = "[" + ",".join(format(float(value), ".9g") for value in query.embedding) + "]"
+        async with self._sessions() as session:
+            rows = (await session.execute(text("""
+                WITH candidates AS (
+                    SELECT c.id AS chunk_id, d.id AS document_id, d.title, d.source_url,
+                           d.bank_code, d.product_type, d.effective_from, d.effective_to,
+                           c.body,
+                           (1 - (c.embedding <=> CAST(:embedding AS vector))) AS vector_score,
+                           ts_rank_cd(c.textsearch, plainto_tsquery('simple', :query_text)) AS text_score
+                    FROM knowledge_chunks c
+                    JOIN knowledge_documents d ON d.id = c.document_id
+                    WHERE d.review_status = 'approved'
+                      AND d.ingestion_status = 'published'
+                      AND (d.effective_from IS NULL OR d.effective_from <= CURRENT_DATE)
+                      AND (d.effective_to IS NULL OR d.effective_to > CURRENT_DATE)
+                )
+                SELECT *, GREATEST(vector_score, LEAST(text_score, 1.0)) AS score
+                FROM candidates
+                WHERE vector_score > 0 OR text_score > 0
+                ORDER BY score DESC, vector_score DESC, document_id, chunk_id
+                LIMIT :limit
+            """), {
+                "embedding": vector_literal,
+                "query_text": query.text[:4000],
+                "limit": query.limit,
+            })).mappings().all()
+        return tuple(
+            KnowledgeEvidence(
+                chunk_id=row["chunk_id"], document_id=row["document_id"],
+                title=row["title"], source_url=row["source_url"], body=row["body"],
+                score=float(row["score"]), bank_code=row["bank_code"], product_type=row["product_type"],
+                effective_from=row["effective_from"], effective_to=row["effective_to"],
+            )
+            for row in rows if float(row["score"]) >= query.min_score
+        )
 
     async def fail_ingestion(self, job: IngestionJob, error_code: str) -> None:
         async with self._sessions() as session, session.begin():
