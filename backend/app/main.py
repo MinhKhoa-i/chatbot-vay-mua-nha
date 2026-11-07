@@ -9,7 +9,10 @@ DATA_UPDATED = "2026-10-31"
 app = FastAPI(title="Chatbot vay mua nhà API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # dev server
+    allow_origins=[
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    "http://localhost:5174", "http://127.0.0.1:5174",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -22,7 +25,7 @@ def health():
 
 # /api/chat
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=1000)
     session_id: Optional[str] = None
 
 
