@@ -1,0 +1,252 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-10-31",
+  "description": "Dữ liệu mẫu chuẩn hóa về các sản phẩm vay mua nhà tại 3 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank)",
+  "banks": [
+    {
+      "id": "vietcombank",
+      "code": "VCB",
+      "name": "Ngân hàng TMCP Ngoại thương Việt Nam",
+      "short_name": "Vietcombank",
+      "logo_url": null,
+      "website": "https://www.vietcombank.com.vn",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "package_name": "Vay mua nhà ở, đất ở (Gói Nhà Mới Thành Đạt)",
+      "interest_rate": {
+        "promo_rate": 5.2,
+        "promo_duration_months": 12,
+        "floating_margin": 3.5,
+        "floating_rate_estimated": 9.2,
+        "reference_rate_type": "Lãi suất tiền gửi tiết kiệm 12 tháng trả sau của Vietcombank",
+        "adjustment_frequency_months": 3,
+        "rate_options": [
+          {
+            "duration_months": 12,
+            "rate": 5.2,
+            "conditions": "Áp dụng cố định 12 tháng đầu, thời hạn vay tối thiểu 36 tháng"
+          },
+          {
+            "duration_months": 24,
+            "rate": 6.5,
+            "conditions": "Áp dụng cố định 24 tháng đầu, thời hạn vay tối thiểu 48 tháng"
+          },
+          {
+            "duration_months": 36,
+            "rate": 7.5,
+            "conditions": "Áp dụng cố định 36 tháng đầu, thời hạn vay tối thiểu 60 tháng"
+          }
+        ]
+      },
+      "promotions": {
+        "summary": "Lãi suất ưu đãi chỉ từ 5.2%/năm, thời hạn vay tối đa 30 năm, hạn mức đến 50 tỷ đồng, ân hạn nợ gốc đến 12 tháng",
+        "grace_period_months": 12,
+        "early_repayment_penalty": {
+          "description": "Phí trả nợ trước hạn theo biểu phí Vietcombank: Năm 1: 1.5%, Năm 2-3: 1.0%, Năm 4-5: 0.5%, Từ năm thứ 6: 0% (miễn phí)",
+          "tiers": [
+            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
+            { "from_year": 2, "to_year": 3, "rate_percent": 1.0 },
+            { "from_year": 4, "to_year": 5, "rate_percent": 0.5 },
+            { "from_year": 6, "to_year": 30, "rate_percent": 0.0 }
+          ]
+        },
+        "special_offers": [
+          "Miễn phí duy trì dịch vụ VCB Digibank",
+          "Tặng tài khoản số đẹp theo ngày sinh/số điện thoại",
+          "Ưu đãi hạn mức phát hành thẻ tín dụng quốc tế"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 70.0,
+        "max_ltv_note": "Tối đa 70% giá trị tài sản bảo đảm là chính ngôi nhà mua; lên tới 100% giá trị HĐMB nếu bổ sung thêm tài sản bảo đảm độc lập khác",
+        "max_loan_term_years": 30,
+        "min_loan_term_years": 3,
+        "max_loan_amount": 50000000000,
+        "min_loan_amount": 100000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 75,
+        "borrower_scope": "Công dân Việt Nam từ đủ 18 tuổi đến không quá 75 tuổi tại thời điểm đáo hạn khoản vay; cho phép vay mua nhà cho bản thân hoặc người thân (bố, mẹ, vợ, chồng, con)",
+        "min_monthly_income": 10000000,
+        "accepted_collateral": [
+          "Bất động sản đã có Giấy chứng nhận quyền sử dụng đất, quyền sở hữu nhà ở (Sổ đỏ/Sổ hồng)",
+          "Nhà ở hình thành trong tương lai tại các dự án bất động sản có liên kết hợp tác với Vietcombank",
+          "Giấy tờ có giá, số dư tiền gửi có kỳ hạn do Vietcombank phát hành"
+        ],
+        "processing_time_days": "3 - 5 ngày làm việc sau khi nhận đủ hồ sơ hợp lệ",
+        "general_requirements": [
+          "Có nguồn thu nhập ổn định và đủ khả năng tài chính để trả nợ gốc và lãi",
+          "Không có lịch sử nợ xấu tại CIC tại thời điểm thẩm định",
+          "Vốn tự có tham gia tối thiểu 30% giá trị phương án mua nhà"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-10-31",
+      "disclaimer": "Thông tin chỉ mang tính tham khảo. Lãi suất, hạn mức và điều kiện phê duyệt chính thức căn cứ theo thông báo phê duyệt tín dụng của Vietcombank tại thời điểm giải ngân."
+    },
+    {
+      "id": "bidv",
+      "code": "BIDV",
+      "name": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
+      "short_name": "BIDV",
+      "logo_url": null,
+      "website": "https://bidv.com.vn",
+      "source_url": "https://bidv.com.vn/bidv/privatecustomer/dichvunganhang/tindung/vaynhucaunhao",
+      "package_name": "Vay nhu cầu nhà ở (Gói Ngôi nhà đầu tiên)",
+      "interest_rate": {
+        "promo_rate": 5.5,
+        "promo_duration_months": 6,
+        "floating_margin": 3.8,
+        "floating_rate_estimated": 9.5,
+        "reference_rate_type": "Lãi suất tiền gửi tiết kiệm cá nhân 24 tháng trả sau của BIDV",
+        "adjustment_frequency_months": 6,
+        "rate_options": [
+          {
+            "duration_months": 6,
+            "rate": 5.5,
+            "conditions": "Áp dụng cho khoản vay có thời hạn tối thiểu 36 tháng"
+          },
+          {
+            "duration_months": 12,
+            "rate": 6.2,
+            "conditions": "Áp dụng cho khoản vay có thời hạn tối thiểu 48 tháng"
+          },
+          {
+            "duration_months": 24,
+            "rate": 7.0,
+            "conditions": "Áp dụng cho khoản vay có thời hạn tối thiểu 60 tháng"
+          }
+        ]
+      },
+      "promotions": {
+        "summary": "Gói vay ưu đãi Ngôi nhà đầu tiên cho khách hàng cá nhân, lãi suất từ 5.5%/năm, cam kết mốc thời gian xử lý hồ sơ tối đa 05 ngày làm việc",
+        "grace_period_months": 6,
+        "early_repayment_penalty": {
+          "description": "Phí trả nợ trước hạn theo biểu phí BIDV: Năm 1: 1.5%, Năm 2: 1.0%, Năm 3: 0.5%, Từ năm thứ 4 trở đi: 0% (miễn phí)",
+          "tiers": [
+            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
+            { "from_year": 2, "to_year": 2, "rate_percent": 1.0 },
+            { "from_year": 3, "to_year": 3, "rate_percent": 0.5 },
+            { "from_year": 4, "to_year": 30, "rate_percent": 0.0 }
+          ]
+        },
+        "special_offers": [
+          "Áp dụng cho khách hàng cá nhân chưa có dư nợ vay mua nhà tại BIDV",
+          "Miễn phí chuyển tiền trọn đời trên BIDV SmartBanking",
+          "Ưu đãi giảm phí bảo hiểm nhà tư nhân"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 80.0,
+        "max_ltv_note": "Tối đa 80% giá trị tài sản bảo đảm; lên tới 100% tổng nhu cầu vốn phương án vay nếu có tài sản bảo đảm độc lập bổ sung",
+        "max_loan_term_years": 30,
+        "min_loan_term_years": 3,
+        "max_loan_amount": null,
+        "min_loan_amount": 100000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 70,
+        "borrower_scope": "Khách hàng cá nhân là công dân Việt Nam sinh sống, làm việc tại địa bàn có chi nhánh/phòng giao dịch BIDV",
+        "min_monthly_income": 10000000,
+        "accepted_collateral": [
+          "Bất động sản thuộc sở hữu của người vay hoặc của bên thứ ba (bố mẹ, vợ chồng, con)",
+          "Nhà ở hình thành từ vốn vay tại các dự án nhà ở thương mại",
+          "Số dư tài khoản tiền gửi, chứng chỉ tiền gửi, trái phiếu do BIDV phát hành"
+        ],
+        "processing_time_days": "Tối đa 05 ngày làm việc kể từ khi nhận đủ hồ sơ hợp lệ tại chi nhánh",
+        "general_requirements": [
+          "Khách hàng cá nhân không có khoản vay mục đích mua nhà ở tại BIDV tại thời điểm vay (đối với gói Ngôi nhà đầu tiên)",
+          "Có phương án vay vốn khả thi, nguồn thu nhập chứng minh trả nợ đầy đủ",
+          "Lịch sử tín dụng CIC không có nợ xấu"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-10-31",
+      "disclaimer": "Thông tin chỉ mang tính tham khảo. Điều kiện phê duyệt, lãi suất và hạn mức thực tế căn cứ theo quyết định cấp tín dụng của BIDV."
+    },
+    {
+      "id": "techcombank",
+      "code": "TCB",
+      "name": "Ngân hàng TMCP Kỹ Thương Việt Nam",
+      "short_name": "Techcombank",
+      "logo_url": null,
+      "website": "https://techcombank.com",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "package_name": "Vay mua bất động sản có Giấy chứng nhận",
+      "interest_rate": {
+        "promo_rate": 6.8,
+        "promo_duration_months": 12,
+        "floating_margin": 3.5,
+        "floating_rate_estimated": 10.3,
+        "reference_rate_type": "Lãi suất cơ sở Techcombank áp dụng cho khách hàng cá nhân",
+        "adjustment_frequency_months": 3,
+        "rate_options": [
+          {
+            "duration_months": 3,
+            "rate": 3.99,
+            "conditions": "Mức lãi suất khởi điểm kỳ hạn ngắn từ 3.99%/năm dành cho khách hàng ưu tiên"
+          },
+          {
+            "duration_months": 6,
+            "rate": 5.99,
+            "conditions": "Áp dụng cố định 6 tháng đầu"
+          },
+          {
+            "duration_months": 12,
+            "rate": 6.8,
+            "conditions": "Áp dụng cố định 12 tháng đầu cho khách hàng mua nhà có Giấy chứng nhận"
+          },
+          {
+            "duration_months": 24,
+            "rate": 7.99,
+            "conditions": "Áp dụng cố định 24 tháng đầu cho khách hàng chọn kỳ ưu đãi dài"
+          }
+        ]
+      },
+      "promotions": {
+        "summary": "Thời hạn vay lên tới 35 năm (thổ cư đủ điều kiện đến 45 năm), ân hạn nợ gốc lên đến 24 tháng, phí trả trước hạn chỉ từ 1% và miễn phí từ năm thứ 6",
+        "grace_period_months": 24,
+        "early_repayment_penalty": {
+          "description": "Phí trả nợ trước hạn chỉ từ 1.0% trên số dư trả trước trong 5 năm đầu, miễn phí (0%) từ năm thứ 6 trở đi",
+          "tiers": [
+            { "from_year": 1, "to_year": 5, "rate_percent": 1.0 },
+            { "from_year": 6, "to_year": 45, "rate_percent": 0.0 }
+          ]
+        },
+        "special_offers": [
+          "Phê duyệt sơ bộ trực tuyến nhanh chóng",
+          "Thời gian nhận lại giấy tờ tài sản bảo đảm chỉ khoảng 02 ngày làm việc sau khi tất toán",
+          "Gói tài khoản ưu tiên Techcombank Inspire / Techcombank Priority"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 80.0,
+        "max_ltv_note": "Tỷ lệ cho vay tối đa đến 80% giá trị tài sản bảo đảm được thẩm định",
+        "max_loan_term_years": 35,
+        "min_loan_term_years": 5,
+        "max_loan_amount": null,
+        "min_loan_amount": 200000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 70,
+        "borrower_scope": "Khách hàng cá nhân là công dân Việt Nam từ đủ 18 tuổi và không quá 70 tuổi tại thời điểm vay vốn",
+        "min_monthly_income": 15000000,
+        "accepted_collateral": [
+          "Bất động sản đã có Giấy chứng nhận (Sổ đỏ/Sổ hồng) thuộc sở hữu của người vay hoặc của người thân",
+          "Căn hộ chung cư đã hình thành có Giấy chứng nhận (yêu cầu mua bảo hiểm cháy nổ theo quy định hợp đồng thế chấp)"
+        ],
+        "processing_time_days": "Phê duyệt sơ bộ hạn mức trong 24 giờ",
+        "general_requirements": [
+          "Nguồn thu nhập chứng minh từ lương (sao kê 3 kỳ gần nhất), cho thuê tài sản hoặc hoạt động sản xuất kinh doanh",
+          "Không có lịch sử nợ xấu tại CIC",
+          "Tài sản bảo đảm có pháp lý rõ ràng, không có tranh chấp hoặc vi phạm quy hoạch"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-10-31",
+      "disclaimer": "Thông tin chỉ mang tính tham khảo. Mức lãi suất khởi điểm 'chỉ từ 3.99%' và tỷ lệ cho vay phụ thuộc vào kết quả phê duyệt tín dụng của Techcombank cho từng khách hàng."
+    }
+  ]
+}
