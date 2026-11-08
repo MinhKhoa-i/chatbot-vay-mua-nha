@@ -1,6 +1,6 @@
 import { Icon, Orb } from "./icons.jsx";
 
-export default function Sidebar({ convos, activeId, open, onClose, onNew, onSelect, onClear }) {
+export default function Sidebar({ convos, activeId, open, onClose, onNew, onSelect, onClear, formActive, onForm, onHome }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-20 bg-black/30 lg:hidden" onClick={onClose} aria-hidden="true" />}
@@ -21,6 +21,19 @@ export default function Sidebar({ convos, activeId, open, onClose, onNew, onSele
         <div className="flex items-center gap-2.5 rounded-2xl border border-line px-3.5 py-3">
           <Orb size={22} />
           <span className="text-sm font-medium">Trợ lý vay mua nhà</span>
+        </div>
+
+        <div className="-mt-2 flex flex-col gap-0.5">
+          <button onClick={onHome}
+            className="flex items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left text-sm text-muted hover:bg-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-brand">
+            <Icon name="home" size={16} strokeWidth={1.5} />
+            Trang chủ
+          </button>
+          <button onClick={onForm} aria-current={formActive ? "page" : undefined}
+            className={`flex items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left text-sm focus-visible:outline-2 focus-visible:outline-brand ${formActive ? "bg-soft font-medium text-ink" : "text-muted hover:bg-soft hover:text-ink"}`}>
+            <Icon name="calc" size={16} strokeWidth={1.5} />
+            Nhập thông tin khoản vay
+          </button>
         </div>
 
         <nav aria-label="Lịch sử trò chuyện" className="min-h-0 flex-1 overflow-y-auto">
