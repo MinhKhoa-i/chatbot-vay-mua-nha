@@ -1,6 +1,7 @@
 export const DEFAULT_RATE = 8.5; // %/năm, giả định minh họa, chưa phải lãi suất ngân hàng cụ thể
 
-// Trả đều gốc và lãi hằng tháng (niên kim)
+// Trả đều gốc và lãi hằng tháng (niên kim). Chỉ dùng khi chạy mock: số chính thức lấy từ
+// backend (backend/finance/calculator.py). Sửa công thức thì sửa cả hai chỗ.
 export function annuity(amount, years, ratePct = DEFAULT_RATE) {
   const n = years * 12;
   const r = ratePct / 100 / 12;

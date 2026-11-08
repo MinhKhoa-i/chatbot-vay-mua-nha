@@ -62,16 +62,18 @@ Migration hiện có chuỗi `0004_knowledge` → `0005_jobs_ops` → `0006_conv
 Mở terminal thứ nhất, từ `ai_service/`, chạy API trên host:
 
 ```bash
-uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
 Kiểm tra endpoint health ở terminal khác:
 
 ```bash
-curl -i http://127.0.0.1:8000/health
+curl -i http://127.0.0.1:8001/health
 ```
 
 Kết quả mong đợi là HTTP 200 với `{"status":"ok"}`.
+
+AI service chạy ở cổng **8001** vì cổng 8000 dành cho `backend/` (frontend gọi backend). Muốn bot tính được khoản trả góp thì chạy thêm backend ở cổng 8000 (xem `backend/README.md`); địa chỉ backend đặt bằng `LOAN_BACKEND_BASE_URL` trong `.env`. Hợp đồng chung giữa các phần: `docs/api.md`.
 
 Sau khi migration xong, khởi động đúng **một** worker qua Compose ở terminal khác:
 
@@ -120,14 +122,14 @@ PY
 Kiểm tra Markdown được tạo và các URL nguồn trước khi upload. Tạo conversation (ghi lại `conversation_id` trong JSON trả về):
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8000/api/v1/conversations \
+curl -sS -X POST http://127.0.0.1:8001/api/v1/conversations \
   -H 'Content-Type: application/json'
 ```
 
 Upload tài liệu bằng multipart form. Thay `reviewer-demo` và ngày giờ bằng lần review thực tế, có timezone; dùng nguồn đã kiểm tra (hoặc bỏ `source_url` nếu chưa có URL đáng tin cậy). `verified` bắt buộc là `true`:
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8000/api/v1/knowledge/documents \
+curl -sS -X POST http://127.0.0.1:8001/api/v1/knowledge/documents \
   -F 'file=@data/snapshots/faq-demo.md;type=text/markdown' \
   -F 'metadata={"title":"FAQ quy trình vay mua nhà (demo)","verified":true,"reviewed_by":"reviewer-demo","reviewed_at":"2026-11-08T10:00:00Z"}'
 ```
@@ -136,7 +138,7 @@ Nếu thành công, response trả `document_id` và `ingestion_status` thườn
 
 ```bash
 DOCUMENT_ID='<document_id từ response upload>'
-curl -sS "http://127.0.0.1:8000/api/v1/knowledge/documents/${DOCUMENT_ID}"
+curl -sS "http://127.0.0.1:8001/api/v1/knowledge/documents/${DOCUMENT_ID}"
 ```
 
 Worker cần truy cập được embedding provider để biến tài liệu thành chunks/vector. Nếu upload bị `UNSUPPORTED_FILE_TYPE`, hãy dùng `.md`, `.txt` hoặc PDF; nếu trạng thái `failed`, xem log worker/provider và mã lỗi trả về. Có thể theo dõi log bằng `docker compose logs -f worker`.
@@ -148,7 +150,7 @@ Tạo conversation như bước trên, rồi gán UUID thực tế đã nhận. 
 ```bash
 CONVERSATION_ID='<conversation_id từ bước tạo>'
 CLIENT_REQUEST_ID="$(uv run python -c 'import uuid; print(uuid.uuid4())')"
-curl -N -sS -X POST "http://127.0.0.1:8000/api/v1/conversations/${CONVERSATION_ID}/messages" \
+curl -N -sS -X POST "http://127.0.0.1:8001/api/v1/conversations/${CONVERSATION_ID}/messages" \
   -H 'Content-Type: application/json' \
   -H 'Accept: text/event-stream' \
   -d "{\"client_request_id\":\"${CLIENT_REQUEST_ID}\",\"text\":\"Tôi cần chuẩn bị hồ sơ gì để vay mua nhà?\",\"expected_version\":0}"
