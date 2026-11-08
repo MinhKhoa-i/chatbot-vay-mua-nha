@@ -14,7 +14,7 @@
 1. **Thị phần & Uy tín tín dụng bất động sản:** Gồm nhóm 4 ngân hàng thương mại có vốn Nhà nước (Big 4: Vietcombank, BIDV, VietinBank, Agribank) và nhóm 4 ngân hàng TMCP tư nhân hàng đầu có quy mô gói vay bán lẻ lớn (Techcombank, MB Bank, VPBank, ACB).
 2. **Tính công khai & Minh bạch của nguồn dữ liệu:** Ngân hàng có cổng thông tin điện tử chính thức, đăng tải công khai biểu mẫu, quy trình, điều kiện vay, hạn mức, thời hạn và lãi suất các gói vay mua nhà.
 3. **Đa dạng về chính sách vay:** Bao gồm các gói vay với đa dạng phương thức trả nợ (gốc đều lãi giảm dần, niên kim cố định), thời hạn vay từ 20 đến 35-45 năm, tỷ lệ tài trợ LTV từ 70% đến 100%.
-4. **Sự tương thích với dữ liệu hiện có của dự án:** Kết nối liền mạch với các tài liệu quy trình vay ([quy-trinh-vay.md](file:///v:/chatbot-vay-mua-nha/docs/quy-trinh-vay.md)) và bộ câu hỏi thường gặp ([faq.json](file:///v:/chatbot-vay-mua-nha/data/faq.json)).
+4. **Sự tương thích với dữ liệu hiện có của dự án:** Kết nối liền mạch với các tài liệu quy trình vay ([quy-trinh-vay.md](quy-trinh-vay.md)) và bộ câu hỏi thường gặp ([faq.json](../data/faq.json)).
 
 ---
 
@@ -69,9 +69,10 @@
   * Trang sản phẩm: [Techcombank Vay mua bất động sản có GCN](https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o)
   * Hướng dẫn thủ tục: [Techcombank Blog Thủ tục vay ngân hàng mua nhà](https://techcombank.com/thong-tin/blog/thu-tuc-vay-ngan-hang-mua-nha)
 * **Các trường dữ liệu trích xuất:**
-  * Lãi suất ưu đãi: Khởi điểm từ 3.99%/năm (áp dụng kỳ 3–6 tháng) hoặc 6.8%/năm (12 tháng).
+  * Lãi suất ưu đãi tiêu chuẩn: 6.8%/năm (cố định 12 tháng). Mức từ 3.99%/năm là gói ưu đãi kỳ hạn ngắn (3 tháng) dành riêng cho nhóm khách hàng ưu tiên (Techcombank Priority/Private) hoặc dự án liên kết chỉ định, không áp dụng phổ thông.
   * Biên độ thả nổi sau ưu đãi: Lãi suất cơ sở Techcombank + biên độ 3.5%/năm.
   * Hạn mức: Tối đa 80% giá trị định giá tài sản bảo đảm.
+  * Độ tuổi: Từ đủ 18 tuổi và không quá 70 tuổi tại thời điểm kết thúc thời hạn vay (đáo hạn).
   * Phí trả nợ trước hạn: Từ 1.0% trong 5 năm đầu, miễn phí (0%) từ năm thứ 6 trở đi.
 
 ---
@@ -137,4 +138,4 @@
 
 1. **Tính biến động của lãi suất:** Các mức lãi suất ưu đãi, biên độ thả nổi và chính sách chương trình tín dụng của ngân hàng thường thay đổi theo từng tháng/quý căn cứ vào định hướng điều hành của Ngân hàng Nhà nước và thanh khoản thị trường.
 2. **Xác thực trực tiếp:** Mọi thông số thu thập từ website ngân hàng có giá trị tham khảo tại thời điểm cập nhật (`last_updated`). Chatbot cần hiển thị rõ ngày cập nhật và khuyến nghị khách hàng kiểm tra lại với chi nhánh/phòng giao dịch ngân hàng trước khi ký kết hồ sơ tín dụng chính thức.
-3. **Tuân thủ quy định pháp luật:** Tuyệt đối không đưa các điều kiện ép mua bảo hiểm nhân thọ vào điều kiện bắt buộc, đảm bảo phù hợp với Khoản 5 Điều 15 Luật Các tổ chức tín dụng số 32/2024/QH15.
+3. **Tuân thủ quy định pháp luật:** Tuyệt đối không đưa các điều kiện ép mua bảo hiểm nhân thọ vào điều kiện bắt buộc, đảm bảo phù hợp với **Khoản 5 Điều 15 Luật Các tổ chức tín dụng số 32/2024/QH15** (có hiệu lực từ ngày 01/07/2024), nghiêm cấm: *"Tổ chức tín dụng, chi nhánh ngân hàng nước ngoài, người quản lý, người điều hành, nhân viên của tổ chức tín dụng, chi nhánh ngân hàng nước ngoài gắn việc bán sản phẩm bảo hiểm không bắt buộc với việc cung ứng sản phẩm, dịch vụ ngân hàng dưới mọi hình thức."* Chatbot cần trích dẫn chính xác nguyên văn điều khoản này khi tư vấn cho người dùng.

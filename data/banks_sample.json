@@ -185,7 +185,7 @@
           {
             "duration_months": 3,
             "rate": 3.99,
-            "conditions": "Mức lãi suất khởi điểm kỳ hạn ngắn từ 3.99%/năm dành cho khách hàng ưu tiên"
+            "conditions": "Gói ưu đãi đặc biệt kỳ hạn ngắn (3 tháng) với lãi suất khởi điểm từ 3.99%/năm chỉ áp dụng cho nhóm khách hàng ưu tiên (Techcombank Priority/Private) hoặc dự án liên kết chỉ định, không áp dụng phổ thông. Lãi suất ưu đãi tiêu chuẩn thông thường là 6.8%/năm (12 tháng)."
           },
           {
             "duration_months": 6,
@@ -231,7 +231,7 @@
       "eligibility": {
         "min_age": 18,
         "max_age_at_loan_end": 70,
-        "borrower_scope": "Khách hàng cá nhân là công dân Việt Nam từ đủ 18 tuổi và không quá 70 tuổi tại thời điểm vay vốn",
+        "borrower_scope": "Khách hàng cá nhân là công dân Việt Nam từ đủ 18 tuổi và không quá 70 tuổi tại thời điểm kết thúc thời hạn vay (đáo hạn)",
         "min_monthly_income": 15000000,
         "accepted_collateral": [
           "Bất động sản đã có Giấy chứng nhận (Sổ đỏ/Sổ hồng) thuộc sở hữu của người vay hoặc của người thân",
@@ -241,7 +241,8 @@
         "general_requirements": [
           "Nguồn thu nhập chứng minh từ lương (sao kê 3 kỳ gần nhất), cho thuê tài sản hoặc hoạt động sản xuất kinh doanh",
           "Không có lịch sử nợ xấu tại CIC",
-          "Tài sản bảo đảm có pháp lý rõ ràng, không có tranh chấp hoặc vi phạm quy hoạch"
+          "Tài sản bảo đảm có pháp lý rõ ràng, không có tranh chấp hoặc vi phạm quy hoạch",
+          "Độ tuổi của người vay tại thời điểm đáo hạn không vượt quá 70 tuổi"
         ]
       },
       "repayment_methods": ["reducing_balance", "annuity"],

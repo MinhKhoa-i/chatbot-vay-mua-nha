@@ -102,7 +102,6 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
 |:---|:---:|:---:|:---|:---|
 | `repayment_methods` | `array[string]`| **Có** | Các phương thức trả nợ hỗ trợ: `"annuity"` (niên kim cố định gốc + lãi), `"reducing_balance"` (gốc đều, lãi giảm dần). | `["reducing_balance", "annuity"]` |
 | `last_updated` | `string` | **Có** | Ngày rà soát & cập nhật thông số theo định dạng chuẩn `YYYY-MM-DD`. | `"2026-10-31"` |
-| `is_sample` | `boolean` | **Có** | Đánh dấu đây là dữ liệu mẫu đối soát (`true`) hay dữ liệu động trên hệ thống (`false`). | `false` |
 | `disclaimer` | `string` | **Có** | Lời khuyến cáo pháp lý và tính chất tham khảo của dữ liệu. | `"Thông tin mang tính tham khảo..."` |
 
 ---
@@ -129,6 +128,7 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
           "code",
           "name",
           "short_name",
+          "website",
           "source_url",
           "package_name",
           "interest_rate",
@@ -136,7 +136,8 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
           "loan_limit",
           "eligibility",
           "repayment_methods",
-          "last_updated"
+          "last_updated",
+          "disclaimer"
         ],
         "properties": {
           "id": { "type": "string" },
