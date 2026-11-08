@@ -1,4 +1,20 @@
 import { API_URL, DATA_UPDATED, USE_MOCK } from "../config.js";
+import { schedule } from "./loan.js";
+
+// Lỗi có câu tiếng Việt để hiện thẳng cho người dùng (422 từ backend hoặc kiểm tra ở mock)
+export class ApiError extends Error {}
+
+async function request(path, init) {
+  const res = await fetch(`${API_URL}${path}`, init);
+  if (res.ok) return res.json();
+  if (res.status === 422) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(typeof body?.detail === "string" ? body.detail : "Thông tin nhập chưa hợp lệ, vui lòng kiểm tra lại.");
+  }
+  throw new Error("HTTP " + res.status);
+}
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* Hợp đồng API (khớp docs/api.md, mục 3.2):
    POST {API_URL}/api/chat  { message, session_id }
@@ -18,14 +34,54 @@ export async function getReply({ message, sessionId }) {
   return mockReply(message);
 }
 
+// GET /api/banks (docs/api.md, mục 3.4) -> { banks[], updated_at, is_sample }
+export async function getBanks() {
+  if (!USE_MOCK) return request("/api/banks");
+  const { default: data } = await import("../../../data/banks_sample.json");
+  await delay(300);
+  return { banks: data.banks, updated_at: data.updated_at, is_sample: true };
+}
+
+// POST /api/estimate (docs/api.md, mục 3.3)
+// params: { amount, years, rate, method, promo_rate?, promo_duration_months? }
+export async function estimateLoan(params) {
+  const body = { method: "annuity", promo_rate: null, promo_duration_months: 0, ...params };
+  if (!USE_MOCK) {
+    return request("/api/estimate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+  await delay(500);
+  return mockEstimate(body);
+}
+
 // ---- Dữ liệu mẫu (chỉ dùng khi VITE_USE_MOCK=true) ----
+function mockEstimate(body) {
+  const { amount, years, rate, method, promo_rate, promo_duration_months } = body;
+  if (!Number.isInteger(years) || years < 1 || years > 35) throw new ApiError("Thời hạn vay phải từ 1 đến 35 năm");
+  let rows;
+  try {
+    rows = schedule(amount, years * 12, rate, method, promo_rate, promo_duration_months);
+  } catch (e) {
+    throw new ApiError(e.message);
+  }
+  return {
+    ...body,
+    monthly_payment: rows[0].payment,
+    total_interest: rows.reduce((t, r) => t + r.interest, 0),
+    updated_at: DATA_UPDATED,
+  };
+}
+
 function parseLoan(text) {
   const m = text.match(/(\d+(?:[.,]\d+)?)\s*(tỷ|tỉ|triệu|tr)(?![\p{L}])/iu);
   const y = text.match(/(\d+)\s*năm/i);
   if (!m || !y) return null;
   const num = parseFloat(m[1].replace(",", "."));
   const amount = /^tr/i.test(m[2]) ? num * 1e6 : num * 1e9;
-  return { amount, years: parseInt(y[1], 10), rate: 8.5 };
+  return { amount: Math.round(amount), years: parseInt(y[1], 10), rate: 8.5 };
 }
 
 const RULES = [
@@ -42,7 +98,12 @@ function mockReply(message) {
   const loan = parseLoan(message);
   if (loan) {
     const t = loan.amount >= 1e9 ? `${loan.amount / 1e9} tỷ`.replace(".", ",") : `${loan.amount / 1e6} triệu`;
-    return { reply: `Với khoản vay ${t} đồng trong ${loan.years} năm, bạn có thể tham khảo ước tính bên dưới.`, updated_at: DATA_UPDATED, estimate: loan };
+    const reply = `Với khoản vay ${t} đồng trong ${loan.years} năm, bạn có thể tham khảo ước tính bên dưới.`;
+    try {
+      return { reply, updated_at: DATA_UPDATED, estimate: mockEstimate(loan) };
+    } catch (e) {
+      return { reply: e.message + ".", updated_at: DATA_UPDATED };
+    }
   }
   if (/tính|ước tính|trả hàng tháng|mỗi tháng/i.test(message)) {
     return { reply: "Bạn cho mình biết số tiền muốn vay và thời hạn vay nhé, ví dụ: \"Mình cần vay 1,5 tỷ trong 20 năm\".", updated_at: DATA_UPDATED };

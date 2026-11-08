@@ -133,6 +133,8 @@ Trả về:
 
 Làm tròn đến đồng; phần chênh do làm tròn dồn vào tháng cuối nên tổng tiền gốc luôn bằng `amount`.
 
+Form nhập thông tin khách ở frontend (STT 18) gọi endpoint này và `GET /api/banks`. Khi khách chọn ngân hàng, form gửi `rate` = `floating_rate_estimated`, `promo_rate` và `promo_duration_months` lấy từ `interest_rate` của gói vay. Tỷ lệ vay/giá trị nhà và trả nợ/thu nhập chỉ là phép chia trên giao diện, dùng `monthly_payment` do backend trả về.
+
 ### 3.4. `GET /api/banks`
 
 Trả về dữ liệu mẫu đọc từ `data/banks_sample.json`. Mỗi phần tử của `banks` là một gói vay theo đúng `docs/schema.md`, backend không đổi tên trường.
@@ -213,5 +215,5 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 - Thêm `estimate` có cấu trúc vào event `done` của `ai_service` (Hoàn).
 - Cho bot hỏi phương thức trả nợ và ưu đãi rồi gửi `method`, `promo_rate`, `promo_duration_months`, vì backend đã hỗ trợ (Hoàn).
 - Ân hạn nợ gốc (`grace_period_months`) chưa có trong `calculator.py` (Định).
-- Form nhập thông tin khách (STT 18) dùng `GET /api/banks` và `POST /api/estimate` theo tài liệu này (Sang).
+- Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.

@@ -100,7 +100,7 @@ export default function Messages({ messages, loading, onRate, onRegenerate, onAs
               <div className="flex min-w-0 flex-1 flex-col gap-5">
                 <p className={`whitespace-pre-line text-[17px] leading-[1.6] ${m.error ? "text-[#c0443f]" : ""}`}>{m.text}</p>
                 {m.estimate && (
-                  <EstimateCard estimate={m.estimate} onCompare={() => onAsk("So sánh lãi suất ngân hàng")} onAdjust={onAdjust} />
+                  <EstimateCard estimate={m.estimate} onCompare={() => onAsk("So sánh lãi suất ngân hàng")} onAdjust={() => onAdjust(m.estimate)} />
                 )}
                 {i === last && !loading && !m.error && (
                   <Tools text={m.text} rating={m.rating} onRate={(v) => onRate(m.id, v)} onRegenerate={onRegenerate} />

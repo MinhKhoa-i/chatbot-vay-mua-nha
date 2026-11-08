@@ -6,7 +6,7 @@ export const FEATURES = { attach: false }; // bật khi backend hỗ trợ tải
 
 export const SUGGESTIONS = [
   { icon: "house", text: "Tôi muốn tìm hiểu vay mua nhà" },
-  { icon: "calc", text: "Tính khoản vay cho tôi" },
+  { icon: "calc", text: "Tính khoản vay cho tôi", form: true }, // mở form nhập thông tin thay vì gửi tin nhắn
   { icon: "bars", text: "So sánh lãi suất ngân hàng" },
   { icon: "help", text: "Điều kiện để được vay là gì?" },
 ];
