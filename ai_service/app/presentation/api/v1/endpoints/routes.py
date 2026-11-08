@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.presentation.api.v1.endpoints.conversations import router as conversations_router
+from ai_service.app.presentation.api.v1.endpoints.route_conversations import router as conversations_router
 from app.presentation.api.v1.endpoints.route_chat import router as chat_router
 from app.presentation.api.v1.endpoints.route_knowledge import router as knowledge_router
 

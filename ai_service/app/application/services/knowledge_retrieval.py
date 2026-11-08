@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.domain.errors import ChatError, RetrievalError
 from app.domain.entities.knowledge_evidence import GroundedContext, KnowledgeSearchQuery
 from app.domain.ports.knowledge_ingestion import KnowledgeRepository, TextEmbedder
@@ -46,8 +48,10 @@ class KnowledgeRetrievalService:
         accepted = tuple(item for item in evidence if item.score >= self._min_score)
         blocks: list[str] = []
         citations: list[str] = []
+        document_citations: dict[UUID, str] = {}
         used = 0
-        for index, item in enumerate(accepted, start=1):
+        for item in accepted:
+            index = len(document_citations) + 1
             citation = f"[{index}] {item.title}"
             if item.source_url:
                 citation += f" — {item.source_url}"
@@ -58,6 +62,7 @@ class KnowledgeRetrievalService:
                 dates.append(f"đến {item.effective_to.isoformat()}")
             if dates:
                 citation += f" ({' '.join(dates)})"
+            citation = document_citations.get(item.document_id, citation)
             block = f"{citation}\n{item.body.strip()}"
             remaining = self._max_context_characters - used
             if remaining <= 0:
@@ -65,6 +70,8 @@ class KnowledgeRetrievalService:
             if len(block) > remaining:
                 block = block[:remaining]
             blocks.append(block)
-            citations.append(citation)
+            if item.document_id not in document_citations:
+                document_citations[item.document_id] = citation
+                citations.append(citation)
             used += len(block)
         return GroundedContext(tuple(accepted[:len(blocks)]), "\n\n".join(blocks), tuple(citations))
