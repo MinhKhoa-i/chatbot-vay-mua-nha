@@ -5,6 +5,9 @@ from fastapi import HTTPException
 
 from app.application.services.knowledge_retrieval import KnowledgeRetrievalService
 from app.application.use_cases.stream_chat import StreamChatUseCase
+from app.application.use_cases.estimate_loan import EstimateLoanUseCase
+from app.infrastructure.finance.http_loan_calculator import HttpLoanCalculator
+from app.infrastructure.llm.openai_estimate_extractor import OpenAIEstimateExtractor
 from app.core.config import get_settings
 from app.domain.errors import ChatConfigurationError, ChatError
 from app.infrastructure.db.conversation_repository import PostgresConversationRepository
@@ -12,6 +15,7 @@ from app.infrastructure.db.session import get_async_session_factory
 from app.infrastructure.knowledge.postgres_knowledge_repository import PostgresKnowledgeRepository
 from app.infrastructure.knowledge.qwen_embedding_adapter import QwenEmbeddingAdapter
 from app.infrastructure.llm.openai_chat_adapter import OpenAIChatAdapter
+from app.infrastructure.llm.openai_intent_classifier import OpenAIIntentClassifier
 from app.infrastructure.prompts.loader import get_prompt_catalog
 from app.presentation.api.conversation_dependencies import _get_cipher
 
@@ -59,5 +63,18 @@ def _build_stream_chat_use_case() -> StreamChatUseCase:
             prompts=prompts,
         ),
         PostgresConversationRepository(sessions, cipher), prompts=prompts,
+        classifier=OpenAIIntentClassifier(
+            base_url=settings.llm_base_url, api_key=settings.llm_api_key,
+            model=settings.llm_model, timeout_seconds=min(settings.llm_timeout_seconds, 10.0),
+            prompts=prompts,
+        ),
         retrieval=KnowledgeRetrievalService(PostgresKnowledgeRepository(sessions), embedder),
+        estimate=EstimateLoanUseCase(
+            OpenAIEstimateExtractor(
+                base_url=settings.llm_base_url, api_key=settings.llm_api_key,
+                model=settings.llm_model, prompts=prompts,
+                timeout_seconds=min(settings.llm_timeout_seconds, 10.0),
+            ),
+            HttpLoanCalculator(settings.loan_backend_base_url), prompts,
+        ),
     )

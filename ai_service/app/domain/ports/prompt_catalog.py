@@ -3,6 +3,13 @@ from typing import Protocol
 
 
 class PromptName(StrEnum):
+    ESTIMATE_EXTRACTION = "estimate_extraction"
+    ESTIMATE_QUESTIONS = "estimate_questions"
+    ESTIMATE_CONFIRMATION = "estimate_confirmation"
+    ESTIMATE_RESULT = "estimate_result"
+    ESTIMATE_CANCELLED = "estimate_cancelled"
+    ESTIMATE_UNSUPPORTED = "estimate_unsupported"
+    INTENT_CLASSIFICATION = "intent_classification"
     CHAT_SYSTEM = "chat_system"
     TURN_GUIDANCE = "turn_guidance"
     GROUNDING = "grounding"

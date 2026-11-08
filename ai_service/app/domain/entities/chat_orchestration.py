@@ -6,3 +6,4 @@ class ChatIntent(StrEnum):
 
     GENERAL = "general"
     RETRIEVAL = "retrieval"
+    ESTIMATE = "estimate"

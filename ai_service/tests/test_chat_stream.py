@@ -6,7 +6,10 @@ from uuid import uuid4
 import httpx
 from fastapi import FastAPI
 
+from intent_stubs import StubIntentClassifier
+
 from app.application.use_cases.stream_chat import StreamChatUseCase
+from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.chat_request import ChatClaim, ChatCommit, ChatRequest, ChatSnapshot
 from app.domain.entities.knowledge_evidence import GroundedContext, KnowledgeEvidence
 from app.domain.ports.chat_completion import ChatCompletionPort, ChatProviderUnavailable
@@ -73,8 +76,13 @@ def test_endpoint_streams_sse_deltas_and_never_echoes_conversation_id(monkeypatc
     completion = FakeCompletion(["Xin chào", " bạn"])
 
     async def run():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog()))),
-                                     base_url="http://test") as client:
+        use_case = StreamChatUseCase(
+            completion, FakeRepository(), prompts=get_prompt_catalog(),
+            classifier=StubIntentClassifier(ChatIntent.GENERAL),
+        )
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=make_app(use_case)), base_url="http://test",
+        ) as client:
             conversation_id = uuid4()
             response = await client.post(f"/api/v1/conversations/{conversation_id}/messages", json={
                 "client_request_id": str(uuid4()), "text": "Xin chào", "expected_version": 0,
@@ -94,8 +102,13 @@ def test_endpoint_rejects_extra_fields(monkeypatch):
     completion = FakeCompletion(["ok"])
 
     async def run():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog()))),
-                                     base_url="http://test") as client:
+        use_case = StreamChatUseCase(
+            completion, FakeRepository(), prompts=get_prompt_catalog(),
+            classifier=StubIntentClassifier(ChatIntent.GENERAL),
+        )
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=make_app(use_case)), base_url="http://test",
+        ) as client:
             path = f"/api/v1/conversations/{uuid4()}/messages"
             invalid = await client.post(path, json={"client_request_id": str(uuid4()), "text": "hi", "unknown": 1})
             assert invalid.status_code == 422
@@ -105,7 +118,10 @@ def test_endpoint_rejects_extra_fields(monkeypatch):
 
 def test_provider_error_is_sanitized_in_stream(monkeypatch):
     completion = FakeCompletion(fail=True)
-    use_case = StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog(), retrieval=FakeRetrieval())
+    use_case = StreamChatUseCase(
+        completion, FakeRepository(), prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(), retrieval=FakeRetrieval(),
+    )
 
     async def run():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(use_case)),
@@ -123,7 +139,10 @@ def test_provider_error_is_sanitized_in_stream(monkeypatch):
 
 def test_retrieval_endpoint_streams_model_fragments_and_commits(monkeypatch):
     completion = FakeCompletion(["Theo tài liệu", ", cần giấy tờ."])
-    use_case = StreamChatUseCase(completion, FakeRepository(), prompts=get_prompt_catalog(), retrieval=FakeRetrieval())
+    use_case = StreamChatUseCase(
+        completion, FakeRepository(), prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(), retrieval=FakeRetrieval(),
+    )
 
     async def run():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=make_app(use_case)),

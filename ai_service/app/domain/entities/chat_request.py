@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from app.domain.entities.chat_orchestration import ChatIntent
+from app.domain.entities.estimate_session import EstimateSession
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +19,7 @@ class ChatSnapshot:
     history: tuple[tuple[str, str], ...]
     lease_token: UUID
     request_id: UUID
+    estimate_session: EstimateSession = EstimateSession()
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +46,7 @@ class ChatCommit:
 @dataclass(frozen=True, slots=True)
 class ChatSnapshotUpdate:
     intent: ChatIntent
+    estimate_session: EstimateSession | None = None
 
 
 @dataclass(frozen=True, slots=True)

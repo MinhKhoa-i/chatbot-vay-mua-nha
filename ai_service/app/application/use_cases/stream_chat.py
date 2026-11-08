@@ -5,15 +5,17 @@ from collections.abc import AsyncIterator
 from app.application.services.chat_response_policy import ChatResponsePolicy
 from app.application.services.request_fingerprint import chat_request_fingerprint
 from app.application.services.retrieval_query import RetrievalQueryBuilder
+from app.application.use_cases.estimate_loan import EstimateLoanUseCase
+from app.domain.ports.loan_calculator import LoanCalculationError
 from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.knowledge_evidence import GroundedContext
 from app.domain.entities.chat_request import ChatEvent, ChatRequest, ChatSnapshot, ChatSnapshotUpdate, ChatTurnError
 from app.domain.errors import ChatError, RetrievalError, UnexpectedChatError
 from app.domain.ports.chat_completion import ChatCompletionPort, ChatProviderUnavailable
+from app.domain.ports.chat_intent_classifier import ChatIntentClassifier, IntentClassificationError
 from app.domain.ports.chat_turn_repository import ChatTurnRepository
 from app.domain.ports.knowledge_retrieval import KnowledgeRetriever
 from app.domain.ports.prompt_catalog import PromptCatalog
-from app.domain.services.chat_intent_classifier import ChatIntentClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +29,16 @@ class StreamChatUseCase:
         repository: ChatTurnRepository,
         *,
         prompts: PromptCatalog,
+        classifier: ChatIntentClassifier,
         retrieval: KnowledgeRetriever | None = None,
-        classifier: ChatIntentClassifier | None = None,
         response_policy: ChatResponsePolicy | None = None,
+        estimate: EstimateLoanUseCase | None = None,
     ) -> None:
+        self._estimate = estimate
         self._completion = completion
         self._repository = repository
-        self._classifier = classifier or ChatIntentClassifier()
-        self._query_builder = RetrievalQueryBuilder(self._classifier, prompts)
+        self._classifier = classifier
+        self._query_builder = RetrievalQueryBuilder(prompts)
         self._retrieval = retrieval
         self._response_policy = response_policy or ChatResponsePolicy(prompts)
 
@@ -61,12 +65,39 @@ class StreamChatUseCase:
                 return
 
             snapshot = claim.snapshot
+            estimate_turn = None
+            if snapshot.estimate_session.active and self._estimate is not None:
+                stage = "estimate"
+                estimate_turn = await self._estimate.execute(request.text, snapshot.estimate_session)
             stage = "classification"
-            intent = self._classifier.classify(request.text)
-            stage = "retrieval"
-            grounded = await self._retrieve(intent, request.text, snapshot.history)
-            stage = "prompt"
-            deterministic = self._response_policy.deterministic_reply(intent, request.text, grounded)
+            try:
+                if estimate_turn is not None and estimate_turn.handled:
+                    intent = ChatIntent.ESTIMATE
+                else:
+                    async with asyncio.timeout(10):
+                        intent = await self._classifier.classify(request.text, history=snapshot.history)
+            except TimeoutError as exc:
+                raise IntentClassificationError("CLASSIFICATION_TIMEOUT") from exc
+            estimate_state = None
+            if intent == ChatIntent.ESTIMATE:
+                stage = "estimate"
+                if self._estimate is None:
+                    raise LoanCalculationError("ESTIMATE_NOT_CONFIGURED", retryable=False)
+                if estimate_turn is None:
+                    estimate_turn = await self._estimate.execute(request.text, snapshot.estimate_session)
+                if not estimate_turn.handled:
+                    # An unrelated message must never authorize a calculator call.
+                    intent = ChatIntent.RETRIEVAL
+                else:
+                    estimate_state = estimate_turn.session
+            if intent == ChatIntent.ESTIMATE:
+                grounded = GroundedContext((), "", ())
+                deterministic = estimate_turn.answer
+            else:
+                stage = "retrieval"
+                grounded = await self._retrieve(intent, request.text, snapshot.history)
+                stage = "prompt"
+                deterministic = self._response_policy.deterministic_reply(intent, request.text, grounded)
             answer_parts: list[str] = []
             if deterministic is not None:
                 answer_parts.append(deterministic)
@@ -93,7 +124,7 @@ class StreamChatUseCase:
             commit = await self._repository.commit(
                 request, request_id=snapshot.request_id, lease_token=snapshot.lease_token,
                 snapshot_version=snapshot.conversation_version, answer=answer,
-                state_update=ChatSnapshotUpdate(intent=intent),
+                state_update=ChatSnapshotUpdate(intent=intent, estimate_session=estimate_state),
             )
             if commit.response_status >= 400:
                 yield ChatEvent("error", {"code": commit.error_code or "REQUEST_FAILED", "retryable": commit.retryable})

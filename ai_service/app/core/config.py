@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_model: str = ""
     llm_timeout_seconds: float = 45.0
+    loan_backend_base_url: str = "http://127.0.0.1:8000"
 
     @property
     def embedding_api_key(self) -> str:

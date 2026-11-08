@@ -4,7 +4,10 @@ from uuid import uuid4
 
 import pytest
 
+from intent_stubs import StubIntentClassifier
+
 from app.application.use_cases.stream_chat import StreamChatUseCase
+from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.chat_request import ChatClaim, ChatCommit, ChatRequest, ChatSnapshot
 from app.domain.entities.knowledge_evidence import GroundedContext, KnowledgeEvidence
 from app.domain.errors import RetrievalError
@@ -72,11 +75,12 @@ def grounded_context():
     )
 
 
-def execute(completion, retrieval, text, repository=None):
+def execute(completion, retrieval, text, repository=None, *, intent=ChatIntent.RETRIEVAL):
     repository = repository or FakeRepository()
     request = ChatRequest(uuid4(), uuid4(), text, None)
     events = asyncio.run(collect(StreamChatUseCase(
         completion, repository, prompts=get_prompt_catalog(), retrieval=retrieval,
+        classifier=StubIntentClassifier(intent),
     ).execute(request)))
     return events, repository
 
@@ -91,7 +95,7 @@ async def collect(events):
 def test_general_skips_retrieval_and_model(text, expected):
     completion = FakeCompletion()
     retrieval = FakeRetrieval(error=AssertionError("must not retrieve"))
-    events, repository = execute(completion, retrieval, text)
+    events, repository = execute(completion, retrieval, text, intent=ChatIntent.GENERAL)
     assert expected in repository.committed_answer
     assert retrieval.queries == []
     assert completion.calls == 0

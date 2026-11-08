@@ -57,7 +57,9 @@ def test_greeting_does_not_advertise_unimplemented_calculations():
     greeting = catalog.get(PromptName.GREETING)
     system = catalog.get(PromptName.CHAT_SYSTEM)
 
-    assert "chưa hỗ trợ tính khoản trả góp hoặc ước tính khả năng vay" in greeting
-    assert "công cụ tính toán chưa được tích hợp" in greeting
+    assert "gọi backend" in greeting
+    assert "lãi suất cố định toàn kỳ" in greeting
+    assert "cung cấp và xác nhận" in greeting
+    assert "không phải đánh giá khả năng vay theo thu nhập" in greeting
     assert "Không tự tính tiền trả nợ" in system
-    assert "Ước tính số tiền trả góp hằng tháng dựa trên" not in greeting
+    assert "công cụ tính toán chưa được tích hợp" not in greeting

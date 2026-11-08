@@ -16,6 +16,7 @@ from app.domain.entities.chat_request import (
 from app.domain.entities.conversation import Conversation, ConversationMessage
 from app.domain.ports.chat_turn_repository import ChatTurnRepository
 from app.infrastructure.db.chat_error_boundary import chat_repository_errors
+from app.infrastructure.db.estimate_state_codec import decode_estimate_session, encode_estimate_session
 from app.infrastructure.db.models import (
     ConversationMessageModel,
     ConversationModel,
@@ -364,6 +365,7 @@ class PostgresConversationRepository(ChatTurnRepository):
                         tuple(history),
                         token,
                         ledger.id,
+                        estimate_session=decode_estimate_session(profile),
                     ),
                 )
 
@@ -480,7 +482,15 @@ class PostgresConversationRepository(ChatTurnRepository):
                     raise PayloadCipherError("conversation state version mismatch")
                 checkpoint["conversation_version"] = next_version
                 if state_update is not None:
-                    # Keep the public checkpoint shape, but never resume legacy workflows.
+                    if state_update.estimate_session is not None:
+                        profile_payload["estimate_session"] = encode_estimate_session(state_update.estimate_session)
+                        profile_row.revision += 1
+                        profile_payload["profile_revision"] = profile_row.revision
+                        profile_row.slots_ciphertext = self._cipher.encrypt_json(
+                            profile_payload, table="conversation_profiles", column="slots_ciphertext",
+                            resource_id=request.conversation_id,
+                        )
+                    # New estimate state is stored only in the encrypted profile.
                     checkpoint.update(
                         current_stage="ANSWERING",
                         active_intents=[state_update.intent.value],

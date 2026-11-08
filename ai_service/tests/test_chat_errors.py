@@ -7,6 +7,8 @@ from fastapi import FastAPI, HTTPException
 from openai import AsyncOpenAI, APIStatusError
 from sqlalchemy.exc import SQLAlchemyError
 
+from intent_stubs import StubIntentClassifier
+
 from app.application.services.knowledge_retrieval import KnowledgeRetrievalService
 from app.application.use_cases.stream_chat import StreamChatUseCase
 from app.domain.entities.chat_request import ChatClaim, ChatRequest, ChatSnapshot
@@ -65,7 +67,7 @@ class Completion:
 def use_case(repository, *, completion=None, retrieval=None):
     return StreamChatUseCase(
         completion or Completion(), repository, prompts=get_prompt_catalog(),
-        retrieval=retrieval or Retrieval(),
+        retrieval=retrieval or Retrieval(), classifier=StubIntentClassifier(),
     )
 
 

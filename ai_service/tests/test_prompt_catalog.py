@@ -12,7 +12,6 @@ from app.application.services.retrieval_query import RetrievalQueryBuilder
 from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.knowledge_evidence import GroundedContext
 from app.domain.ports.prompt_catalog import PromptName
-from app.domain.services.chat_intent_classifier import ChatIntentClassifier
 from app.infrastructure.llm.openai_chat_adapter import OpenAIChatAdapter
 from app.infrastructure.prompts.loader import MarkdownPromptCatalog, PromptLoadError, get_prompt_catalog
 
@@ -74,7 +73,7 @@ def test_application_uses_injected_text_not_infrastructure_imports():
         assert policy.deterministic_reply(ChatIntent.GENERAL, text, empty) == expected
     assert policy.deterministic_reply(ChatIntent.RETRIEVAL, "Hồ sơ?", empty) == "CUSTOM FALLBACK"
     assert policy.retrieval_guidance == "CUSTOM GUIDANCE"
-    query = RetrievalQueryBuilder(ChatIntentClassifier(), prompts).build(
+    query = RetrievalQueryBuilder(prompts).build(
         "Còn bên đó?", (("user", "Ngân hàng A?"),),
     )
     assert query == "Ngân hàng A?\nCURRENT=Còn bên đó?"

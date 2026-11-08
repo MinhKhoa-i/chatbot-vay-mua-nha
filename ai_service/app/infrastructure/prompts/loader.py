@@ -34,6 +34,11 @@ class MarkdownPromptCatalog:
                 PromptName.TURN_GUIDANCE: {"guidance": ""},
                 PromptName.GROUNDING: {"knowledge_context": ""},
                 PromptName.RETRIEVAL_QUERY: {"previous_questions": "", "text": ""},
+                PromptName.ESTIMATE_QUESTIONS: {"fields": ""},
+                PromptName.ESTIMATE_CONFIRMATION: {"amount": "", "years": "", "rate": ""},
+                PromptName.ESTIMATE_RESULT: {
+                    "amount": "", "years": "", "rate": "", "monthly_payment": "", "total_interest": "",
+                },
             }
             if name in template_values:
                 try:

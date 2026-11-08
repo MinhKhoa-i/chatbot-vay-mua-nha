@@ -1,9 +1,10 @@
 from collections.abc import AsyncIterator
 
-from openai import APIError, APIStatusError, APITimeoutError, AsyncOpenAI
+from openai import APIError, AsyncOpenAI
 
 from app.domain.ports.chat_completion import ChatProviderUnavailable
 from app.domain.ports.prompt_catalog import PromptCatalog, PromptName
+from app.infrastructure.llm.provider_errors import translate_provider_error
 from app.infrastructure.prompts.loader import get_prompt_catalog
 
 
@@ -69,17 +70,5 @@ class OpenAIChatAdapter:
                     content = chunk.choices[0].delta.content
                     if isinstance(content, str) and content:
                         yield content
-        except APITimeoutError as exc:
-            raise ChatProviderUnavailable(code="MODEL_TIMEOUT") from exc
-        except APIStatusError as exc:
-            if exc.status_code in {401, 403}:
-                error = ChatProviderUnavailable(code="MODEL_AUTHENTICATION_FAILED", retryable=False)
-            elif exc.status_code == 429:
-                error = ChatProviderUnavailable(code="MODEL_RATE_LIMITED")
-            elif exc.status_code < 500:
-                error = ChatProviderUnavailable(code="MODEL_REQUEST_REJECTED", retryable=False)
-            else:
-                error = ChatProviderUnavailable()
-            raise error from exc
         except APIError as exc:
-            raise ChatProviderUnavailable() from exc
+            raise translate_provider_error(exc) from exc
