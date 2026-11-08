@@ -4,7 +4,10 @@ import { Icon, Orb } from "./icons.jsx";
 
 function EstimateCard({ estimate, onCompare, onAdjust }) {
   const rate = estimate.rate ?? DEFAULT_RATE;
-  const { monthly, interest } = annuity(estimate.amount, estimate.years, rate);
+  // Ưu tiên số do backend tính (calculator.py); chỉ tự tính khi chạy mock hoặc server chưa gửi
+  const local = estimate.monthly_payment == null ? annuity(estimate.amount, estimate.years, rate) : null;
+  const monthly = estimate.monthly_payment ?? local.monthly;
+  const interest = estimate.total_interest ?? local.interest;
   const stats = [
     ["Số tiền vay", vnd(estimate.amount)],
     ["Thời hạn", `${estimate.years} năm`],
@@ -26,7 +29,9 @@ function EstimateCard({ estimate, onCompare, onAdjust }) {
         ))}
       </dl>
       <p className="text-xs leading-relaxed text-muted">
-        Giả định lãi suất {String(rate).replace(".", ",")}%/năm cố định, trả đều gốc và lãi hằng tháng. Đây là ví dụ minh họa, chưa phải lãi suất của một ngân hàng cụ thể.
+        Giả định lãi suất {String(rate).replace(".", ",")}%/năm cố định,{" "}
+        {estimate.method === "reducing_balance" ? "trả gốc đều, lãi giảm dần (số trên là tháng đầu, cao nhất)" : "trả đều gốc và lãi hằng tháng"}.
+        Đây là ví dụ minh họa, chưa phải lãi suất của một ngân hàng cụ thể.
       </p>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <button onClick={onCompare} className="rounded-xl bg-ink px-5 py-3 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
