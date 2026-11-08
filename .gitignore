@@ -71,6 +71,7 @@ AGENTS.md
 CLAUDE.md
 skills-lock.json
 
+<<<<<<< HEAD
 # ===== File tài liệu nội bộ =====
 *.xlsx
 *.pdf
@@ -79,3 +80,7 @@ skills-lock.json
 ai_service/.agents/
 ai_service/data/snapshots/
 *.ipynb
+=======
+*.ipynb
+ai_service/data/
+>>>>>>> 84aa83a (chore: go snapshots)

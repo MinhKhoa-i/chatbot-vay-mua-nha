@@ -1,0 +1,47 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+# Environment variables and secrets
+.env
+.env.*
+.mcp.json
+!.env.example
+!.env.*.example
+# Coding agents: generated or project-local configuration
+.claude/
+CLAUDE.md
+AGENTS.md
+.playwright-mcp/
+.gstack/
+.impeccable/
+# Local databases
+*.sqlite
+*.sqlite3
+*.db
+# Node.js
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.vite/
+.turbo/
+*.tsbuildinfo
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+# Java / JVM
+.gradle/
+target/
+*.class
+# Go
+bin/
+*.test
+coverage.out
+# Rust
