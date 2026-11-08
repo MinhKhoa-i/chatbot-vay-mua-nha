@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "corpus_id": "home-loan-vi-vn",
+  "last_reviewed_on": "2026-11-05",
+  "documents": [
+    {
+      "source_id": "vn-sbv-lending-consolidation-86-2026",
+      "title": "Văn bản hợp nhất số 86/VBHN-NHNN hợp nhất Thông tư quy định về hoạt động cho vay của tổ chức tín dụng, chi nhánh ngân hàng nước ngoài đối với khách hàng",
+      "publisher": "Ngân hàng Nhà nước Việt Nam; Công báo điện tử nước Cộng hòa xã hội chủ nghĩa Việt Nam",
+      "document_type": "consolidated_regulation",
+      "canonical_url": "https://congbao.chinhphu.vn/van-ban/van-ban-hop-nhat-so-86-vbhn-nhnn-470152/67336.htm",
+      "issued_on": "2026-06-30",
+      "effective_from": null,
+      "retrieved_on": "2026-11-05",
+      "review_status": "primary_source_checked_human_legal_review_required",
+      "scope": "Primary legal reference for general lending rules. The consolidated text includes amendments, including the rules amended by Circular 29/2026/TT-NHNN, effective 2026-08-15.",
+      "topics": ["general_loan_conditions", "loan_application", "lender_assessment", "loan_agreement", "repayment"],
+      "limitations": [
+        "This is a legal reference, not a guarantee that any person qualifies for a loan.",
+        "Do not infer a universal operational workflow, underwriting outcome, product rate, fee, or document checklist beyond the text and an applicable lender product.",
+        "For production corpus activation, validate the relevant provisions against the downloadable official document and obtain subject-matter review."
+      ]
+    },
+    {
+      "source_id": "vn-sbv-circular-29-2026",
+      "title": "Thông tư số 29/2026/TT-NHNN sửa đổi, bổ sung một số điều của Thông tư số 39/2016/TT-NHNN quy định về hoạt động cho vay của tổ chức tín dụng, chi nhánh ngân hàng nước ngoài đối với khách hàng",
+      "publisher": "Ngân hàng Nhà nước Việt Nam; Công báo điện tử nước Cộng hòa xã hội chủ nghĩa Việt Nam",
+      "document_type": "amending_regulation",
+      "canonical_url": "https://congbao.chinhphu.vn/van-ban/thong-tu-so-29-2026-tt-nhnn-469916.htm",
+      "issued_on": "2026-06-30",
+      "effective_from": "2026-08-15",
+      "retrieved_on": "2026-11-05",
+      "review_status": "primary_source_checked_human_legal_review_required",
+      "scope": "Use with the consolidated lending regulation when checking the amendment and effective date.",
+      "topics": ["general_loan_conditions", "loan_application", "lending_rules"],
+      "limitations": [
+        "An amendment should not be interpreted in isolation from the consolidated regulation and any later changes.",
+        "Do not present legal summaries as personalized legal or credit advice."
+      ]
+    },
+    {
+      "source_id": "vn-law-credit-institutions-32-2024",
+      "title": "Luật Các tổ chức tín dụng số 32/2024/QH15",
+      "publisher": "Quốc hội; Cổng Thông tin điện tử Chính phủ",
+      "document_type": "law",
+      "canonical_url": "https://vanban.chinhphu.vn/?classid=1&docid=211190&orggroupid=1&pageid=27160",
+      "issued_on": "2024-01-18",
+      "effective_from": "2024-07-01",
+      "retrieved_on": "2026-11-05",
+      "review_status": "primary_source_linked_human_legal_review_required",
+      "scope": "Legal source for general credit-institution duties and consumer safeguards mentioned in the curated guide.",
+      "topics": ["consumer_safeguards", "insurance_linkage"],
+      "limitations": [
+        "Cite the applicable article and current text before answering legal questions.",
+        "Do not infer that every insurance product or collateral-insurance requirement has the same legal treatment; distinguish product terms and mandatory law."
+      ]
+    },
+    {
+      "source_id": "vietcombank-home-land-loan-product",
+      "title": "Vay mua nhà ở, đất ở",
+      "publisher": "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)",
+      "document_type": "bank_product_page",
+      "canonical_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
+      "issued_on": null,
+      "effective_from": null,
+      "retrieved_on": "2026-11-05",
+      "review_status": "official_page_checked_revalidate_before_product_claims",
+      "scope": "Product-specific reference for the displayed eligibility, document categories, repayment notes, and five-stage application sequence on the page.",
+      "topics": ["bank_specific_process", "bank_specific_documents", "bank_specific_terms"],
+      "limitations": [
+        "Terms can change without a stable publication date; re-check the live page before using numeric or eligibility claims.",
+        "Clearly label all claims as Vietcombank-specific, not universal market or legal requirements.",
+        "A product page is not evidence that a particular user will be approved."
+      ]
+    },
+    {
+      "source_id": "techcombank-home-loan-product",
+      "title": "Vay mua bất động sản có Giấy chứng nhận",
+      "publisher": "Ngân hàng TMCP Kỹ thương Việt Nam (Techcombank)",
+      "document_type": "bank_product_page",
+      "canonical_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "issued_on": null,
+      "effective_from": null,
+      "retrieved_on": "2026-11-05",
+      "review_status": "official_page_checked_revalidate_before_product_claims",
+      "scope": "Illustrates product-specific application steps and product terms; do not merge its values into general process content.",
+      "topics": ["bank_specific_process", "bank_specific_documents", "bank_specific_terms", "repayment_examples"],
+      "limitations": [
+        "Rates, limits, fees, age criteria, insurance conditions, and processing times are volatile; only answer them with a fresh, directly relevant source and retrieval timestamp.",
+        "Clearly label all claims as Techcombank-specific and product-specific.",
+        "Do not treat an online calculator or advertised rate as a binding offer or approval."
+      ]
+    },
+    {
+      "source_id": "bidv-home-loan-product",
+      "title": "Vay nhu cầu nhà ở",
+      "publisher": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)",
+      "document_type": "bank_product_page",
+      "canonical_url": "https://bidv.com.vn/bidv/privatecustomer/dichvunganhang/tindung/vaynhucaunhao",
+      "issued_on": null,
+      "effective_from": null,
+      "retrieved_on": "2026-11-05",
+      "review_status": "official_page_checked_revalidate_before_product_claims",
+      "scope": "Current BIDV product page. The displayed loan caps, maximum term and processing time are BIDV-specific and subject to the page's eligibility and scope conditions.",
+      "topics": ["bank_specific_process", "bank_specific_documents", "bank_specific_terms", "processing_time"],
+      "limitations": [
+        "The live page has no stable publication/effective date; record retrieval time and re-check volatile claims before answering.",
+        "Only answer a numeric or operational claim when its exact scope and conditions are included in the approved retrieved evidence.",
+        "Clearly label all claims as BIDV-specific, not universal legal or market requirements.",
+        "A product page is not evidence that a particular user will be approved."
+      ]
+    },
+    {
+      "source_id": "bidv-home-loan-guide-2023",
+      "title": "Điều kiện và thủ tục vay ngân hàng mua nhà mới nhất",
+      "publisher": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)",
+      "document_type": "bank_educational_article",
+      "canonical_url": "https://bidv.com.vn/bidv/bidv-blog/tin-dung/dieu-kien-vay-ngan-hang-mua-nha",
+      "issued_on": "2023-11-21",
+      "effective_from": null,
+      "retrieved_on": "2026-11-05",
+      "review_status": "official_page_checked_stale_product_content_excluded_pending_review",
+      "scope": "Historical bank-published explainer; usable only for general non-numeric process context after human review.",
+      "topics": ["bank_specific_process", "bank_specific_documents"],
+      "limitations": [
+        "The publication is dated 2023 and includes potentially outdated product conditions, rates, fees, and timelines; exclude those claims from active retrieval until reverified against a current product page.",
+        "Clearly label any retained process as BIDV-specific rather than a universal rule."
+      ]
+    }
+  ]
+}

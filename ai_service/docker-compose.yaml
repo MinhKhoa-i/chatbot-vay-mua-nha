@@ -1,0 +1,54 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: home_loan_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Required}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+    volumes:
+      - home_loan_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # The container must reach PostgreSQL through Compose DNS, not localhost.
+      DATABASE_URL: ${WORKER_DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}}
+      KNOWLEDGE_SNAPSHOT_DIR: /srv/data/snapshots
+      # Use host.docker.internal for an embedding gateway running on the host.
+      EMBEDDING_BASE_URL: ${WORKER_EMBEDDING_BASE_URL:-http://host.docker.internal:20128/v1}
+    volumes:
+      - type: bind
+        source: ${KNOWLEDGE_SNAPSHOT_DIR:-./data/snapshots}
+        target: /srv/data/snapshots
+        read_only: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    stop_grace_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  home_loan_postgres_data:
