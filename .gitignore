@@ -67,7 +67,15 @@ logs/
 Thumbs.db
 desktop.ini
 
-
 AGENTS.md
 CLAUDE.md
 skills-lock.json
+
+# ===== File tài liệu nội bộ =====
+*.xlsx
+*.pdf
+
+# ===== AI service =====
+ai_service/.agents/
+ai_service/data/snapshots/
+*.ipynb
