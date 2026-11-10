@@ -106,7 +106,7 @@ async def test_commit_records_one_intent_without_modifying_profile(legacy, corru
     assert conversation.active_request_id is None
 
 
-def test_estimate_serialization_preserves_decimal_rate_as_string():
+def test_estimate_serialization_matches_flat_backend_contract():
     result = LoanEstimateResult(
         LoanEstimateInput(1_000_000_000, 20, Decimal("9.5")),
         8_770_000,
@@ -115,7 +115,12 @@ def test_estimate_serialization_preserves_decimal_rate_as_string():
     )
 
     assert PostgresConversationRepository._serialize_estimate(result) == {
-        "input": {"amount": 1_000_000_000, "years": 20, "rate": "9.5"},
+        "amount": 1_000_000_000,
+        "years": 20,
+        "rate": 9.5,
+        "method": "annuity",
+        "promo_rate": None,
+        "promo_duration_months": 0,
         "monthly_payment": 8_770_000,
         "total_interest": 1_104_800_000,
         "updated_at": "2026-10-31",

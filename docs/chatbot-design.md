@@ -309,10 +309,11 @@ Khi module sẵn sàng, tái sử dụng công thức ở backend thay vì viế
 
 Khi lượt chat hoàn tất, `ai_service` phát event SSE `done`. Payload giữ các trường hội thoại hiện có (`conversation_id`, `client_request_id`, `conversation_version`, `user_message_id`, `assistant_message_id`, `reply`) và có thêm trường `estimate`:
 
-- Nếu calculator trả kết quả thành công sau xác nhận, `estimate` là object chứa `input.amount` (số nguyên VND), `input.years` (số nguyên năm), `input.rate` (chuỗi thập phân theo `%/năm`), `monthly_payment` (số nguyên VND), `total_interest` (số nguyên VND) và `updated_at`.
+- Nếu calculator trả kết quả thành công sau xác nhận, `estimate` là object phẳng theo cùng cấu trúc với response `POST /api/estimate`: `amount` (số nguyên VND), `years` (số nguyên năm), `rate` (number, %/năm), `method`, `promo_rate`, `promo_duration_months`, `monthly_payment` (số nguyên VND), `total_interest` (số nguyên VND) và `updated_at`.
+- Với luồng hiện được hỗ trợ (niên kim, lãi cố định), `method` là `"annuity"`, `promo_rate` là `null` và `promo_duration_months` là `0`.
 - Với lượt không tạo ra kết quả tính toán — ví dụ chat kiến thức, thu thập dữ liệu, chờ xác nhận hoặc hủy — `estimate` là `null`.
 - `reply` vẫn là nội dung thân thiện để hiển thị cho người dùng; frontend dùng `estimate` để hiển thị/định dạng các giá trị số, không phân tích ngược số từ `reply`.
-- Các giá trị trong object lấy từ response của calculator backend; LLM không tự tính, sửa hoặc suy diễn kết quả.
+- Các giá trị kết quả lấy từ response của calculator backend; LLM không tự tính, sửa hoặc suy diễn kết quả.
 
 Ví dụ payload của event `done` khi mô phỏng thành công:
 
@@ -325,11 +326,12 @@ Ví dụ payload của event `done` khi mô phỏng thành công:
   "assistant_message_id": "<uuid>",
   "reply": "Khoản trả hàng tháng khoảng 1.234.567 VND.",
   "estimate": {
-    "input": {
-      "amount": 1000000000,
-      "years": 20,
-      "rate": "9.5"
-    },
+    "amount": 1000000000,
+    "years": 20,
+    "rate": 9.5,
+    "method": "annuity",
+    "promo_rate": null,
+    "promo_duration_months": 0,
     "monthly_payment": 8770000,
     "total_interest": 1104800000,
     "updated_at": "2026-10-31"
@@ -339,20 +341,11 @@ Ví dụ payload của event `done` khi mô phỏng thành công:
 
 Response hoàn tất được lưu cùng request ledger để replay trả lại cùng `reply` và `estimate` mà không gọi calculator lần nữa. Với response thành công đã lưu bởi phiên bản cũ nhưng chưa có trường này, luồng replay chuẩn hóa thành `estimate: null`.
 
-### 8.3. Luồng mô phỏng hiện tại
+### 8.3. Luồng tính toán hiện tại và các ràng buộc mở rộng
 
 1. Xác định khách muốn lịch trả nợ hay đánh giá ngân sách/khả năng vay. Tận dụng thông tin đã xác nhận trong hội thoại, hỏi từng dữ kiện còn thiếu theo mục 7; không hỏi cả bộ hồ sơ khi chỉ cần kiến thức chung.
-2. Với lịch trả nợ: cần tiền vay, thời hạn, phương thức trả và lãi suất/lịch lãi suất có nguồn hoặc giả định được xác nhận. Với khả năng vay: cần thêm thu nhập ròng, nợ hiện tại, chi phí sinh hoạt và chính sách/ngân sách do khách chọn. Không mặc định một ngưỡng DTI chung cho mọi ngân hàng.
-3. Xác nhận kịch bản: đơn vị tiền, tháng/năm, lãi suất năm dạng phần trăm hay tỷ lệ, giai đoạn ưu đãi, sau ưu đãi, phí được tính/chưa tính và quy tắc trả nợ. Nếu calculator không hỗ trợ lãi thay đổi/ân hạn thì từ chối kịch bản đó thay vì âm thầm thay bằng lãi cố định.
-4. Application gọi calculator qua port. Input/output cần thống nhất với backend trước triển khai: phiên bản công thức, đơn vị, quy tắc làm tròn, giả định, lịch trả nợ và các kết quả tổng hợp. Không dùng con số trong văn bản RAG chưa kiểm duyệt trực tiếp làm tham số.
-5. Nếu calculator thiếu dữ liệu, timeout hoặc lỗi validation: hỏi bổ sung/báo chưa tính được; **không chuyển sang cho LLM tự tính**. Không ghi thành kết quả mô phỏng thành công.
-6. Hiển thị kết quả tham khảo, giả định và nguồn chính sách; phân biệt “khoản có thể trả theo ngân sách” với “hạn mức ngân hàng chấp thuận”. Không hứa đủ điều kiện vay.
-
-### 8.2. Luồng dự kiến
-
-1. Xác định khách muốn lịch trả nợ hay đánh giá ngân sách/khả năng vay. Tận dụng thông tin đã xác nhận trong hội thoại, hỏi từng dữ kiện còn thiếu theo mục 7; không hỏi cả bộ hồ sơ khi chỉ cần kiến thức chung.
-2. Với lịch trả nợ: cần tiền vay, thời hạn, phương thức trả và lãi suất/lịch lãi suất có nguồn hoặc giả định được xác nhận. Với khả năng vay: cần thêm thu nhập ròng, nợ hiện tại, chi phí sinh hoạt và chính sách/ngân sách do khách chọn. Không mặc định một ngưỡng DTI chung cho mọi ngân hàng.
-3. Xác nhận kịch bản: đơn vị tiền, tháng/năm, lãi suất năm dạng phần trăm hay tỷ lệ, giai đoạn ưu đãi, sau ưu đãi, phí được tính/chưa tính và quy tắc trả nợ. Nếu calculator không hỗ trợ lãi thay đổi/ân hạn thì từ chối kịch bản đó thay vì âm thầm thay bằng lãi cố định.
-4. Application gọi calculator qua port. Input/output cần thống nhất với backend trước triển khai: phiên bản công thức, đơn vị, quy tắc làm tròn, giả định, lịch trả nợ và các kết quả tổng hợp. Không dùng con số trong văn bản RAG chưa kiểm duyệt trực tiếp làm tham số.
+2. Với lịch trả nợ hiện tại: cần tiền vay, thời hạn, lãi suất cố định và xác nhận kịch bản; hệ thống chỉ hỗ trợ phương thức niên kim. Đánh giá ngân sách/khả năng vay cần thêm thu nhập ròng, nợ hiện tại, chi phí sinh hoạt và chính sách/ngân sách do khách chọn, nhưng không được xem là quyết định duyệt vay. Không mặc định một ngưỡng DTI chung cho mọi ngân hàng.
+3. Xác nhận kịch bản và đơn vị trước khi tính. Nếu yêu cầu lãi thay đổi, ưu đãi, ân hạn hoặc phương thức chưa được calculator hỗ trợ, từ chối kịch bản đó thay vì âm thầm thay bằng giả định lãi cố định/niên kim.
+4. Application gọi calculator qua port. Không dùng con số trong văn bản RAG chưa kiểm duyệt trực tiếp làm tham số. Khi mở rộng tích hợp, thống nhất với backend phiên bản công thức, đơn vị, quy tắc làm tròn, giả định, lịch trả nợ và các kết quả tổng hợp.
 5. Nếu calculator thiếu dữ liệu, timeout hoặc lỗi validation: hỏi bổ sung/báo chưa tính được; **không chuyển sang cho LLM tự tính**. Không ghi thành kết quả mô phỏng thành công.
 6. Hiển thị kết quả tham khảo, giả định và nguồn chính sách; phân biệt “khoản có thể trả theo ngân sách” với “hạn mức ngân hàng chấp thuận”. Không hứa đủ điều kiện vay.

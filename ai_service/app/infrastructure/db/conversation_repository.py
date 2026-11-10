@@ -530,11 +530,12 @@ class PostgresConversationRepository(ChatTurnRepository):
         if estimate is None:
             return None
         return {
-            "input": {
-                "amount": estimate.request.amount,
-                "years": estimate.request.years,
-                "rate": str(estimate.request.rate),
-            },
+            "amount": estimate.request.amount,
+            "years": estimate.request.years,
+            "rate": float(estimate.request.rate),
+            "method": "annuity",
+            "promo_rate": None,
+            "promo_duration_months": 0,
             "monthly_payment": estimate.monthly_payment,
             "total_interest": estimate.total_interest,
             "updated_at": estimate.updated_at,
