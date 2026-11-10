@@ -183,6 +183,27 @@ Gửi tin nhắn:
 
 `ai_service` gọi `POST {LOAN_BACKEND_BASE_URL}/api/estimate` khi khách nhờ tính khoản vay. `LOAN_BACKEND_BASE_URL` đặt trong `ai_service/.env`, mặc định `http://127.0.0.1:8000`. Hiện bot chỉ gửi `amount`, `years`, `rate` (niên kim, lãi cố định) và kiểm tra response có `method == "annuity"`.
 
+Event SSE `done` chứa `estimate` có cấu trúc khi lượt chat hoàn tất phép tính thành công; nếu lượt chat không tạo estimate thì trường này là `null`. Ví dụ phần `data` của event:
+
+```json
+{
+  "reply": "Khoản vay 1 tỷ đồng trong 20 năm, lãi suất 9.5%/năm...",
+  "estimate": {
+    "amount": 1000000000,
+    "years": 20,
+    "rate": 9.5,
+    "method": "annuity",
+    "promo_rate": null,
+    "promo_duration_months": 0,
+    "monthly_payment": 8770000,
+    "total_interest": 1104800000,
+    "updated_at": "2026-10-31"
+  }
+}
+```
+
+`estimate` dùng cùng cấu trúc phẳng với response `POST /api/estimate` (mục 3.3): đầu vào gồm `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`; kết quả gồm `monthly_payment`, `total_interest`, `updated_at`. `rate` là số. Vì `ai_service` hiện chỉ hỗ trợ niên kim lãi cố định, `method` luôn là `"annuity"`, `promo_rate` là `null` và `promo_duration_months` là `0`. Khi lượt chat không tạo kết quả estimate, trường này là `null`.
+
 ## 5. Nối backend với AI service (việc của tuần 2)
 
 Mục tiêu: frontend **không đổi** gì, vẫn gọi `POST /api/chat`.
@@ -192,7 +213,7 @@ Mục tiêu: frontend **không đổi** gì, vẫn gọi `POST /api/chat`.
 3. Backend đọc SSE đến event `done`, lấy `reply`, rồi trả `{ reply, updated_at, estimate }` cho frontend. Gặp event `error` có `retryable: true` thì thử lại với **cùng** `client_request_id`.
 4. Chưa đặt `AI_SERVICE_URL` thì backend giữ câu trả lời mẫu như hiện nay.
 
-Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) không. Nếu có thì thêm endpoint `POST /api/chat/stream` riêng, giữ `POST /api/chat` như cũ. Event `done` hiện chưa trả `estimate` có cấu trúc (số tiền chỉ nằm trong văn bản), nên muốn hiện thẻ ước tính thì Hoàn cần thêm trường này vào `done`.
+Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) không. Nếu có thì thêm endpoint `POST /api/chat/stream` riêng, giữ `POST /api/chat` như cũ. Event `done` đã trả `estimate` có cấu trúc như mô tả ở trên; backend có thể dùng trường này để cung cấp thẻ ước tính cho frontend khi nối hai service.
 
 ## 6. Bảng tên trường dùng chung
 
@@ -212,7 +233,6 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 ## 7. Việc còn mở
 
 - Nối `/api/chat` với `ai_service` theo mục 5 (Hiếu và Hoàn).
-- Thêm `estimate` có cấu trúc vào event `done` của `ai_service` (Hoàn).
 - Cho bot hỏi phương thức trả nợ và ưu đãi rồi gửi `method`, `promo_rate`, `promo_duration_months`, vì backend đã hỗ trợ (Hoàn).
 - Ân hạn nợ gốc (`grace_period_months`) chưa có trong `calculator.py` (Định).
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).

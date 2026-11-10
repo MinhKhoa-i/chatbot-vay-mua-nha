@@ -288,3 +288,64 @@ Quy ước mức độ cần thiết:
 | Điều kiện sản phẩm | Nhóm cư trú/quốc tịch theo phạm vi cần thiết (`residency_category`)             | Có điều kiện, chỉ khi nguồn sản phẩm yêu cầu                 | “Bạn thuộc nhóm khách hàng cư trú/quốc tịch nào theo điều kiện gói vay này?” Chỉ phục vụ tra điều kiện công bố, không thu số giấy tờ.                                      |
 | Hồ sơ              | Loại giấy tờ chứng minh thu nhập có thể chuẩn bị (`income_evidence_categories`) | Có điều kiện: checklist                                      | “Bạn có thể chuẩn bị nhóm giấy tờ nào: xác nhận lương, sao kê hay hồ sơ kinh doanh?” Chỉ hỏi loại giấy tờ, không thu bản sao trong MVP.                                    |
 | Ưu tiên            | Tiêu chí lựa chọn (`comparison_priorities`)                                     | Có điều kiện: so sánh                                        | “Bạn ưu tiên khoản trả thấp, tổng chi phí, lãi ổn định, thời hạn hay linh hoạt trả trước?” Cho phép chọn nhiều tiêu chí, không tự thay bằng tiêu chí lợi ích của bên bán.  |
+
+## 8. Tích hợp tính toán khả năng vay và khoản trả nợ
+
+### 8.1. Trạng thái thực tế và ranh giới kiến trúc
+
+Nhánh hiện tại **chưa có `backend/finance/calculator.py`**, chưa có endpoint tính toán của backend và chưa có port calculator trong AI service. Tên đường dẫn trên là mục tiêu tích hợp module của bạn Định, không phải một import có thể dùng ngay. MVP chỉ hỏi đáp có nguồn; lời chào phải nói rõ chưa hỗ trợ tính toán, system prompt tiếp tục cấm LLM tự tính.
+
+Khi module sẵn sàng, tái sử dụng công thức ở backend thay vì viết lại trong prompt, endpoint chat hay frontend:
+
+- **Backend:** calculator là nơi duy nhất sở hữu công thức, quy tắc làm tròn và test nghiệp vụ; application use case của backend gọi module và presentation cung cấp API có version.
+- **AI domain:** khai báo input/output có kiểu dữ liệu và port `LoanCalculator`; domain không import FastAPI, HTTP client hoặc package `backend`.
+- **AI application:** use case thu thập/kiểm tra thông tin, yêu cầu xác nhận giả định, gọi port và xử lý lỗi. Tách khỏi use case hỏi đáp kiến thức hiện tại để không làm tăng phụ thuộc của mọi lượt chat.
+- **AI infrastructure:** adapter HTTP triển khai port và gọi API calculator của backend với timeout/retry có giới hạn; composition root inject adapter. Hai service triển khai độc lập, không import chéo source tree.
+- **AI presentation:** chỉ validation/serialize HTTP/SSE, không chứa công thức. LLM chỉ giải thích kết quả đã nhận; số tiền/kỳ hạn/lãi suất hiển thị từ output có cấu trúc, không để mô hình tạo lại con số.
+
+**Trạng thái triển khai hiện tại:** `ai_service` đã có luồng mô phỏng annuity với lãi suất cố định toàn kỳ, `EstimateLoanUseCase` và adapter gọi loan calculator backend. Calculator chỉ được gọi sau khi đã thu thập đủ số tiền vay, thời hạn, lãi suất và khách hàng xác nhận kịch bản. Đây là mô phỏng tham khảo, không đánh giá khả năng chi trả hoặc quyết định duyệt vay.
+
+### 8.2. Hợp đồng kết quả estimate trên SSE
+
+Khi lượt chat hoàn tất, `ai_service` phát event SSE `done`. Payload giữ các trường hội thoại hiện có (`conversation_id`, `client_request_id`, `conversation_version`, `user_message_id`, `assistant_message_id`, `reply`) và có thêm trường `estimate`:
+
+- Nếu calculator trả kết quả thành công sau xác nhận, `estimate` là object phẳng theo cùng cấu trúc với response `POST /api/estimate`: `amount` (số nguyên VND), `years` (số nguyên năm), `rate` (number, %/năm), `method`, `promo_rate`, `promo_duration_months`, `monthly_payment` (số nguyên VND), `total_interest` (số nguyên VND) và `updated_at`.
+- Với luồng hiện được hỗ trợ (niên kim, lãi cố định), `method` là `"annuity"`, `promo_rate` là `null` và `promo_duration_months` là `0`.
+- Với lượt không tạo ra kết quả tính toán — ví dụ chat kiến thức, thu thập dữ liệu, chờ xác nhận hoặc hủy — `estimate` là `null`.
+- `reply` vẫn là nội dung thân thiện để hiển thị cho người dùng; frontend dùng `estimate` để hiển thị/định dạng các giá trị số, không phân tích ngược số từ `reply`.
+- Các giá trị kết quả lấy từ response của calculator backend; LLM không tự tính, sửa hoặc suy diễn kết quả.
+
+Ví dụ payload của event `done` khi mô phỏng thành công:
+
+```json
+{
+  "conversation_id": "<uuid>",
+  "client_request_id": "<uuid>",
+  "conversation_version": 4,
+  "user_message_id": "<uuid>",
+  "assistant_message_id": "<uuid>",
+  "reply": "Khoản trả hàng tháng khoảng 1.234.567 VND.",
+  "estimate": {
+    "amount": 1000000000,
+    "years": 20,
+    "rate": 9.5,
+    "method": "annuity",
+    "promo_rate": null,
+    "promo_duration_months": 0,
+    "monthly_payment": 8770000,
+    "total_interest": 1104800000,
+    "updated_at": "2026-10-31"
+  }
+}
+```
+
+Response hoàn tất được lưu cùng request ledger để replay trả lại cùng `reply` và `estimate` mà không gọi calculator lần nữa. Với response thành công đã lưu bởi phiên bản cũ nhưng chưa có trường này, luồng replay chuẩn hóa thành `estimate: null`.
+
+### 8.3. Luồng tính toán hiện tại và các ràng buộc mở rộng
+
+1. Xác định khách muốn lịch trả nợ hay đánh giá ngân sách/khả năng vay. Tận dụng thông tin đã xác nhận trong hội thoại, hỏi từng dữ kiện còn thiếu theo mục 7; không hỏi cả bộ hồ sơ khi chỉ cần kiến thức chung.
+2. Với lịch trả nợ hiện tại: cần tiền vay, thời hạn, lãi suất cố định và xác nhận kịch bản; hệ thống chỉ hỗ trợ phương thức niên kim. Đánh giá ngân sách/khả năng vay cần thêm thu nhập ròng, nợ hiện tại, chi phí sinh hoạt và chính sách/ngân sách do khách chọn, nhưng không được xem là quyết định duyệt vay. Không mặc định một ngưỡng DTI chung cho mọi ngân hàng.
+3. Xác nhận kịch bản và đơn vị trước khi tính. Nếu yêu cầu lãi thay đổi, ưu đãi, ân hạn hoặc phương thức chưa được calculator hỗ trợ, từ chối kịch bản đó thay vì âm thầm thay bằng giả định lãi cố định/niên kim.
+4. Application gọi calculator qua port. Không dùng con số trong văn bản RAG chưa kiểm duyệt trực tiếp làm tham số. Khi mở rộng tích hợp, thống nhất với backend phiên bản công thức, đơn vị, quy tắc làm tròn, giả định, lịch trả nợ và các kết quả tổng hợp.
+5. Nếu calculator thiếu dữ liệu, timeout hoặc lỗi validation: hỏi bổ sung/báo chưa tính được; **không chuyển sang cho LLM tự tính**. Không ghi thành kết quả mô phỏng thành công.
+6. Hiển thị kết quả tham khảo, giả định và nguồn chính sách; phân biệt “khoản có thể trả theo ngân sách” với “hạn mức ngân hàng chấp thuận”. Không hứa đủ điều kiện vay.

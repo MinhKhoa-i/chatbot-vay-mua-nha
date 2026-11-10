@@ -35,7 +35,7 @@ class FakeRepository(ChatTurnRepository):
     async def claim(self, request: ChatRequest, request_hash: str) -> ChatClaim:
         return self.claim_result
 
-    async def commit(self, request: ChatRequest, *, request_id, lease_token, snapshot_version, answer, state_update=None) -> ChatCommit:
+    async def commit(self, request: ChatRequest, *, request_id, lease_token, snapshot_version, answer, state_update=None, estimate=None) -> ChatCommit:
         self.commits += 1
         if self.commit_error:
             return ChatCommit({}, 409, None, None, snapshot_version, error_code=self.commit_error)
@@ -58,7 +58,7 @@ def test_completed_retry_replays_without_calling_provider_or_committing_again():
         events = [event async for event in use_case.execute(request)]
 
         assert [(event.event, event.data) for event in events] == [
-            ("replay", {"reply": "saved answer", "conversation_version": 1}),
+            ("replay", {"reply": "saved answer", "conversation_version": 1, "estimate": None}),
         ]
         assert completion.calls == 0
         assert repository.commits == 0
@@ -84,6 +84,7 @@ def test_replay_bypasses_classifier_and_retrieval():
 
     events = asyncio.run(run())
     assert [event.event for event in events] == ["replay"]
+    assert events[0].data["estimate"] is None
     assert completion.calls == repository.commits == 0
 
 

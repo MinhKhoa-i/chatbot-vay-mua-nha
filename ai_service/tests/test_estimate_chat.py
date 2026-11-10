@@ -72,6 +72,7 @@ async def test_collect_confirm_update_and_render_only_backend_numbers():
     assert len(calculator.calls) == 1 and calculator.calls[0].years == 25
     assert "1.234.567" in fourth.answer and "9.876.543" in fourth.answer
     assert "không phải đánh giá khả năng chi trả" in fourth.answer
+    assert fourth.result == LoanEstimateResult(calculator.calls[0], 1234567, 9876543, "2026-10-31")
 
 
 @pytest.mark.parametrize("action", ["unsupported", "cancel", "unrelated", "confirm"])
@@ -100,6 +101,7 @@ class EstimateRepository(FakeRepository):
         return ChatClaim("claimed", ChatSnapshot(0, (), uuid4(), uuid4(), self.estimate_session))
 
     async def commit(self, *args, **kwargs):
+        self.committed_estimate = kwargs.get("estimate")
         result = await super().commit(*args, **kwargs)
         if self.state_update.estimate_session is not None:
             self.estimate_session = self.state_update.estimate_session
@@ -127,6 +129,10 @@ async def test_stream_estimate_multiturn_bypasses_rag_and_generation_and_classif
     assert completion.calls == 0 and retrieval.queries == []
     assert len(calculator.calls) == 1
     assert repository.estimate_session.status == "completed"
+    assert repository.committed_estimate == LoanEstimateResult(
+        calculator.calls[0], 1234567, 9876543, "2026-10-31",
+    )
+    assert events[-1].data["estimate"] is repository.committed_estimate
 
 
 async def test_side_question_keeps_pending_estimate_without_running_calculator():
@@ -144,6 +150,8 @@ async def test_side_question_keeps_pending_estimate_without_running_calculator()
     assert events[-1].event == "done"
     assert repository.estimate_session == state and calculator.calls == []
     assert repository.state_update.estimate_session is None
+    assert repository.committed_estimate is None
+    assert events[-1].data["estimate"] is None
 
 
 @pytest.mark.parametrize("state", [

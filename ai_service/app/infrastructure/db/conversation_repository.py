@@ -14,6 +14,7 @@ from app.domain.entities.chat_request import (
     ChatTurnError,
 )
 from app.domain.entities.conversation import Conversation, ConversationMessage
+from app.domain.entities.loan_estimate import LoanEstimateResult
 from app.domain.ports.chat_turn_repository import ChatTurnRepository
 from app.infrastructure.db.chat_error_boundary import chat_repository_errors
 from app.infrastructure.db.estimate_state_codec import decode_estimate_session, encode_estimate_session
@@ -407,6 +408,7 @@ class PostgresConversationRepository(ChatTurnRepository):
     async def commit(
         self, request: ChatRequest, *, request_id: UUID, lease_token: UUID,
         snapshot_version: int, answer: str, state_update: ChatSnapshotUpdate | None = None,
+        estimate: LoanEstimateResult | None = None,
     ) -> ChatCommit:
         async with self._session_factory() as session:
             async with session.begin():
@@ -510,6 +512,7 @@ class PostgresConversationRepository(ChatTurnRepository):
                     "conversation_id": str(request.conversation_id), "client_request_id": str(request.client_request_id),
                     "conversation_version": next_version, "user_message_id": str(user_id),
                     "assistant_message_id": str(assistant_id), "reply": answer,
+                    "estimate": self._serialize_estimate(estimate),
                 }
                 ledger.status = "completed"
                 ledger.lease_token = None
@@ -521,6 +524,22 @@ class PostgresConversationRepository(ChatTurnRepository):
                 ledger.response_ciphertext = self._encrypt_request_response(request_id, 200, body)
                 ledger.updated_at = now
                 return ChatCommit(body, 200, user_id, assistant_id, next_version)
+
+    @staticmethod
+    def _serialize_estimate(estimate: LoanEstimateResult | None) -> dict | None:
+        if estimate is None:
+            return None
+        return {
+            "amount": estimate.request.amount,
+            "years": estimate.request.years,
+            "rate": float(estimate.request.rate),
+            "method": "annuity",
+            "promo_rate": None,
+            "promo_duration_months": 0,
+            "monthly_payment": estimate.monthly_payment,
+            "total_interest": estimate.total_interest,
+            "updated_at": estimate.updated_at,
+        }
 
     @chat_repository_errors("fail")
     async def fail(
