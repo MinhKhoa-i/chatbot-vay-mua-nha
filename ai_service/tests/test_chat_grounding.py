@@ -19,6 +19,7 @@ from app.infrastructure.prompts.loader import get_prompt_catalog
 class FakeRepository(ChatTurnRepository):
     def __init__(self, *, history=()):
         self.committed_answer = None
+        self.committed_estimate = None
         self.state_update = None
         self.history = history
 
@@ -27,10 +28,11 @@ class FakeRepository(ChatTurnRepository):
             0, self.history, uuid4(), uuid4(),
         ))
 
-    async def commit(self, request, *, request_id, lease_token, snapshot_version, answer, state_update=None):
+    async def commit(self, request, *, request_id, lease_token, snapshot_version, answer, state_update=None, estimate=None):
         self.committed_answer = answer
+        self.committed_estimate = estimate
         self.state_update = state_update
-        return ChatCommit({"reply": answer}, 200, uuid4(), uuid4(), snapshot_version + 1)
+        return ChatCommit({"reply": answer, "estimate": estimate}, 200, uuid4(), uuid4(), snapshot_version + 1)
 
     async def fail(self, request, *, request_id, lease_token, error_code, response_status, retryable):
         return True
@@ -101,6 +103,8 @@ def test_general_skips_retrieval_and_model(text, expected):
     assert completion.calls == 0
     assert [event.event for event in events] == ["delta", "done"]
     assert repository.state_update.intent == "general"
+    assert repository.committed_estimate is None
+    assert events[-1].data["estimate"] is None
 
 
 @pytest.mark.parametrize("text", [
@@ -117,6 +121,8 @@ def test_missing_evidence_never_calls_model_or_starts_slot_collection(text):
     assert retrieval.queries == [text]
     assert [event.event for event in events] == ["delta", "done"]
     assert repository.state_update.intent == "retrieval"
+    assert repository.committed_estimate is None
+    assert events[-1].data["estimate"] is None
 
 
 @pytest.mark.parametrize("retrieval, code", [

@@ -1,5 +1,6 @@
 import base64
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -7,6 +8,7 @@ import pytest
 
 from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.chat_request import ChatRequest, ChatSnapshotUpdate
+from app.domain.entities.loan_estimate import LoanEstimateInput, LoanEstimateResult
 from app.domain.errors import ConversationStateError
 from app.infrastructure.db.conversation_repository import PostgresConversationRepository
 from app.infrastructure.security.payload_cipher import PayloadCipher, PayloadCipherError
@@ -93,6 +95,7 @@ async def test_commit_records_one_intent_without_modifying_profile(legacy, corru
         resource_id=conversation_id,
     )
     assert result.response_status == 200
+    assert result.response_body["estimate"] is None
     assert result.version == conversation.version == saved["conversation_version"] == 1
     assert saved["active_intents"] == ["retrieval"]
     assert saved["pending_tasks"] == [] and saved["pending_question"] is None
@@ -101,3 +104,20 @@ async def test_commit_records_one_intent_without_modifying_profile(legacy, corru
     assert len(session.added) == 2
     assert ledger.status == "completed"
     assert conversation.active_request_id is None
+
+
+def test_estimate_serialization_preserves_decimal_rate_as_string():
+    result = LoanEstimateResult(
+        LoanEstimateInput(1_000_000_000, 20, Decimal("9.5")),
+        8_770_000,
+        1_104_800_000,
+        "2026-10-31",
+    )
+
+    assert PostgresConversationRepository._serialize_estimate(result) == {
+        "input": {"amount": 1_000_000_000, "years": 20, "rate": "9.5"},
+        "monthly_payment": 8_770_000,
+        "total_interest": 1_104_800_000,
+        "updated_at": "2026-10-31",
+    }
+    assert PostgresConversationRepository._serialize_estimate(None) is None

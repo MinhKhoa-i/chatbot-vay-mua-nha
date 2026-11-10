@@ -27,7 +27,7 @@ class FakeRepository(ChatTurnRepository):
     async def claim(self, request: ChatRequest, request_hash: str) -> ChatClaim:
         return ChatClaim("claimed", ChatSnapshot(0, (), uuid4(), uuid4()))
 
-    async def commit(self, request: ChatRequest, *, request_id, lease_token, snapshot_version, answer, state_update=None) -> ChatCommit:
+    async def commit(self, request: ChatRequest, *, request_id, lease_token, snapshot_version, answer, state_update=None, estimate=None) -> ChatCommit:
         return ChatCommit({"status": "completed"}, 200, uuid4(), uuid4(), snapshot_version + 1)
 
     async def fail(self, request: ChatRequest, *, request_id, lease_token, error_code, response_status, retryable) -> bool:

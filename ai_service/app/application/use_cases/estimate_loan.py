@@ -17,6 +17,7 @@ class EstimateTurn:
     answer: str
     session: EstimateSession
     handled: bool = True
+    result: LoanEstimateResult | None = None
 
 
 class EstimateLoanUseCase:
@@ -45,7 +46,7 @@ class EstimateLoanUseCase:
                     result = await self._calculator.estimate(session.to_input())
             except TimeoutError as exc:
                 raise LoanCalculationError("LOAN_CALCULATION_TIMEOUT") from exc
-            return EstimateTurn(self._render_result(result), replace(session, status="completed"))
+            return EstimateTurn(self._render_result(result), replace(session, status="completed"), result=result)
         updated = session.updated(extraction.updates)
         if updated.missing_fields:
             return EstimateTurn(self._prompts.get(PromptName.ESTIMATE_QUESTIONS).format(

@@ -53,6 +53,7 @@ class StreamChatUseCase:
             if claim.kind == "replay":
                 body = claim.response_body or {}
                 if claim.response_status and claim.response_status < 300:
+                    body.setdefault("estimate", None)
                     yield ChatEvent("replay", body)
                 else:
                     yield ChatEvent("error", body)
@@ -79,6 +80,7 @@ class StreamChatUseCase:
             except TimeoutError as exc:
                 raise IntentClassificationError("CLASSIFICATION_TIMEOUT") from exc
             estimate_state = None
+            estimate_result = None
             if intent == ChatIntent.ESTIMATE:
                 stage = "estimate"
                 if self._estimate is None:
@@ -90,6 +92,7 @@ class StreamChatUseCase:
                     intent = ChatIntent.RETRIEVAL
                 else:
                     estimate_state = estimate_turn.session
+                    estimate_result = estimate_turn.result
             if intent == ChatIntent.ESTIMATE:
                 grounded = GroundedContext((), "", ())
                 deterministic = estimate_turn.answer
@@ -125,6 +128,7 @@ class StreamChatUseCase:
                 request, request_id=snapshot.request_id, lease_token=snapshot.lease_token,
                 snapshot_version=snapshot.conversation_version, answer=answer,
                 state_update=ChatSnapshotUpdate(intent=intent, estimate_session=estimate_state),
+                estimate=estimate_result,
             )
             if commit.response_status >= 400:
                 yield ChatEvent("error", {"code": commit.error_code or "REQUEST_FAILED", "retryable": commit.retryable})
