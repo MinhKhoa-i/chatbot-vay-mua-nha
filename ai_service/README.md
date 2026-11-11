@@ -6,6 +6,7 @@ Hướng dẫn này dành cho môi trường demo phát triển, không phải c
 
 - Docker Desktop (Windows/macOS) hoặc Docker Engine và Docker Compose v2.
 - Python 3.12.
+- curl để kiểm tra health, theo dõi ingestion và thử chat streaming (SSE).
 - [uv](https://docs.astral.sh/uv/) để đồng bộ môi trường Python theo `uv.lock`.
 - Dịch vụ tương thích OpenAI cho chat và embedding có thể truy cập từ máy chạy API/worker. Với demo hoàn chỉnh, cần cấu hình cả hai dịch vụ và thông tin model tương ứng.
 - Git Bash để chạy toàn bộ lệnh trong hướng dẫn; các khối script Python được truyền qua Bash heredoc và chạy bằng `uv run python -`.
@@ -92,10 +93,11 @@ Trước khi nạp, khởi động database, API và đúng một worker theo c�
 
 ### Nạp `data/faq.json` — mỗi FAQ là một tài liệu
 
-Script đọc JSON, tạo Markdown trong bộ nhớ và upload riêng từng FAQ qua `POST /api/v1/knowledge/documents`. Trường `source_name` được dùng làm `title` trong metadata và heading Markdown, nên phần nguồn tham khảo tự động hiển thị tên nguồn thay vì mã FAQ/câu hỏi. Tên nguồn được bỏ khoảng trắng ở hai đầu, phải có từ 1 đến 500 ký tự; script dừng nếu không hợp lệ thay vì cắt mất tên nguồn. FAQ ID, category, câu hỏi, câu trả lời, phạm vi, URL nguồn chính, nguồn bổ sung, ngày cập nhật và disclaimer vẫn được giữ trong nội dung; `source_url` và `last_updated` vẫn được gửi trong metadata. API hiện không có metadata riêng cho FAQ ID/category. Script đang đặt `LIMIT = None` để nạp toàn bộ; đổi thành `LIMIT = 1` nếu muốn thử FAQ đầu tiên. Không cần tạo các file trung gian.
+Script đọc JSON, tạo Markdown trong bộ nhớ và upload riêng từng FAQ qua `POST /api/v1/knowledge/documents`. Trường `source_name` được dùng làm `title` trong metadata và heading Markdown, nên phần nguồn tham khảo tự động hiển thị tên nguồn thay vì mã FAQ/câu hỏi. Tên nguồn được bỏ khoảng trắng ở hai đầu, phải có từ 1 đến 500 ký tự; script dừng nếu không hợp lệ thay vì cắt mất tên nguồn. FAQ ID, category, câu hỏi, câu trả lời, phạm vi, URL nguồn chính, nguồn bổ sung, ngày cập nhật và disclaimer vẫn được giữ trong nội dung; `source_url` và `last_updated` vẫn được gửi trong metadata. API hiện không có metadata riêng cho FAQ ID/category. Script đang đặt `LIMIT = None` để nạp toàn bộ; đổi thành `LIMIT = 1` nếu muốn thử FAQ đầu tiên.
 
-```bash
-uv run python - <<'PY'
+Tạo file `scripts/ingest_faq.py` (tạo thư mục `scripts/` nếu chưa có) với nội dung sau. Sau khi lưu file, chạy lệnh ở cuối khối từ thư mục `ai_service/`.
+
+```python
 import json
 from datetime import datetime
 from pathlib import Path
@@ -104,12 +106,14 @@ from uuid import NAMESPACE_URL, uuid5
 import httpx
 
 BASE_URL = "http://127.0.0.1:8001"
-REVIEWED_BY = "admin1"
 REVIEWED_AT = datetime.now().astimezone().isoformat()
 LIMIT = None
 
-if "TEN_NGUOI_" in REVIEWED_BY or "THAY_BANG_" in REVIEWED_AT:
-    raise SystemExit("Hãy điền thông tin review thực tế trước khi nạp.")
+while True:
+    REVIEWED_BY = input("Nhập tên người review tài liệu: ").strip()
+    if REVIEWED_BY:
+        break
+    print("Tên không được để trống; hãy nhập tên người review.")
 reviewed_at = datetime.fromisoformat(REVIEWED_AT)
 if reviewed_at.tzinfo is None or reviewed_at.utcoffset() is None:
     raise SystemExit("REVIEWED_AT phải có múi giờ, ví dụ +07:00 hoặc Z.")
@@ -159,7 +163,12 @@ with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
             raise SystemExit(f"{faq_id}: HTTP {response.status_code}\n{response.text}")
         result = response.json()
         print(f"{faq_id}: document_id={result['document_id']} status={result['ingestion_status']}")
-PY
+```
+
+Chạy từ thư mục `ai_service/`:
+
+```bash
+uv run python scripts/ingest_faq.py
 ```
 
 `logical_document_id = uuid5(NAMESPACE_URL, faq_id)` là UUID ổn định với đầu vào tên chỉ là ID trong JSON (ví dụ `FAQ-01`). UUID v5 vẫn cần namespace cố định `NAMESPACE_URL`; giữ nguyên namespace và FAQ ID để các lần nạp sau nhận diện cùng tài liệu logic. Không dùng lại một FAQ ID cho nội dung độc lập ở bộ dữ liệu khác khi dùng cùng namespace. `document_id` là UUID riêng do API tạo cho từng phiên bản, không phải chuỗi `FAQ-01`. Các FAQ khác ID có thể có cùng `title`; title không phải khóa định danh và các mục nguồn vẫn được nhóm theo `document_id`.
@@ -168,10 +177,11 @@ Với cùng công thức UUID, nạp lại cùng nội dung và metadata sẽ nh
 
 ### Nạp `docs/quy-trinh-vay.md` — một tài liệu Markdown
 
-Tài liệu quy trình liên tục nên giữ thành một tài liệu; worker tự chia theo heading và giới hạn token. Vì đây là tài liệu tổng hợp nhiều nguồn, không gán URL của riêng một ngân hàng làm `source_url` chung; các liên kết nguồn vẫn được giữ trong nội dung. Điền cùng metadata review thực tế như trên:
+Tài liệu quy trình liên tục nên giữ thành một tài liệu; worker tự chia theo heading và giới hạn token. Vì đây là tài liệu tổng hợp nhiều nguồn, không gán URL của riêng một ngân hàng làm `source_url` chung; các liên kết nguồn vẫn được giữ trong nội dung.
 
-```bash
-uv run python - <<'PY'
+Tạo file `scripts/ingest_loan_process.py` với nội dung sau. Sau khi lưu file, chạy lệnh ở cuối khối từ thư mục `ai_service/`.
+
+```python
 import json
 from datetime import datetime
 from pathlib import Path
@@ -181,11 +191,13 @@ import httpx
 
 BASE_URL = "http://127.0.0.1:8001"
 SOURCE = Path("../docs/quy-trinh-vay.md")
-REVIEWED_BY = "admin1"
 REVIEWED_AT = datetime.now().astimezone().isoformat()
 
-if "TEN_NGUOI_" in REVIEWED_BY or "THAY_BANG_" in REVIEWED_AT:
-    raise SystemExit("Hãy điền thông tin review thực tế trước khi nạp.")
+while True:
+    REVIEWED_BY = input("Nhập tên người review tài liệu: ").strip()
+    if REVIEWED_BY:
+        break
+    print("Tên không được để trống; hãy nhập tên người review.")
 reviewed_at = datetime.fromisoformat(REVIEWED_AT)
 if reviewed_at.tzinfo is None or reviewed_at.utcoffset() is None:
     raise SystemExit("REVIEWED_AT phải có múi giờ, ví dụ +07:00 hoặc Z.")
@@ -217,9 +229,14 @@ with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
         files={"file": (SOURCE.name, content, "text/markdown")},
     )
     if response.is_error:
-        raise SystemExit(f"HTTP {response.status_code}\\n{response.text}")
+        raise SystemExit(f"HTTP {response.status_code}\n{response.text}")
     print(json.dumps(response.json(), ensure_ascii=False, indent=2))
-PY
+```
+
+Chạy từ thư mục `ai_service/`:
+
+```bash
+uv run python scripts/ingest_loan_process.py
 ```
 
 ### Theo dõi ingestion và kiểm tra câu trả lời
@@ -231,7 +248,7 @@ document_id="UUID_NHAN_DUOC_TU_RESPONSE"
 curl -sS "http://127.0.0.1:8001/api/v1/knowledge/documents/${document_id}"
 ```
 
-Nếu trạng thái `failed` hoặc `queued` kéo dài, xem log worker/provider bằng `docker compose logs --tail 100 worker`. Khi đã `published`, thử câu hỏi tương ứng với FAQ và từng bước trong quy trình vay; kiểm tra câu trả lời bám bằng chứng, trích đúng nguồn và không gộp điều kiện giữa các ngân hàng. Disclaimer được giữ trong FAQ nhưng không đảm bảo mọi câu trả lời sẽ hiển thị disclaimer; kiểm thử hành vi đó riêng. `published` xác nhận ingestion hoàn tất, không tự chứng minh chất lượng retrieval.
+Nếu trạng thái `failed` hoặc `queued` kéo dài, xem log worker/provider bằng `docker compose logs --tail 100 worker`. Khi đã `published`, thử câu hỏi tương ứng với FAQ và từng bước trong quy trình vay; kiểm tra câu trả lời bám bằng chứng, trích đúng nguồn và không gộp điều kiện giữa các ngân hàng. Disclaimer được giữ trong nội dung FAQ; với câu trả lời retrieval có gọi model, prompt yêu cầu model tự viết một câu disclaimer ngắn trước footer nguồn. Đây là hướng dẫn prompt, không phải bảo đảm được kiểm tra ở runtime; greeting, câu trả lời xác định và phản hồi khi thiếu bằng chứng không có disclaimer model. `published` xác nhận ingestion hoàn tất, không tự chứng minh chất lượng retrieval.
 
 ## 6. Thử chat streaming bằng curl
 
@@ -279,7 +296,7 @@ Chat request yêu cầu `client_request_id` UUID và `text` từ 1–4000 ký t�
 ## Giới hạn và lưu ý bảo mật
 
 - Đây là demo, chưa phải hệ thống tư vấn tín dụng/duyệt vay. Có mô phỏng trả góp niên kim lãi suất cố định qua backend; không có đánh giá khả năng chi trả hoặc endpoint phê duyệt vay trong AI service. Không coi nội dung chatbot là báo giá, lãi suất hiện hành hoặc cam kết duyệt vay.
-- Demo không có xác thực/ủy quyền cho API hội thoại hoặc upload. Không mở cổng ra Internet, không đưa dữ liệu khách hàng thật lên môi trường chia sẻ và chỉ cho người vận hành đáng tin dùng endpoint upload. CORS cho phép origin frontend local, nhưng CORS không phải cơ chế xác thực.
+- Demo không có xác thực/ủy quyền cho API hội thoại, upload hoặc endpoint `PATCH /api/v1/knowledge/documents/{document_id}/activation` để bật/tắt tài liệu tri thức. Không mở cổng ra Internet, không đưa dữ liệu khách hàng thật lên môi trường chia sẻ và chỉ cho người vận hành đáng tin dùng endpoint upload hoặc bật/tắt tài liệu. CORS cho phép origin frontend local, nhưng CORS không phải cơ chế xác thực.
 - Nội dung hội thoại được mã hóa AES-256-GCM bằng `DATA_ENCRYPTION_KEY_BASE64`; hãy bảo vệ và sao lưu khóa an toàn. Mất khóa đồng nghĩa không đọc được payload đã mã hóa. Không đặt khóa thật trong git, log, issue hoặc lệnh shell được chia sẻ.
 - FAQ demo phải được đối chiếu với nguồn gốc và tình trạng hiệu lực trước khi đánh dấu verified. Tài liệu không được review không nên upload dưới dạng tài liệu đã duyệt; câu trả lời retrieval chỉ nên căn cứ vào nguồn đã được nạp/duyệt. API/provider vẫn có thể lỗi hoặc dữ liệu có thể cũ.
 - Snapshot lưu trong `ai_service/data/snapshots/`; PostgreSQL lưu metadata, chunks/vector và trạng thái. Docker volume database giữ dữ liệu qua lần dừng container. Demo không cấu hình backup, quản lý secret, xoay khóa hay quy trình xóa an toàn cho production.

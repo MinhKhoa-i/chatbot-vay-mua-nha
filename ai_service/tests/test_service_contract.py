@@ -64,4 +64,6 @@ def test_greeting_does_not_advertise_unimplemented_calculations():
     assert "cung cấp và xác nhận" in greeting
     assert "không phải đánh giá khả năng vay theo thu nhập" in greeting
     assert "Không tự tính tiền trả nợ" in system
+    assert "kết thúc bằng một câu disclaimer ngắn do bạn viết" in system
+    assert "không cần disclaimer này" in system
     assert "công cụ tính toán chưa được tích hợp" not in greeting

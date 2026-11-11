@@ -238,8 +238,9 @@ Prompt gồm instruction cố định, nhiệm vụ hiện tại, lịch sử gi
 3. Trích dẫn đặt cạnh phát biểu quan trọng, đặc biệt với số liệu/phí/lãi suất.
 4. Mốc hiệu lực hoặc thời điểm xác minh khi phù hợp.
 5. Câu hỏi tiếp theo nếu cần.
+6. Một câu disclaimer ngắn do model viết, sau nội dung trả lời; xác nhận thông tin chỉ mang tính tham khảo và khuyến nghị hỏi ngân hàng khi phù hợp.
 
-Không chỉ nối danh sách tất cả nguồn retrieval vào cuối rồi coi là đã kiểm chứng. Cần lưu document/chunk IDs thực sự hỗ trợ câu trả lời; chỉ hiển thị URL được lấy từ metadata đáng tin cậy. Kiểm tra citation ID tồn tại chưa đủ chứng minh entailment; phát biểu quan trọng cần đối chiếu nội dung và được đánh giá bằng bộ test/người review.
+Trong implementation hiện tại của `ai_service`, prompt yêu cầu model thêm disclaimer trong cùng lượt trả lời, còn hệ thống quản lý nhãn citation và nối footer “Nguồn tham khảo” phía sau toàn bộ output model. Sự hiện diện của disclaimer hiện chưa được kiểm tra cấu trúc ở runtime nên đây là hướng dẫn prompt, không phải bảo đảm tuyệt đối. Không chỉ nối danh sách tất cả nguồn retrieval vào cuối rồi coi là đã kiểm chứng. Cần lưu document/chunk IDs thực sự hỗ trợ câu trả lời; chỉ hiển thị URL được lấy từ metadata đáng tin cậy. Kiểm tra citation ID tồn tại chưa đủ chứng minh entailment; phát biểu quan trọng cần đối chiếu nội dung và được đánh giá bằng bộ test/người review.
 
 Với nội dung số liệu sản phẩm hoặc pháp lý nhạy cảm, đề xuất **buffer toàn bộ câu trả lời để kiểm tra trước khi phát nội dung**. Streaming trực tiếp phù hợp hơn với nội dung rủi ro thấp; không thể thu hồi điều người dùng đã đọc chỉ bằng việc gửi lỗi sau đó. Kiểm tra nguồn lần nữa trước khi hoàn tất turn nếu document có thể bị thu hồi trong khi model đang trả lời.
 

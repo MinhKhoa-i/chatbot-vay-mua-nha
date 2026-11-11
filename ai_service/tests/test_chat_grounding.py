@@ -141,16 +141,88 @@ def test_unavailable_retrieval_fails_closed(retrieval, code):
     assert "private details" not in str(caught.value)
 
 
-def test_grounded_response_receives_sources_and_appends_only_cited_sources(grounded_context):
-    completion = FakeCompletion("Tài liệu đã duyệt nêu mức 8%. [1]")
+def test_grounded_response_places_model_disclaimer_before_system_source_footer(grounded_context):
+    model_answer = (
+        "Tài liệu đã duyệt nêu mức 8%. [1]\n\n"
+        "Lưu ý: Thông tin chỉ mang tính tham khảo; bạn nên xác nhận điều kiện áp dụng trực tiếp với ngân hàng."
+    )
+    completion = FakeCompletion(model_answer)
     retrieval = FakeRetrieval(grounded_context)
     events, repository = execute(completion, retrieval, "Chào bạn, lãi suất bao nhiêu?")
+
     assert completion.calls == 1
     assert len(retrieval.queries) == 1
     assert "Tài liệu nêu mức 8%." in completion.knowledge_context
-    assert "Nguồn tham khảo: [1] Lãi suất chính thức — https://bank.example/rates" in repository.committed_answer
+    assert repository.committed_answer == (
+        model_answer + "\n\nNguồn tham khảo: [1] Lãi suất chính thức — https://bank.example/rates"
+    )
     assert any(event.event == "delta" and "Nguồn tham khảo" in event.data.get("text", "") for event in events)
     assert "".join(event.data["text"] for event in events if event.event == "delta") == repository.committed_answer
+
+
+def test_retrieval_guidance_requires_model_generated_disclaimer_before_footer():
+    from app.domain.ports.prompt_catalog import PromptName
+
+    guidance = get_prompt_catalog().get(PromptName.RETRIEVAL_GUIDANCE)
+    assert "một câu disclaimer ngắn" in guidance
+    assert "Lưu ý:" in guidance
+    assert "trước phần nguồn tham khảo do ứng dụng nối thêm" in guidance
+    assert "không tự tạo danh mục nguồn" in guidance
+
+
+def test_general_reply_does_not_receive_retrieval_disclaimer_or_source_footer():
+    completion = FakeCompletion("A friendly answer")
+    events, repository = execute(
+        completion, FakeRetrieval(), "Xin chào", intent=ChatIntent.GENERAL,
+    )
+
+    assert repository.committed_answer.startswith("Xin chào!")
+    assert "Lưu ý:" not in repository.committed_answer
+    assert "Nguồn tham khảo:" not in repository.committed_answer
+    assert completion.calls == 0
+    assert [event.event for event in events] == ["delta", "done"]
+
+
+def test_no_evidence_reply_does_not_receive_model_disclaimer_or_footer():
+    completion = FakeCompletion()
+    events, repository = execute(completion, FakeRetrieval(), "Hồ sơ vay cần gì?")
+
+    assert "chưa tìm thấy tài liệu đã được duyệt" in repository.committed_answer
+    assert "Lưu ý:" not in repository.committed_answer
+    assert "Nguồn tham khảo:" not in repository.committed_answer
+    assert completion.calls == 0
+    assert [event.event for event in events] == ["delta", "done"]
+
+
+def test_deterministic_estimate_reply_does_not_receive_retrieval_disclaimer_or_footer(grounded_context):
+    class EstimateStub:
+        async def execute(self, text, session):
+            from types import SimpleNamespace
+            return SimpleNamespace(handled=True, answer="Ước tính trả góp: 10 triệu đồng.", session=session, result=None)
+
+    repository = FakeRepository()
+    request = ChatRequest(uuid4(), uuid4(), "Tính khoản vay", None)
+    events = asyncio.run(collect(StreamChatUseCase(
+        FakeCompletion(), repository, prompts=get_prompt_catalog(),
+        retrieval=FakeRetrieval(grounded_context), classifier=StubIntentClassifier(ChatIntent.ESTIMATE),
+        estimate=EstimateStub(),
+    ).execute(request)))
+
+    assert repository.committed_answer == "Ước tính trả góp: 10 triệu đồng."
+    assert "Lưu ý:" not in repository.committed_answer
+    assert "Nguồn tham khảo:" not in repository.committed_answer
+    assert [event.event for event in events] == ["delta", "done"]
+    assert events[-1].data["reply"] == repository.committed_answer
+
+
+def test_disclaimerless_model_answer_is_not_rewritten_by_the_application(grounded_context):
+    model_answer = "Tài liệu đã duyệt nêu mức 8%. [1]"
+    _, repository = execute(FakeCompletion(model_answer), FakeRetrieval(grounded_context), "Lãi suất?")
+
+    # The app owns citation metadata/footer only; disclaimer generation is best-effort prompt behavior.
+    assert repository.committed_answer.startswith(model_answer)
+    assert "Nguồn tham khảo:" in repository.committed_answer
+    assert "Lưu ý:" not in repository.committed_answer
 
 
 def test_grounded_response_omits_uncited_sources_from_footer(grounded_context):
