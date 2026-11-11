@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "updated_at": "2026-10-31",
-  "description": "Dữ liệu mẫu chuẩn hóa về các sản phẩm vay mua nhà tại 3 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank)",
+  "version": "1.1.0",
+  "updated_at": "2026-11-11",
+  "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB)",
   "banks": [
     {
       "id": "vietcombank",
@@ -81,7 +81,7 @@
         ]
       },
       "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-10-31",
+      "last_updated": "2026-11-11",
       "disclaimer": "Thông tin chỉ mang tính tham khảo. Lãi suất, hạn mức và điều kiện phê duyệt chính thức căn cứ theo thông báo phê duyệt tín dụng của Vietcombank tại thời điểm giải ngân."
     },
     {
@@ -162,7 +162,7 @@
         ]
       },
       "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-10-31",
+      "last_updated": "2026-11-11",
       "disclaimer": "Thông tin chỉ mang tính tham khảo. Điều kiện phê duyệt, lãi suất và hạn mức thực tế căn cứ theo quyết định cấp tín dụng của BIDV."
     },
     {
@@ -246,8 +246,306 @@
         ]
       },
       "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-10-31",
+      "last_updated": "2026-11-11",
       "disclaimer": "Thông tin chỉ mang tính tham khảo. Mức lãi suất khởi điểm 'chỉ từ 3.99%' và tỷ lệ cho vay phụ thuộc vào kết quả phê duyệt tín dụng của Techcombank cho từng khách hàng."
+    },
+    {
+      "id": "vietinbank",
+      "code": "CTG",
+      "name": "Ngân hàng TMCP Công Thương Việt Nam",
+      "short_name": "VietinBank",
+      "logo_url": null,
+      "website": "https://www.vietinbank.vn",
+      "source_url": "https://www.vietinbank.vn/ca-nhan/san-pham-dich-vu/cho-vay/cho-vay-nhan-quyen-su-dung-dat-mua-xay-dung-sua-chua-nha-va-hoac-cong-trinh-xay-dung-30-html",
+      "package_name": "Cho vay nhận quyền sử dụng đất, mua, xây dựng, sửa chữa nhà và/hoặc công trình xây dựng",
+      "interest_rate": {
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
+        "reference_rate_type": "Lãi suất theo quy định của VietinBank tại từng thời kỳ",
+        "adjustment_frequency_months": 3,
+        "rate_options": []
+      },
+      "promotions": {
+        "summary": "Hỗ trợ vay vốn lên đến 100% nhu cầu vốn, thời hạn cho vay linh hoạt đối với từng mục đích lên tới 35 năm, ân hạn nợ gốc đến 12 tháng",
+        "grace_period_months": 12,
+        "early_repayment_penalty": {
+          "description": "Áp dụng theo biểu phí hiện hành của VietinBank tại từng thời kỳ (chi tiết liên hệ chi nhánh giải ngân)",
+          "tiers": []
+        },
+        "special_offers": [
+          "Miễn phí phát hành thẻ ghi nợ và thẻ tín dụng VietinBank",
+          "Miễn phí chuyển khoản trên ứng dụng VietinBank iPay",
+          "Ưu đãi lãi suất tiền gửi cho khách hàng thân thiết"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 70.0,
+        "max_ltv_note": "Tối đa 70% giá trị tài sản bảo đảm là chính bất động sản mua; lên đến 100% nhu cầu vốn nếu có thêm tài sản bảo đảm độc lập bổ sung",
+        "max_loan_term_years": 35,
+        "min_loan_term_years": 3,
+        "max_loan_amount": null,
+        "min_loan_amount": 100000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 70,
+        "borrower_scope": "Công dân Việt Nam từ đủ 18 tuổi đến không quá 70 tuổi tại thời điểm kết thúc thời hạn vay",
+        "min_monthly_income": 10000000,
+        "accepted_collateral": [
+          "Bất động sản có Giấy chứng nhận quyền sử dụng đất, quyền sở hữu nhà ở",
+          "Nhà ở hình thành trong tương lai tại các dự án có liên kết hoặc bảo lãnh của ngân hàng",
+          "Số dư tiền gửi tiết kiệm, giấy tờ có giá do VietinBank phát hành"
+        ],
+        "processing_time_days": "3 - 5 ngày làm việc kể từ khi nhận đủ hồ sơ",
+        "general_requirements": [
+          "Có năng lực pháp luật dân sự và năng lực hành vi dân sự đầy đủ",
+          "Có thu nhập thường xuyên ổn định đảm bảo khả năng trả nợ gốc và lãi",
+          "Không có nợ xấu tại các tổ chức tín dụng tại thời điểm vay vốn",
+          "Có vốn tự có tham gia thực hiện phương án theo quy định"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-11-11",
+      "disclaimer": "Thông tin về hạn mức (tối đa 100% nhu cầu vốn) và thời hạn vay (tối đa 35 năm) trích dẫn từ trang sản phẩm chính thức của VietinBank. Trang không công bố lãi suất ưu đãi, biên độ thả nổi và biểu bậc phạt trước hạn nên các trường này để null/rỗng; thông tin cụ thể áp dụng theo phê duyệt tín dụng của VietinBank."
+    },
+    {
+      "id": "agribank",
+      "code": "VBA",
+      "name": "Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam",
+      "short_name": "Agribank",
+      "logo_url": null,
+      "website": "https://www.agribank.com.vn",
+      "source_url": "https://www.agribank.com.vn/vn/ca-nhan/san-pham-dich-vu/vay-von-agribank/vay-nha-o-thuong-mai",
+      "package_name": "Vay mua nhà ở thương mại",
+      "interest_rate": {
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
+        "reference_rate_type": "Lãi suất theo các gói tín dụng ưu đãi từng thời kỳ của Agribank",
+        "adjustment_frequency_months": 6,
+        "rate_options": []
+      },
+      "promotions": {
+        "summary": "Đáp ứng nhu cầu vay vốn mua nhà ở thương mại, số tiền cho vay tối đa 100% giá trị hợp đồng/phương án, thời hạn vay lên đến 35 năm, trả nợ linh hoạt",
+        "grace_period_months": 12,
+        "early_repayment_penalty": {
+          "description": "Áp dụng theo biểu phí hiện hành của Agribank tại từng thời kỳ",
+          "tiers": []
+        },
+        "special_offers": [
+          "Hỗ trợ mở tài khoản thanh toán và dịch vụ Agribank E-Mobile Banking miễn phí",
+          "Thủ tục đơn giản, tiếp cận dễ dàng tại hơn 2.300 điểm giao dịch toàn quốc"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 70.0,
+        "max_ltv_note": "Mức cho vay phổ biến 70% giá trị tài sản bảo đảm là chính căn nhà mua; có thể hỗ trợ tối đa đến 100% giá trị HĐMB/phương án nếu có tài sản bảo đảm hợp pháp bổ sung",
+        "max_loan_term_years": 35,
+        "min_loan_term_years": 3,
+        "max_loan_amount": null,
+        "min_loan_amount": 50000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 65,
+        "borrower_scope": "Khách hàng cá nhân mua nhà ở thương mại thuộc dự án đầu tư xây dựng nhà ở trong hệ thống Agribank",
+        "min_monthly_income": 8000000,
+        "accepted_collateral": [
+          "Quyền sử dụng đất, nhà ở và tài sản gắn liền với đất có đầy đủ giấy tờ hợp pháp (có thể sử dụng chính căn nhà mua làm tài sản đảm bảo)",
+          "Sổ tiết kiệm, giấy tờ có giá do Agribank hoặc tổ chức tín dụng uy tín phát hành"
+        ],
+        "processing_time_days": "3 - 5 ngày làm việc",
+        "general_requirements": [
+          "Có mục đích sử dụng vốn vay hợp pháp, rõ ràng",
+          "Có nguồn thu nhập ổn định bảo đảm khả năng thanh toán nợ vay đúng hạn",
+          "Không có nợ xấu tại Agribank và các tổ chức tín dụng khác"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-11-11",
+      "disclaimer": "Thông tin về thời hạn vay (tối đa 35 năm) trích dẫn từ trang sản phẩm Vay mua nhà ở thương mại của Agribank. Trang không niêm yết mức lãi suất ưu đãi cụ thể, biên độ và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng; lãi suất áp dụng theo gói tín dụng từng thời kỳ tại chi nhánh Agribank."
+    },
+    {
+      "id": "mbbank",
+      "code": "MB",
+      "name": "Ngân hàng TMCP Quân Đội",
+      "short_name": "MB Bank",
+      "logo_url": null,
+      "website": "https://www.mbbank.com.vn",
+      "source_url": "https://www.mbbank.com.vn/26/36/san-pham/cho-vay",
+      "package_name": "Cho vay mua nhà đất, căn hộ dự án (Gói MB Dream Home)",
+      "interest_rate": {
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
+        "reference_rate_type": "Lãi suất cơ sở MB áp dụng cho khách hàng cá nhân",
+        "adjustment_frequency_months": 3,
+        "rate_options": []
+      },
+      "promotions": {
+        "summary": "Gói MB Dream Home cho vay đến 80% giá trị TSBĐ, thời hạn lên đến 35 năm, hỗ trợ chính sách miễn trả nợ gốc giai đoạn đầu",
+        "grace_period_months": 24,
+        "early_repayment_penalty": {
+          "description": "Áp dụng theo biểu phí tín dụng hiện hành của MB tại từng thời kỳ",
+          "tiers": []
+        },
+        "special_offers": [
+          "Mở tài khoản số đẹp miễn phí theo số điện thoại hoặc tứ quý",
+          "Tặng thẻ tín dụng MB Visa/Mastercard hạn mức hấp dẫn",
+          "Đăng ký và quản lý khoản vay trực tuyến trên App MBBank"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 80.0,
+        "max_ltv_note": "Tối đa 80% giá trị tài sản bảo đảm thẩm định theo các gói vay mua nhà của MB",
+        "max_loan_term_years": 30,
+        "min_loan_term_years": 3,
+        "max_loan_amount": null,
+        "min_loan_amount": 100000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 70,
+        "borrower_scope": "Khách hàng cá nhân là công dân Việt Nam từ đủ 18 tuổi và không quá 70 tuổi khi hết hạn khoản vay",
+        "min_monthly_income": 10000000,
+        "accepted_collateral": [
+          "Nhà đất, căn hộ có Giấy chứng nhận quyền sở hữu hợp pháp",
+          "Quyền tài sản phát sinh từ Hợp đồng mua bán căn hộ/nhà ở tại các dự án hợp tác",
+          "Giấy tờ có giá, số dư tiền gửi tại MB"
+        ],
+        "processing_time_days": "Phê duyệt sơ bộ trong vòng 24 - 48 giờ làm việc",
+        "general_requirements": [
+          "Thu nhập thường xuyên ổn định từ lương, sản xuất kinh doanh hoặc cho thuê tài sản",
+          "Lịch sử tín dụng CIC tốt, không có nợ quá hạn hoặc nợ xấu",
+          "Vốn tự có tham gia tối thiểu 20% giá trị bất động sản mua"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-11-11",
+      "disclaimer": "Trang danh mục sản phẩm cho vay của MB Bank không niêm yết cụ thể lãi suất ưu đãi, biên độ thả nổi và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng. Lãi suất, hạn mức và thời hạn vay thực tế căn cứ theo thông báo phê duyệt tín dụng của MB."
+    },
+    {
+      "id": "vpbank",
+      "code": "VPB",
+      "name": "Ngân hàng TMCP Việt Nam Thịnh Vượng",
+      "short_name": "VPBank",
+      "logo_url": null,
+      "website": "https://www.vpbank.com.vn",
+      "source_url": "https://www.vpbank.com.vn/ca-nhan/vay/vay-mua-nha",
+      "package_name": "Vay mua nhà đất, căn hộ",
+      "interest_rate": {
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
+        "reference_rate_type": "Lãi suất cơ sở VPBank áp dụng cho khoản vay thế chấp bất động sản",
+        "adjustment_frequency_months": 3,
+        "rate_options": []
+      },
+      "promotions": {
+        "summary": "Trang sản phẩm công bố lãi suất ưu đãi chỉ từ 4.6%, duyệt vay cấp tốc 5 phút, vay lên đến 80% giá trị căn nhà, thời gian vay linh hoạt từ 25 đến 35 năm",
+        "grace_period_months": 12,
+        "early_repayment_penalty": {
+          "description": "Áp dụng theo biểu phí hiện hành của VPBank tại từng thời kỳ",
+          "tiers": []
+        },
+        "special_offers": [
+          "Duyệt vay cấp tốc chỉ trong 5 phút",
+          "Hỗ trợ định giá tài sản trực tuyến nhanh qua nền tảng VPBank NEO",
+          "Miễn phí phát hành thẻ tín dụng VPBank kèm hoàn tiền hấp dẫn"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 80.0,
+        "max_ltv_note": "Vay số tiền lên đến 80% giá trị căn nhà theo công bố trên trang sản phẩm VPBank",
+        "max_loan_term_years": 35,
+        "min_loan_term_years": 25,
+        "max_loan_amount": null,
+        "min_loan_amount": 100000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 70,
+        "borrower_scope": "Công dân Việt Nam từ đủ 18 tuổi đến không quá 70 tuổi tại thời điểm tất toán khoản vay",
+        "min_monthly_income": 10000000,
+        "accepted_collateral": [
+          "Bất động sản có Giấy chứng nhận quyền sở hữu nhà ở và quyền sử dụng đất ở",
+          "Căn hộ chung cư, nhà phố hình thành từ vốn vay tại dự án liên kết với VPBank",
+          "Tài sản bảo đảm của bên thứ ba là bố mẹ, con cái, vợ chồng"
+        ],
+        "processing_time_days": "Duyệt vay cấp tốc chỉ trong 5 phút",
+        "general_requirements": [
+          "Có phương án vay vốn khả thi và mục đích vay tiêu dùng nhà ở hợp pháp",
+          "Tổng thu nhập hộ gia đình đảm bảo khả năng trả nợ gốc và lãi hàng tháng",
+          "Không có nợ xấu tại CIC tại thời điểm nộp hồ sơ"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-11-11",
+      "disclaimer": "Thông tin về tỷ lệ cho vay (lên đến 80% giá trị căn nhà) và thời hạn vay (từ 25 đến 35 năm) trích dẫn trực tiếp từ trang sản phẩm của VPBank. Trang có nêu 'Lãi suất ưu đãi chỉ từ 4.6%' nhưng không công bố số tháng ưu đãi cụ thể và biên độ thả nổi nên các trường lãi suất được để null để đảm bảo tính chính xác và nhất quán với bộ tính toán; thông tin chi tiết phụ thuộc phê duyệt tín dụng của VPBank."
+    },
+    {
+      "id": "acb",
+      "code": "ACB",
+      "name": "Ngân hàng TMCP Á Châu",
+      "short_name": "ACB",
+      "logo_url": null,
+      "website": "https://acb.com.vn",
+      "source_url": "https://acb.com.vn/vay-von/vay-mua-nha-dat",
+      "package_name": "Vay Mua Nhà Đất",
+      "interest_rate": {
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
+        "reference_rate_type": "Lãi suất cơ sở ACB kỳ hạn 12 tháng áp dụng cho vay cá nhân",
+        "adjustment_frequency_months": 3,
+        "rate_options": []
+      },
+      "promotions": {
+        "summary": "Hỗ trợ nguồn vốn cho các nhu cầu mua hoặc nhận chuyển nhượng nhà ở, đất ở, ân hạn trả vốn vay lên đến 01 năm, lãi trả hàng tháng, vốn trả định kỳ linh hoạt theo dòng tiền",
+        "grace_period_months": 12,
+        "early_repayment_penalty": {
+          "description": "Chính sách trả nợ trước hạn linh hoạt theo quy định biểu phí của ACB, ưu đãi phí khi trả định kỳ hàng tháng",
+          "tiers": []
+        },
+        "special_offers": [
+          "Miễn phí chuyển khoản trọn đời trên ACB ONE",
+          "Phương thức trả nợ linh hoạt: định kỳ hàng tháng hoặc <= 6 tháng/lần theo góp đều hoặc góp bậc thang (tăng 10-20%/năm)",
+          "Ân hạn trả vốn vay lên đến 01 năm"
+        ]
+      },
+      "loan_limit": {
+        "max_ltv_percent": 80.0,
+        "max_ltv_note": "Số tiền vay theo giá trị nhà đất mua và giá trị tài sản thế chấp (thông thường tối đa 80% giá trị TSBĐ)",
+        "max_loan_term_years": 30,
+        "min_loan_term_years": 3,
+        "max_loan_amount": null,
+        "min_loan_amount": 100000000
+      },
+      "eligibility": {
+        "min_age": 18,
+        "max_age_at_loan_end": 65,
+        "borrower_scope": "Công dân Việt Nam, từ 18 tuổi trở lên",
+        "min_monthly_income": 10000000,
+        "accepted_collateral": [
+          "Bất động sản nhà ở, đất ở đã được cấp Giấy chứng nhận hợp pháp (nhà đất dự định mua hoặc nhà đất khác)",
+          "Sổ tiết kiệm, chứng chỉ tiền gửi do ACB phát hành"
+        ],
+        "processing_time_days": "3 - 5 ngày làm việc",
+        "general_requirements": [
+          "Có nguồn thu nhập ổn định và đủ khả năng trả nợ",
+          "Có tài sản thế chấp là nhà đất dự định mua hoặc nhà đất khác",
+          "Lịch sử tín dụng tốt, không có nợ xấu tại các tổ chức tín dụng"
+        ]
+      },
+      "repayment_methods": ["reducing_balance", "annuity"],
+      "last_updated": "2026-11-11",
+      "disclaimer": "Thông tin về mục đích vay, chính sách trả gốc định kỳ linh hoạt và ân hạn gốc lên đến 01 năm trích dẫn trực tiếp từ trang sản phẩm Vay Mua Nhà Đất của ACB. Trang không công bố mức lãi suất ưu đãi cụ thể, biên độ và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng; lãi suất chính thức căn cứ phê duyệt của ACB."
     }
   ]
 }

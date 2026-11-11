@@ -40,10 +40,10 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
 ### 2.2. Nhóm Lãi suất (`interest_rate`)
 | Tên trường | Kiểu dữ liệu | Bắt buộc | Mô tả & Ý nghĩa nghiệp vụ | Ví dụ |
 |:---|:---:|:---:|:---|:---|
-| `promo_rate` | `number` | **Có** | Lãi suất ưu đãi tiêu chuẩn năm (%/năm) áp dụng trong kỳ đầu. | `5.2`, `6.8` |
-| `promo_duration_months` | `integer` | **Có** | Thời gian cố định lãi suất ưu đãi (số tháng). | `12`, `24` |
-| `floating_margin` | `number` | **Có** | Biên độ lãi suất cộng thêm sau khi hết thời gian ưu đãi (%/năm). | `3.5` |
-| `floating_rate_estimated` | `number` | Không | Mức lãi suất thả nổi ước tính hiện tại (%/năm = Lãi suất cơ sở + Biên độ). | `9.5`, `10.2` |
+| `promo_rate` | `number` hoặc `null` | **Có** (cho phép `null`) | Lãi suất ưu đãi tiêu chuẩn năm (%/năm) áp dụng trong kỳ đầu. Để `null` nếu trang nguồn không công bố. | `5.2`, `6.8`, `null` |
+| `promo_duration_months` | `integer` hoặc `null` | **Có** (cho phép `null`) | Thời gian cố định lãi suất ưu đãi (số tháng). Phải cùng có giá trị hoặc cùng `null` với `promo_rate`. | `12`, `24`, `null` |
+| `floating_margin` | `number` hoặc `null` | **Có** (cho phép `null`) | Biên độ lãi suất cộng thêm sau khi hết thời gian ưu đãi (%/năm). Để `null` nếu trang nguồn không công bố. | `3.5`, `null` |
+| `floating_rate_estimated` | `number` hoặc `null` | Không | Mức lãi suất thả nổi ước tính hiện tại (%/năm = Lãi suất cơ sở + Biên độ). | `9.5`, `10.2`, `null` |
 | `reference_rate_type` | `string` | **Có** | Tên loại lãi suất tham chiếu dùng để tính lãi suất thả nổi. | `"LSTK 12T trả sau"`, `"Lãi suất cơ sở Techcombank"` |
 | `adjustment_frequency_months` | `integer` | **Có** | Chu kỳ điều chỉnh lãi suất thả nổi (thường 3 hoặc 6 tháng). | `3`, `6` |
 | `rate_options` | `array[object]`| Không | Danh sách các phương án lựa chọn lãi suất ưu đãi khác nhau của gói vay. | Xem mục 2.2.1 |
@@ -158,10 +158,10 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
               "adjustment_frequency_months"
             ],
             "properties": {
-              "promo_rate": { "type": "number", "minimum": 0 },
-              "promo_duration_months": { "type": "integer", "minimum": 1 },
-              "floating_margin": { "type": "number", "minimum": 0 },
-              "floating_rate_estimated": { "type": "number" },
+              "promo_rate": { "type": ["number", "null"], "minimum": 0 },
+              "promo_duration_months": { "type": ["integer", "null"], "minimum": 1 },
+              "floating_margin": { "type": ["number", "null"], "minimum": 0 },
+              "floating_rate_estimated": { "type": ["number", "null"] },
               "reference_rate_type": { "type": "string" },
               "adjustment_frequency_months": { "type": "integer", "minimum": 1 },
               "rate_options": {
