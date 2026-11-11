@@ -45,4 +45,4 @@ pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-Gồm test hàm tính (`finance/test_calculator.py`) và test hợp đồng API (`tests/test_api.py`).
+Gồm test hàm tính (`tests/test_calculator.py`) và test hợp đồng API (`tests/test_api.py`).
