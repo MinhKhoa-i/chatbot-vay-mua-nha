@@ -75,10 +75,10 @@ BANK_SCHEMA: Dict[str, Any] = {
                             "adjustment_frequency_months",
                         ],
                         "properties": {
-                            "promo_rate": {"type": "number", "minimum": 0},
-                            "promo_duration_months": {"type": "integer", "minimum": 1},
-                            "floating_margin": {"type": "number", "minimum": 0},
-                            "floating_rate_estimated": {"type": "number"},
+                            "promo_rate": {"type": ["number", "null"], "minimum": 0},
+                            "promo_duration_months": {"type": ["integer", "null"], "minimum": 1},
+                            "floating_margin": {"type": ["number", "null"], "minimum": 0},
+                            "floating_rate_estimated": {"type": ["number", "null"]},
                             "reference_rate_type": {"type": "string"},
                             "adjustment_frequency_months": {"type": "integer", "minimum": 1},
                             "rate_options": {
@@ -279,18 +279,31 @@ def validate_business_rules(data: Dict[str, Any]) -> Tuple[List[str], List[str]]
         ir = bank.get("interest_rate", {})
         if isinstance(ir, dict):
             promo_rate = ir.get("promo_rate")
-            if promo_rate is None or not isinstance(promo_rate, (int, float)) or promo_rate < 0:
-                errors.append(f"{prefix} 'interest_rate.promo_rate' phải là số >= 0")
-            elif promo_rate > 20:
-                warnings.append(f"{prefix} Lãi suất ưu đãi {promo_rate}%/năm có vẻ cao bất thường (>20%)")
-
             promo_dur = ir.get("promo_duration_months")
-            if promo_dur is None or not isinstance(promo_dur, int) or promo_dur <= 0:
-                errors.append(f"{prefix} 'interest_rate.promo_duration_months' phải là số nguyên dương")
+
+            # Luật: promo_rate và promo_duration_months phải cùng có giá trị hoặc cùng null (phục vụ calculator.py)
+            if (promo_rate is None and promo_dur is not None) or (promo_rate is not None and promo_dur is None):
+                errors.append(
+                    f"{prefix} 'promo_rate' và 'promo_duration_months' phải cùng có giá trị hoặc cùng null"
+                )
+
+            if promo_rate is not None:
+                if not isinstance(promo_rate, (int, float)) or promo_rate < 0:
+                    errors.append(f"{prefix} 'interest_rate.promo_rate' phải là số >= 0 hoặc null")
+                elif promo_rate > 20:
+                    warnings.append(f"{prefix} Lãi suất ưu đãi {promo_rate}%/năm có vẻ cao bất thường (>20%)")
+
+            if promo_dur is not None:
+                if not isinstance(promo_dur, int) or promo_dur <= 0:
+                    errors.append(f"{prefix} 'interest_rate.promo_duration_months' phải là số nguyên dương hoặc null")
 
             margin = ir.get("floating_margin")
-            if margin is None or not isinstance(margin, (int, float)) or margin < 0:
-                errors.append(f"{prefix} 'interest_rate.floating_margin' phải là số >= 0")
+            if margin is not None and (not isinstance(margin, (int, float)) or margin < 0):
+                errors.append(f"{prefix} 'interest_rate.floating_margin' phải là số >= 0 hoặc null")
+
+            floating_est = ir.get("floating_rate_estimated")
+            if floating_est is not None and not isinstance(floating_est, (int, float)):
+                errors.append(f"{prefix} 'interest_rate.floating_rate_estimated' phải là số hoặc null")
         else:
             errors.append(f"{prefix} 'interest_rate' phải là object")
 
@@ -387,7 +400,10 @@ def check_banks_file(file_path: Path) -> bool:
     print("-" * 125)
     for idx, b in enumerate(banks, start=1):
         ir = b.get("interest_rate", {})
-        rate_str = f"{ir.get('promo_rate')}% ({ir.get('promo_duration_months')}T)"
+        if ir.get("promo_rate") is not None:
+            rate_str = f"{ir.get('promo_rate')}% ({ir.get('promo_duration_months')}T)"
+        else:
+            rate_str = "Chưa công bố"
         ltv_str = f"{b.get('loan_limit', {}).get('max_ltv_percent')}%"
         term_str = f"{b.get('loan_limit', {}).get('max_loan_term_years')} năm"
         source = b.get("source_url", "")

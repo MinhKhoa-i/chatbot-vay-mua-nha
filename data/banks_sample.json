@@ -259,11 +259,11 @@
       "source_url": "https://www.vietinbank.vn/ca-nhan/san-pham-dich-vu/cho-vay/cho-vay-nhan-quyen-su-dung-dat-mua-xay-dung-sua-chua-nha-va-hoac-cong-trinh-xay-dung-30-html",
       "package_name": "Cho vay nhận quyền sử dụng đất, mua, xây dựng, sửa chữa nhà và/hoặc công trình xây dựng",
       "interest_rate": {
-        "promo_rate": 5.8,
-        "promo_duration_months": 12,
-        "floating_margin": 3.5,
-        "floating_rate_estimated": 9.3,
-        "reference_rate_type": "Lãi suất tiền gửi tiết kiệm cá nhân 12 tháng trả sau của VietinBank",
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
+        "reference_rate_type": "Lãi suất theo quy định của VietinBank tại từng thời kỳ",
         "adjustment_frequency_months": 3,
         "rate_options": []
       },
@@ -281,8 +281,8 @@
         ]
       },
       "loan_limit": {
-        "max_ltv_percent": 100.0,
-        "max_ltv_note": "Hỗ trợ vay vốn lên đến 100% nhu cầu vốn theo phương án vay; trên giá trị định giá TSBĐ thông thường tối đa 70% - 80% tùy loại tài sản bảo đảm",
+        "max_ltv_percent": 70.0,
+        "max_ltv_note": "Tối đa 70% giá trị tài sản bảo đảm là chính bất động sản mua; lên đến 100% nhu cầu vốn nếu có thêm tài sản bảo đảm độc lập bổ sung",
         "max_loan_term_years": 35,
         "min_loan_term_years": 3,
         "max_loan_amount": null,
@@ -308,7 +308,7 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin mang tính tham khảo trích xuất từ trang sản phẩm chính thức của VietinBank. Trang sản phẩm không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất và hạn mức thực tế căn cứ quyết định phê duyệt tín dụng của VietinBank tại thời điểm giải ngân."
+      "disclaimer": "Thông tin về hạn mức (tối đa 100% nhu cầu vốn) và thời hạn vay (tối đa 35 năm) trích dẫn từ trang sản phẩm chính thức của VietinBank. Trang không công bố lãi suất ưu đãi, biên độ thả nổi và biểu bậc phạt trước hạn nên các trường này để null/rỗng; thông tin cụ thể áp dụng theo phê duyệt tín dụng của VietinBank."
     },
     {
       "id": "agribank",
@@ -320,11 +320,11 @@
       "source_url": "https://www.agribank.com.vn/vn/ca-nhan/san-pham-dich-vu/vay-von-agribank/vay-nha-o-thuong-mai",
       "package_name": "Vay mua nhà ở thương mại",
       "interest_rate": {
-        "promo_rate": 6.0,
-        "promo_duration_months": 12,
-        "floating_margin": 3.5,
-        "floating_rate_estimated": 9.5,
-        "reference_rate_type": "Lãi suất tiền gửi tiết kiệm 12 tháng trả sau của Agribank",
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
+        "reference_rate_type": "Lãi suất theo các gói tín dụng ưu đãi từng thời kỳ của Agribank",
         "adjustment_frequency_months": 6,
         "rate_options": []
       },
@@ -341,8 +341,8 @@
         ]
       },
       "loan_limit": {
-        "max_ltv_percent": 100.0,
-        "max_ltv_note": "Số tiền cho vay tối đa 100% giá trị hợp đồng chuyển nhượng/mua bán/phương án sử dụng vốn khi có tài sản bảo đảm hợp pháp",
+        "max_ltv_percent": 70.0,
+        "max_ltv_note": "Mức cho vay phổ biến 70% giá trị tài sản bảo đảm là chính căn nhà mua; có thể hỗ trợ tối đa đến 100% giá trị HĐMB/phương án nếu có tài sản bảo đảm hợp pháp bổ sung",
         "max_loan_term_years": 35,
         "min_loan_term_years": 3,
         "max_loan_amount": null,
@@ -366,7 +366,7 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin trích dẫn từ trang sản phẩm Vay mua nhà ở thương mại của Agribank (thời hạn tối đa 35 năm, số tiền vay tối đa 100% HĐMB). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất áp dụng theo các gói tín dụng ưu đãi từng thời kỳ của Agribank."
+      "disclaimer": "Thông tin về thời hạn vay (tối đa 35 năm) trích dẫn từ trang sản phẩm Vay mua nhà ở thương mại của Agribank. Trang không niêm yết mức lãi suất ưu đãi cụ thể, biên độ và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng; lãi suất áp dụng theo gói tín dụng từng thời kỳ tại chi nhánh Agribank."
     },
     {
       "id": "mbbank",
@@ -378,10 +378,10 @@
       "source_url": "https://www.mbbank.com.vn/26/36/san-pham/cho-vay",
       "package_name": "Cho vay mua nhà đất, căn hộ dự án (Gói MB Dream Home)",
       "interest_rate": {
-        "promo_rate": 6.5,
-        "promo_duration_months": 12,
-        "floating_margin": 3.6,
-        "floating_rate_estimated": 10.1,
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất cơ sở MB áp dụng cho khách hàng cá nhân",
         "adjustment_frequency_months": 3,
         "rate_options": []
@@ -401,8 +401,8 @@
       },
       "loan_limit": {
         "max_ltv_percent": 80.0,
-        "max_ltv_note": "Tối đa 80% giá trị tài sản bảo đảm thẩm định theo giá thị trường",
-        "max_loan_term_years": 35,
+        "max_ltv_note": "Tối đa 80% giá trị tài sản bảo đảm thẩm định theo các gói vay mua nhà của MB",
+        "max_loan_term_years": 30,
         "min_loan_term_years": 3,
         "max_loan_amount": null,
         "min_loan_amount": 100000000
@@ -426,7 +426,7 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin mang tính tham khảo từ trang danh mục cho vay của MB Bank và gói MB Dream Home (thời hạn đến 35 năm, LTV 80%). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất và phê duyệt chính thức căn cứ thông báo cấp tín dụng của MB."
+      "disclaimer": "Trang danh mục sản phẩm cho vay của MB Bank không niêm yết cụ thể lãi suất ưu đãi, biên độ thả nổi và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng. Lãi suất, hạn mức và thời hạn vay thực tế căn cứ theo thông báo phê duyệt tín dụng của MB."
     },
     {
       "id": "vpbank",
@@ -438,16 +438,16 @@
       "source_url": "https://www.vpbank.com.vn/ca-nhan/vay/vay-mua-nha",
       "package_name": "Vay mua nhà đất, căn hộ",
       "interest_rate": {
-        "promo_rate": 4.6,
-        "promo_duration_months": 12,
-        "floating_margin": 3.8,
-        "floating_rate_estimated": 10.5,
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất cơ sở VPBank áp dụng cho khoản vay thế chấp bất động sản",
         "adjustment_frequency_months": 3,
         "rate_options": []
       },
       "promotions": {
-        "summary": "Lãi suất ưu đãi chỉ từ 4.6%, duyệt vay cấp tốc chỉ trong 5 phút, vay lên đến 80% giá trị căn nhà, thời gian vay linh hoạt từ 25 đến 35 năm",
+        "summary": "Trang sản phẩm công bố lãi suất ưu đãi chỉ từ 4.6%, duyệt vay cấp tốc 5 phút, vay lên đến 80% giá trị căn nhà, thời gian vay linh hoạt từ 25 đến 35 năm",
         "grace_period_months": 12,
         "early_repayment_penalty": {
           "description": "Áp dụng theo biểu phí hiện hành của VPBank tại từng thời kỳ",
@@ -461,7 +461,7 @@
       },
       "loan_limit": {
         "max_ltv_percent": 80.0,
-        "max_ltv_note": "Vay số tiền lên đến 80% giá trị căn nhà theo công bố chính thức trên trang sản phẩm VPBank",
+        "max_ltv_note": "Vay số tiền lên đến 80% giá trị căn nhà theo công bố trên trang sản phẩm VPBank",
         "max_loan_term_years": 35,
         "min_loan_term_years": 25,
         "max_loan_amount": null,
@@ -486,7 +486,7 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin trích dẫn trực tiếp từ trang Vay mua nhà đất, căn hộ của VPBank (lãi suất ưu đãi chỉ từ 4.6%, thời hạn vay 25 - 35 năm, vay lên đến 80% giá trị căn nhà). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất và hạn mức thực tế căn cứ kết quả phê duyệt của VPBank."
+      "disclaimer": "Thông tin về tỷ lệ cho vay (lên đến 80% giá trị căn nhà) và thời hạn vay (từ 25 đến 35 năm) trích dẫn trực tiếp từ trang sản phẩm của VPBank. Trang có nêu 'Lãi suất ưu đãi chỉ từ 4.6%' nhưng không công bố số tháng ưu đãi cụ thể và biên độ thả nổi nên các trường lãi suất được để null để đảm bảo tính chính xác và nhất quán với bộ tính toán; thông tin chi tiết phụ thuộc phê duyệt tín dụng của VPBank."
     },
     {
       "id": "acb",
@@ -498,10 +498,10 @@
       "source_url": "https://acb.com.vn/vay-von/vay-mua-nha-dat",
       "package_name": "Vay Mua Nhà Đất",
       "interest_rate": {
-        "promo_rate": 6.5,
-        "promo_duration_months": 12,
-        "floating_margin": 3.5,
-        "floating_rate_estimated": 10.0,
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất cơ sở ACB kỳ hạn 12 tháng áp dụng cho vay cá nhân",
         "adjustment_frequency_months": 3,
         "rate_options": []
@@ -545,7 +545,7 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin trích dẫn trực tiếp từ trang sản phẩm Vay Mua Nhà Đất của ACB (https://acb.com.vn/vay-von/vay-mua-nha-dat). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; hạn mức và lãi suất chính thức căn cứ kết quả thẩm định tín dụng của ACB."
+      "disclaimer": "Thông tin về mục đích vay, chính sách trả gốc định kỳ linh hoạt và ân hạn gốc lên đến 01 năm trích dẫn trực tiếp từ trang sản phẩm Vay Mua Nhà Đất của ACB. Trang không công bố mức lãi suất ưu đãi cụ thể, biên độ và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng; lãi suất chính thức căn cứ phê duyệt của ACB."
     }
   ]
 }
