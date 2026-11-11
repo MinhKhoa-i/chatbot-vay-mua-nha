@@ -81,7 +81,7 @@ Trả về:
 | `updated_at` | string | Ngày cập nhật dữ liệu dùng để trả lời |
 | `estimate` | object hoặc `null` | Có khi câu trả lời kèm ước tính khoản vay; frontend hiển thị thẻ ước tính |
 
-`estimate` có cùng các trường với response của `/api/estimate` (mục 3.3). Bắt buộc có `amount`, `years`, `rate`; nên có thêm `method`, `monthly_payment`, `total_interest`. Nếu thiếu `monthly_payment`, frontend tự tính bằng `annuity()` trong `frontend/src/lib/loan.js`. Cách này chỉ dùng cho chế độ mock.
+`estimate` có cùng các trường với response của `/api/estimate` (mục 3.3). Bắt buộc có `amount`, `years`, `rate`; nên có thêm `method`, `monthly_payment`, `total_interest`. Nếu thiếu `monthly_payment` hoặc `total_interest`, thẻ ước tính của frontend gọi `POST /api/estimate` với `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` để lấy số; frontend không tự tính khi chạy với backend thật.
 
 **Hiện trạng:** backend trả một câu cố định (dữ liệu mẫu). Kế hoạch nối với `ai_service` ở mục 5.
 

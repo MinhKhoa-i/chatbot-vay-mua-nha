@@ -1,23 +1,62 @@
 import { useEffect, useRef, useState } from "react";
-import { annuity, DEFAULT_RATE, vnd } from "../lib/loan.js";
+import { ApiError, estimateLoan } from "../lib/api.js";
+import { DEFAULT_RATE, fmtDate, vnd } from "../lib/loan.js";
 import { Icon, Orb } from "./icons.jsx";
 
+const hasNumbers = (e) => e.monthly_payment != null && e.total_interest != null;
+
+// Số trên thẻ luôn do backend tính (POST /api/estimate -> calculator.py).
+// Câu trả lời chat đã kèm số thì dùng luôn, thiếu thì gọi /api/estimate.
+function useServerEstimate(estimate) {
+  const [state, setState] = useState(() => (hasNumbers(estimate) ? { est: estimate } : { loading: true }));
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (hasNumbers(estimate)) return;
+    let alive = true;
+    setState({ loading: true });
+    estimateLoan({
+      amount: Math.round(estimate.amount),
+      years: estimate.years,
+      rate: estimate.rate ?? DEFAULT_RATE,
+      method: estimate.method ?? "annuity",
+      promo_rate: estimate.promo_rate ?? null,
+      promo_duration_months: estimate.promo_duration_months ?? 0,
+    })
+      .then((est) => alive && setState({ est }))
+      .catch((err) => alive && setState({
+        error: err instanceof ApiError ? err.message : "Không kết nối được máy chủ để tính khoản vay. Hãy kiểm tra backend đang chạy rồi thử lại.",
+      }));
+    return () => { alive = false; };
+  }, [estimate, attempt]);
+  return { ...state, retry: () => setAttempt((n) => n + 1) };
+}
+
 function EstimateCard({ estimate, onCompare, onAdjust }) {
-  const rate = estimate.rate ?? DEFAULT_RATE;
-  // Ưu tiên số do backend tính (calculator.py); chỉ tự tính khi chạy mock hoặc server chưa gửi
-  const local = estimate.monthly_payment == null ? annuity(estimate.amount, estimate.years, rate) : null;
-  const monthly = estimate.monthly_payment ?? local.monthly;
-  const interest = estimate.total_interest ?? local.interest;
+  const { est, loading, error, retry } = useServerEstimate(estimate);
+  const shell = "flex flex-col gap-4 rounded-[18px] border border-line bg-white p-5 sm:p-6";
+  if (loading) {
+    return <p className={`${shell} text-sm text-muted`} role="status">Đang tính khoản vay...</p>;
+  }
+  if (error) {
+    return (
+      <div className={shell} role="alert">
+        <p className="text-sm text-[#c0443f]">{error}</p>
+        <button onClick={retry} className="w-fit text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">Thử lại</button>
+      </div>
+    );
+  }
+  const rate = (r) => String(r).replace(".", ",") + "%/năm";
+  const promo = est.promo_rate != null && est.promo_duration_months > 0;
   const stats = [
-    ["Số tiền vay", vnd(estimate.amount)],
-    ["Thời hạn", `${estimate.years} năm`],
-    ["Tổng lãi dự kiến", vnd(interest)],
+    ["Số tiền vay", vnd(est.amount)],
+    ["Thời hạn", `${est.years} năm`],
+    ["Tổng lãi dự kiến", vnd(est.total_interest)],
   ];
   return (
-    <div className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-5 sm:p-6">
-      <p className="text-[13px] text-muted">Ước tính trả hàng tháng</p>
+    <div className={shell}>
+      <p className="text-[13px] text-muted">{est.method === "reducing_balance" ? "Ước tính trả tháng đầu (cao nhất)" : "Ước tính trả hàng tháng"}</p>
       <p className="flex flex-wrap items-end gap-x-2.5">
-        <span className="text-[34px] font-light leading-none sm:text-[44px]">{vnd(monthly)}</span>
+        <span className="text-[34px] font-light leading-none sm:text-[44px]">{vnd(est.monthly_payment)}</span>
         <span className="text-base text-muted">/ tháng</span>
       </p>
       <dl className="grid gap-2.5 sm:grid-cols-3">
@@ -29,9 +68,12 @@ function EstimateCard({ estimate, onCompare, onAdjust }) {
         ))}
       </dl>
       <p className="text-xs leading-relaxed text-muted">
-        Giả định lãi suất {String(rate).replace(".", ",")}%/năm cố định,{" "}
-        {estimate.method === "reducing_balance" ? "trả gốc đều, lãi giảm dần (số trên là tháng đầu, cao nhất)" : "trả đều gốc và lãi hằng tháng"}.
+        {promo
+          ? `Giả định lãi ưu đãi ${rate(est.promo_rate)} trong ${est.promo_duration_months} tháng đầu, sau đó ${rate(est.rate)}`
+          : `Giả định lãi suất ${rate(est.rate)} cố định`},{" "}
+        {est.method === "reducing_balance" ? "trả gốc đều, lãi giảm dần" : "trả đều gốc và lãi hằng tháng"}.
         Đây là ví dụ minh họa, chưa phải lãi suất của một ngân hàng cụ thể.
+        {est.updated_at && ` Dữ liệu cập nhật ${fmtDate(est.updated_at)}.`}
       </p>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <button onClick={onCompare} className="rounded-xl bg-ink px-5 py-3 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

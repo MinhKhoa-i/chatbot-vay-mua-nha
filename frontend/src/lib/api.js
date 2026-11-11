@@ -19,7 +19,7 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 /* Hợp đồng API (khớp docs/api.md, mục 3.2):
    POST {API_URL}/api/chat  { message, session_id }
    ->   { reply, updated_at, estimate?: { amount, years, rate, method?, monthly_payment?, total_interest? } }
-   Thiếu monthly_payment thì EstimateCard tự tính bằng annuity() (chỉ dùng cho mock). */
+   Thiếu monthly_payment thì EstimateCard gọi estimateLoan() để backend tính. */
 export async function getReply({ message, sessionId }) {
   if (!USE_MOCK) {
     const res = await fetch(`${API_URL}/api/chat`, {

@@ -7,7 +7,7 @@ Danh sách kiểm thử . Phạm vi gồm trang chủ, giao diện chat, form nh
 | Chế độ     | Cách bật                                                                                                                           | Dùng để kiểm                                               |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | Mock          | `frontend/.env`: `VITE_USE_MOCK=true` (mặc định), chỉ cần `npm run dev`                                                   | Giao diện, form, luồng thao tác khi chưa có backend       |
-| Backend thật | `VITE_USE_MOCK=false`, `VITE_API_URL=http://localhost:8000`, chạy thêm `uvicorn app.main:app --port 8000` trong `backend/` | Hợp đồng API, số liệu từ `calculator.py`, xử lý lỗi |
+| Backend thật | `npm run dev:backend` (hoặc `VITE_USE_MOCK=false`, `VITE_API_URL=http://localhost:8000` rồi `npm run dev`), chạy thêm `uvicorn app.main:app --port 8000` trong `backend/` | Hợp đồng API, số liệu từ `calculator.py`, xử lý lỗi |
 | Tự động    | `cd backend && python -m pytest`                                                                                                   | Các ca có ghi tên test ở cột "Tự động"                 |
 
 Quy ước:
@@ -53,6 +53,9 @@ Quy ước:
 | CHAT-15 | Xóa dữ liệu                 | Bấm "Xóa dữ liệu của tôi", chọn OK                                                          | Mất hết hội thoại và dữ liệu đã nhập ở form, về màn chào                                                                 | Cao       | Chưa chạy |
 | CHAT-16 | Không lưu vào trình duyệt | Hỏi vài câu rồi tải lại trang (F5)                                                           | Hội thoại mất; DevTools > Application không có dữ liệu hội thoại trong localStorage/sessionStorage                            | Cao       | Chưa chạy |
 | CHAT-17 | Mất kết nối backend         | Chế độ thật, tắt backend, gửi câu hỏi                                                      | Câu báo lỗi màu đỏ "Không kết nối được máy chủ...", không có nút đánh giá dưới câu lỗi                         | Cao       | Chưa chạy |
+| CHAT-18 | Thẻ ước tính lấy số từ backend | Chế độ thật; `/api/chat` trả `estimate` chỉ có `amount` 1500000000, `years` 20, `rate` 8.5 (giả lập bằng DevTools > Network > Override khi `/api/chat` chưa nối ai_service) | Thẻ gọi `POST /api/estimate`, hiện `13.017.349 đ / tháng`, tổng lãi `1.624.163.639 đ`, có ngày cập nhật | Cao | Đạt |
+| CHAT-19 | Thẻ dùng số có sẵn | Chế độ thật; `/api/chat` trả `estimate` đã có `monthly_payment` và `total_interest` | Thẻ hiện đúng số đó, không gọi thêm `/api/estimate` | TB | Đạt |
+| CHAT-20 | Thẻ không tính được | Như CHAT-18 nhưng `/api/estimate` lỗi (tắt backend sau khi chat trả lời), rồi bật lại và bấm "Thử lại" | Thẻ báo "Không kết nối được máy chủ để tính khoản vay...", bấm "Thử lại" thì hiện số; frontend không tự tính | Cao | Đạt |
 
 ## 4. Form nhập thông tin khách
 
