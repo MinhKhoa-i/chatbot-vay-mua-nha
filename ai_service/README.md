@@ -6,9 +6,10 @@ Hướng dẫn này dành cho môi trường demo phát triển, không phải c
 
 - Docker Desktop (Windows/macOS) hoặc Docker Engine và Docker Compose v2.
 - Python 3.12.
+- curl để kiểm tra health, theo dõi ingestion và thử chat streaming (SSE).
 - [uv](https://docs.astral.sh/uv/) để đồng bộ môi trường Python theo `uv.lock`.
 - Dịch vụ tương thích OpenAI cho chat và embedding có thể truy cập từ máy chạy API/worker. Với demo hoàn chỉnh, cần cấu hình cả hai dịch vụ và thông tin model tương ứng.
-- `curl` để gọi API. Các lệnh dưới đây dùng cú pháp Bash (Linux/macOS, WSL hoặc Git Bash).
+- Git Bash để chạy toàn bộ lệnh trong hướng dẫn; các khối script Python được truyền qua Bash heredoc và chạy bằng `uv run python -`.
 
 ## 1. Lấy mã nguồn và chuẩn bị cấu hình
 
@@ -55,7 +56,7 @@ Khi DB đã healthy, vẫn ở `ai_service/` và chạy migration từ máy host
 uv run alembic upgrade head
 ```
 
-Migration hiện có chuỗi `0004_knowledge` → `0005_jobs_ops` → `0006_conversations`; `upgrade head` áp dụng toàn bộ revision còn thiếu. Alembic đọc `DATABASE_URL` từ `.env`. Nếu gặp lỗi kết nối, kiểm tra DB healthy, port, database/user/password khớp giữa `.env` và container, rồi chạy lại migration.
+Các migration hiện có chuỗi `0004_knowledge` → `0005_jobs_ops` → `0006_conversations` → `0007_knowledge_activation`; `upgrade head` áp dụng toàn bộ revision còn thiếu, bao gồm cờ bật/tắt tài liệu tri thức. Alembic đọc `DATABASE_URL` từ `.env`. Nếu gặp lỗi kết nối, kiểm tra DB healthy, port, database/user/password khớp giữa `.env` và container, rồi chạy lại migration.
 
 ## 4. Chạy API và worker — mỗi thành phần đúng một lần
 
@@ -84,71 +85,185 @@ docker compose logs -f worker
 
 `worker` là service đã được khai báo trong Compose và chạy `python -m app.infrastructure.jobs.worker`; không chạy thêm worker bằng `uv run python -m ...` hoặc tiến trình worker thứ hai. Worker dùng URL nội bộ `db:5432`, trong khi API/migration chạy từ host dùng `localhost`. Theo cấu hình mặc định worker gọi embedding qua `http://host.docker.internal:20128/v1`; nếu embedding gateway ở địa chỉ khác, đặt `WORKER_EMBEDDING_BASE_URL` phù hợp trong `.env` trước khi tạo/recreate worker. API đọc `EMBEDDING_BASE_URL` trực tiếp từ `.env`.
 
-## 5. Đưa FAQ demo vào knowledge base
+## 5. Nạp tài liệu vào kho tri thức
 
-API hiện nhận file PDF, văn bản UTF-8 `.txt` hoặc Markdown UTF-8 `.md`; extractor **không đọc JSON**. Không gửi trực tiếp `data/faq.json` dưới đuôi `.json`. Cách dưới đây chuyển FAQ JSON thành Markdown UTF-8 tạm trong thư mục snapshot (không sửa file JSON nguồn). Chỉ upload nội dung sau khi người vận hành đã kiểm tra/duyệt tính chính xác của nguồn: API yêu cầu metadata xác nhận `verified: true`, `reviewed_by` và `reviewed_at` có múi giờ. Ví dụ metadata dưới đây là dữ liệu demo; hãy thay reviewer/ngày và URL nguồn bằng thông tin đã kiểm tra, không khai khống việc review.
+API nhận PDF, UTF-8 `.txt` hoặc Markdown UTF-8 `.md`; extractor **không đọc JSON trực tiếp**. Khi upload, API lưu tài liệu và xếp ingestion vào hàng đợi. Worker trích xuất nội dung, chia thành chunks, tạo embeddings rồi xuất bản. Chat chỉ truy xuất tài liệu đã được duyệt, `published` và còn hiệu lực.
 
-Tại terminal `ai_service/`, từ Bash chạy đoạn chuyển đổi:
+Trước khi nạp, khởi động database, API và đúng một worker theo các bước 2–4. Worker cần truy cập được embedding provider. Chỉ upload sau khi thực sự kiểm tra nội dung và nguồn: API bắt buộc metadata `verified: true`, `reviewed_by` và `reviewed_at` có múi giờ. `reviewed_at` là thời điểm review, không phải thời điểm upload (database tự ghi thời điểm upload). Trong ví dụ, thay placeholder bằng thông tin review thật và giữ nguyên cùng `REVIEWED_AT` khi chạy lại cùng lần review; đổi metadata trong khi nội dung không đổi có thể gây `DOCUMENT_METADATA_CONFLICT`.
 
-```bash
-uv run python - <<'PY'
+### Nạp `data/faq.json` — mỗi FAQ là một tài liệu
+
+Script đọc JSON, tạo Markdown trong bộ nhớ và upload riêng từng FAQ qua `POST /api/v1/knowledge/documents`. Trường `source_name` được dùng làm `title` trong metadata và heading Markdown, nên phần nguồn tham khảo tự động hiển thị tên nguồn thay vì mã FAQ/câu hỏi. Tên nguồn được bỏ khoảng trắng ở hai đầu, phải có từ 1 đến 500 ký tự; script dừng nếu không hợp lệ thay vì cắt mất tên nguồn. FAQ ID, category, câu hỏi, câu trả lời, phạm vi, URL nguồn chính, nguồn bổ sung, ngày cập nhật và disclaimer vẫn được giữ trong nội dung; `source_url` và `last_updated` vẫn được gửi trong metadata. API hiện không có metadata riêng cho FAQ ID/category. Script đang đặt `LIMIT = None` để nạp toàn bộ; đổi thành `LIMIT = 1` nếu muốn thử FAQ đầu tiên.
+
+Tạo file `scripts/ingest_faq.py` (tạo thư mục `scripts/` nếu chưa có) với nội dung sau. Sau khi lưu file, chạy lệnh ở cuối khối từ thư mục `ai_service/`.
+
+```python
 import json
+from datetime import datetime
 from pathlib import Path
+from uuid import NAMESPACE_URL, uuid5
+
+import httpx
+
+BASE_URL = "http://127.0.0.1:8001"
+REVIEWED_AT = datetime.now().astimezone().isoformat()
+LIMIT = None
+
+while True:
+    REVIEWED_BY = input("Nhập tên người review tài liệu: ").strip()
+    if REVIEWED_BY:
+        break
+    print("Tên không được để trống; hãy nhập tên người review.")
+reviewed_at = datetime.fromisoformat(REVIEWED_AT)
+if reviewed_at.tzinfo is None or reviewed_at.utcoffset() is None:
+    raise SystemExit("REVIEWED_AT phải có múi giờ, ví dụ +07:00 hoặc Z.")
 
 source = Path("../data/faq.json")
-out = Path("data/snapshots/faq-demo.md")
 data = json.loads(source.read_text(encoding="utf-8"))
-lines = [f"# {data['title']}", "", data.get("disclaimer", ""), ""]
-for item in data["faqs"]:
-    lines.extend([
-        f"## {item['id']} — {item['category']}",
-        "",
-        f"**Câu hỏi:** {item['question']}",
-        "",
-        f"**Trả lời:** {item['answer']}",
-        "",
-        f"**Phạm vi:** {item.get('applicable_scope', '')}",
-        f"**Nguồn:** {item.get('source_name', '')}",
-        f"**URL:** {item.get('source_url', '')}",
-        f"**Cập nhật nội dung:** {item.get('last_updated', '')}",
-        "",
-    ])
-out.parent.mkdir(parents=True, exist_ok=True)
-out.write_text("\n".join(lines), encoding="utf-8")
-print(f"Đã tạo {out} — kiểm tra nội dung trước khi upload.")
-PY
+items = data["faqs"] if LIMIT is None else data["faqs"][:LIMIT]
+
+with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
+    for item in items:
+        faq_id = item["id"]
+        title = item["source_name"].strip()
+        if not 1 <= len(title) <= 500:
+            raise SystemExit(f"{faq_id}: source_name phải có từ 1 đến 500 ký tự.")
+        lines = [
+            f"# {title}", "", f"FAQ ID: {faq_id}",
+            f"Chủ đề: {item['category']}", "",
+            f"Câu hỏi: {item['question']}", "",
+            f"Trả lời: {item['answer']}", "",
+            f"Phạm vi áp dụng: {item.get('applicable_scope', '')}",
+            f"Nguồn: {item.get('source_name', '')}",
+            f"URL: {item.get('source_url', '')}",
+            "Nguồn bổ sung: " + ", ".join(item.get("additional_sources", [])),
+            f"Cập nhật nội dung: {item.get('last_updated', '')}", "",
+            data.get("disclaimer", ""),
+        ]
+        body = "\n".join(lines).encode("utf-8")
+        logical_id = uuid5(NAMESPACE_URL, faq_id)
+        metadata = {
+            "title": title,
+            "verified": True,
+            "reviewed_by": REVIEWED_BY,
+            "reviewed_at": REVIEWED_AT,
+            "logical_document_id": str(logical_id),
+        }
+        if item.get("source_url"):
+            metadata["source_url"] = item["source_url"]
+        if item.get("last_updated"):
+            metadata["last_updated"] = item["last_updated"]
+
+        response = client.post(
+            "/api/v1/knowledge/documents",
+            data={"metadata": json.dumps(metadata, ensure_ascii=False)},
+            files={"file": (f"{faq_id}.md", body, "text/markdown")},
+        )
+        if response.is_error:
+            raise SystemExit(f"{faq_id}: HTTP {response.status_code}\n{response.text}")
+        result = response.json()
+        print(f"{faq_id}: document_id={result['document_id']} status={result['ingestion_status']}")
 ```
 
-Kiểm tra Markdown được tạo và các URL nguồn trước khi upload. Tạo conversation (ghi lại `conversation_id` trong JSON trả về):
+Chạy từ thư mục `ai_service/`:
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8001/api/v1/conversations \
-  -H 'Content-Type: application/json'
+uv run python scripts/ingest_faq.py
 ```
 
-Upload tài liệu bằng multipart form. Thay `reviewer-demo` và ngày giờ bằng lần review thực tế, có timezone; dùng nguồn đã kiểm tra (hoặc bỏ `source_url` nếu chưa có URL đáng tin cậy). `verified` bắt buộc là `true`:
+`logical_document_id = uuid5(NAMESPACE_URL, faq_id)` là UUID ổn định với đầu vào tên chỉ là ID trong JSON (ví dụ `FAQ-01`). UUID v5 vẫn cần namespace cố định `NAMESPACE_URL`; giữ nguyên namespace và FAQ ID để các lần nạp sau nhận diện cùng tài liệu logic. Không dùng lại một FAQ ID cho nội dung độc lập ở bộ dữ liệu khác khi dùng cùng namespace. `document_id` là UUID riêng do API tạo cho từng phiên bản, không phải chuỗi `FAQ-01`. Các FAQ khác ID có thể có cùng `title`; title không phải khóa định danh và các mục nguồn vẫn được nhóm theo `document_id`.
+
+Với cùng công thức UUID, nạp lại cùng nội dung và metadata sẽ nhận diện tài liệu hiện có; nội dung thay đổi tạo phiên bản mới. Nếu cùng nội dung nhưng metadata khác, API có thể trả `DOCUMENT_METADATA_CONFLICT`.
+
+### Nạp `docs/quy-trinh-vay.md` — một tài liệu Markdown
+
+Tài liệu quy trình liên tục nên giữ thành một tài liệu; worker tự chia theo heading và giới hạn token. Vì đây là tài liệu tổng hợp nhiều nguồn, không gán URL của riêng một ngân hàng làm `source_url` chung; các liên kết nguồn vẫn được giữ trong nội dung.
+
+Tạo file `scripts/ingest_loan_process.py` với nội dung sau. Sau khi lưu file, chạy lệnh ở cuối khối từ thư mục `ai_service/`.
+
+```python
+import json
+from datetime import datetime
+from pathlib import Path
+from uuid import NAMESPACE_URL, uuid5
+
+import httpx
+
+BASE_URL = "http://127.0.0.1:8001"
+SOURCE = Path("../docs/quy-trinh-vay.md")
+REVIEWED_AT = datetime.now().astimezone().isoformat()
+
+while True:
+    REVIEWED_BY = input("Nhập tên người review tài liệu: ").strip()
+    if REVIEWED_BY:
+        break
+    print("Tên không được để trống; hãy nhập tên người review.")
+reviewed_at = datetime.fromisoformat(REVIEWED_AT)
+if reviewed_at.tzinfo is None or reviewed_at.utcoffset() is None:
+    raise SystemExit("REVIEWED_AT phải có múi giờ, ví dụ +07:00 hoặc Z.")
+if not SOURCE.is_file():
+    raise SystemExit(f"Không tìm thấy tài liệu: {SOURCE.resolve()}")
+
+content = SOURCE.read_bytes()
+text = content.decode("utf-8-sig")
+title = next(
+    (line[2:].strip() for line in text.splitlines() if line.startswith("# ") and line[2:].strip()),
+    SOURCE.stem,
+)
+logical_id = uuid5(
+    NAMESPACE_URL,
+    "/docs/quy-trinh-vay.md",
+)
+metadata = {
+    "title": title,
+    "verified": True,
+    "reviewed_by": REVIEWED_BY,
+    "reviewed_at": REVIEWED_AT,
+    "logical_document_id": str(logical_id),
+}
+
+with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
+    response = client.post(
+        "/api/v1/knowledge/documents",
+        data={"metadata": json.dumps(metadata, ensure_ascii=False)},
+        files={"file": (SOURCE.name, content, "text/markdown")},
+    )
+    if response.is_error:
+        raise SystemExit(f"HTTP {response.status_code}\n{response.text}")
+    print(json.dumps(response.json(), ensure_ascii=False, indent=2))
+```
+
+Chạy từ thư mục `ai_service/`:
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8001/api/v1/knowledge/documents \
-  -F 'file=@data/snapshots/faq-demo.md;type=text/markdown' \
-  -F 'metadata={"title":"FAQ quy trình vay mua nhà (demo)","verified":true,"reviewed_by":"reviewer-demo","reviewed_at":"2026-11-08T10:00:00Z"}'
+uv run python scripts/ingest_loan_process.py
 ```
 
-Nếu thành công, response trả `document_id` và `ingestion_status` thường ban đầu là `queued`. Ghi lại `document_id`, xem tiến trình bằng endpoint dưới đây và đợi đến khi `ingestion_status` là `published`:
+### Theo dõi ingestion và kiểm tra câu trả lời
+
+Upload thường trả `ingestion_status: queued` cùng `document_id`. Kiểm tra bằng ID trong response đến khi trạng thái là `published`:
 
 ```bash
-DOCUMENT_ID='<document_id từ response upload>'
-curl -sS "http://127.0.0.1:8001/api/v1/knowledge/documents/${DOCUMENT_ID}"
+document_id="UUID_NHAN_DUOC_TU_RESPONSE"
+curl -sS "http://127.0.0.1:8001/api/v1/knowledge/documents/${document_id}"
 ```
 
-Worker cần truy cập được embedding provider để biến tài liệu thành chunks/vector. Nếu upload bị `UNSUPPORTED_FILE_TYPE`, hãy dùng `.md`, `.txt` hoặc PDF; nếu trạng thái `failed`, xem log worker/provider và mã lỗi trả về. Có thể theo dõi log bằng `docker compose logs -f worker`.
+Nếu trạng thái `failed` hoặc `queued` kéo dài, xem log worker/provider bằng `docker compose logs --tail 100 worker`. Khi đã `published`, thử câu hỏi tương ứng với FAQ và từng bước trong quy trình vay; kiểm tra câu trả lời bám bằng chứng, trích đúng nguồn và không gộp điều kiện giữa các ngân hàng. Disclaimer được giữ trong nội dung FAQ; với câu trả lời retrieval có gọi model, prompt yêu cầu model tự viết một câu disclaimer ngắn trước footer nguồn. Đây là hướng dẫn prompt, không phải bảo đảm được kiểm tra ở runtime; greeting, câu trả lời xác định và phản hồi khi thiếu bằng chứng không có disclaimer model. `published` xác nhận ingestion hoàn tất, không tự chứng minh chất lượng retrieval.
 
 ## 6. Thử chat streaming bằng curl
 
-Tạo conversation như bước trên, rồi gán UUID thực tế đã nhận. Mỗi lượt cần UUID mới cho `client_request_id`; conversation vừa tạo bắt đầu với `expected_version: 0`, còn lượt tiếp theo phải dùng version mới nhất do API trả về. Ví dụ nhanh cho lượt đầu:
+Tạo conversation trước bằng endpoint riêng:
 
 ```bash
-CONVERSATION_ID='<conversation_id từ bước tạo>'
+curl -sS -X POST http://127.0.0.1:8001/api/v1/conversations \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+Lấy `conversation_id` từ response rồi gán vào biến bên dưới. Mỗi lượt cần UUID mới cho `client_request_id`; conversation vừa tạo bắt đầu với `expected_version: 0`, còn lượt tiếp theo phải dùng version mới nhất do API trả về. Có thể bỏ bước tạo riêng nếu tự tạo một UUIDv4 cho path; lượt chat hợp lệ đầu tiên sẽ tạo conversation đó. Ví dụ nhanh cho lượt đầu:
+
+```bash
+CONVERSATION_ID='<conversation_id từ response tạo conversation>'
 CLIENT_REQUEST_ID="$(uv run python -c 'import uuid; print(uuid.uuid4())')"
 curl -N -sS -X POST "http://127.0.0.1:8001/api/v1/conversations/${CONVERSATION_ID}/messages" \
   -H 'Content-Type: application/json' \
@@ -162,7 +277,7 @@ Ví dụ **nội dung mong đợi**, không phải kết quả đã đo từ pro
 
 > Hồ sơ vay mua nhà thường gồm giấy đề nghị vay vốn/phương án trả nợ, giấy tờ nhân thân, giấy tờ chứng minh mục đích vay, hồ sơ chứng minh thu nhập và hồ sơ tài sản bảo đảm. Danh mục cụ thể phụ thuộc ngân hàng/sản phẩm; bạn cần xác nhận trực tiếp với ngân hàng. [1]
 
-Nội dung thực tế và mã trích dẫn phụ thuộc các chunks được truy xuất; không cam kết câu trả lời cố định. Để thử phản hồi xác định không cần model/embedding, thay `text` bằng `Xin chào` trong một conversation mới: nhận lời chào tiếng Việt cùng thông báo **chưa hỗ trợ tính khoản trả góp hoặc ước tính khả năng vay**, rồi event `done`. Lượt chào vẫn cần PostgreSQL và khóa mã hóa hợp lệ để lưu hội thoại.
+Nội dung thực tế và mã trích dẫn phụ thuộc các chunks được truy xuất; không cam kết câu trả lời cố định. Để thử phản hồi xác định không cần model/embedding, thay `text` bằng `Xin chào` trong một conversation mới: nhận lời chào tiếng Việt và thông tin rằng AI service có thể ước tính khoản trả góp niên kim với lãi suất cố định toàn kỳ sau khi thu thập và xác nhận đủ dữ liệu; luồng này không đánh giá khả năng vay hay khả năng chi trả, rồi event `done`. Lượt chào vẫn cần PostgreSQL và khóa mã hóa hợp lệ để lưu hội thoại.
 
 ## Endpoint chính và lỗi thường gặp
 
@@ -173,14 +288,15 @@ Nội dung thực tế và mã trích dẫn phụ thuộc các chunks được t
 - `DELETE /api/v1/conversations/{conversation_id}` — xóa conversation.
 - `POST /api/v1/conversations/{conversation_id}/messages` — gửi lượt chat SSE.
 - `POST /api/v1/knowledge/documents` — tải tài liệu multipart; metadata form field là JSON string.
-- `GET /api/v1/knowledge/documents/{document_id}` — kiểm tra trạng thái ingestion.
+- `GET /api/v1/knowledge/documents/{document_id}` — kiểm tra trạng thái ingestion và cờ `is_active`.
+- `PATCH /api/v1/knowledge/documents/{document_id}/activation` — bật/tắt tài liệu khỏi retrieval, body ví dụ `{"is_active": false}`. Chỉ tài liệu được `approved`, `published`, đang active và còn hiệu lực mới được truy xuất.
 
 Chat request yêu cầu `client_request_id` UUID và `text` từ 1–4000 ký tự; không cho phép field lạ. Thân request tối đa 20 KiB. Lỗi validate thường trả HTTP 422; ID/version cũ có thể tạo event `error` như `CONVERSATION_NOT_FOUND` hoặc `VERSION_CONFLICT`. Provider/migration/config chưa sẵn sàng có thể dẫn đến HTTP 503 hoặc event SSE `error`; các mã thường gặp gồm `MODEL_NOT_CONFIGURED`, `MODEL_UNAVAILABLE`, `MODEL_RATE_LIMITED`, `RETRIEVAL_NOT_CONFIGURED`, `EMBEDDING_UNAVAILABLE`, `KNOWLEDGE_SEARCH_UNAVAILABLE`, `STATE_UNAVAILABLE` và `INTERNAL_ERROR`. Event lỗi bên trong stream có thể vẫn đi cùng HTTP 200 vì response SSE đã bắt đầu; đọc event `error`, không chỉ dựa vào status HTTP. Không gửi lại cùng request ID với nội dung khác.
 
 ## Giới hạn và lưu ý bảo mật
 
-- Đây là demo, chưa phải hệ thống tư vấn tín dụng/duyệt vay. Không có endpoint máy tính khoản vay trong AI service này; không coi nội dung chatbot là báo giá, lãi suất hiện hành hoặc cam kết duyệt vay.
-- Demo không có xác thực/ủy quyền cho API hội thoại hoặc upload. Không mở cổng ra Internet, không đưa dữ liệu khách hàng thật lên môi trường chia sẻ và chỉ cho người vận hành đáng tin dùng endpoint upload. CORS cho phép origin frontend local, nhưng CORS không phải cơ chế xác thực.
+- Đây là demo, chưa phải hệ thống tư vấn tín dụng/duyệt vay. Có mô phỏng trả góp niên kim lãi suất cố định qua backend; không có đánh giá khả năng chi trả hoặc endpoint phê duyệt vay trong AI service. Không coi nội dung chatbot là báo giá, lãi suất hiện hành hoặc cam kết duyệt vay.
+- Demo không có xác thực/ủy quyền cho API hội thoại, upload hoặc endpoint `PATCH /api/v1/knowledge/documents/{document_id}/activation` để bật/tắt tài liệu tri thức. Không mở cổng ra Internet, không đưa dữ liệu khách hàng thật lên môi trường chia sẻ và chỉ cho người vận hành đáng tin dùng endpoint upload hoặc bật/tắt tài liệu. CORS cho phép origin frontend local, nhưng CORS không phải cơ chế xác thực.
 - Nội dung hội thoại được mã hóa AES-256-GCM bằng `DATA_ENCRYPTION_KEY_BASE64`; hãy bảo vệ và sao lưu khóa an toàn. Mất khóa đồng nghĩa không đọc được payload đã mã hóa. Không đặt khóa thật trong git, log, issue hoặc lệnh shell được chia sẻ.
 - FAQ demo phải được đối chiếu với nguồn gốc và tình trạng hiệu lực trước khi đánh dấu verified. Tài liệu không được review không nên upload dưới dạng tài liệu đã duyệt; câu trả lời retrieval chỉ nên căn cứ vào nguồn đã được nạp/duyệt. API/provider vẫn có thể lỗi hoặc dữ liệu có thể cũ.
 - Snapshot lưu trong `ai_service/data/snapshots/`; PostgreSQL lưu metadata, chunks/vector và trạng thái. Docker volume database giữ dữ liệu qua lần dừng container. Demo không cấu hình backup, quản lý secret, xoay khóa hay quy trình xóa an toàn cho production.

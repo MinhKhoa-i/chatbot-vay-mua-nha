@@ -1,6 +1,6 @@
 # Conversation API
 
-Base path: `/api/v1`. All response bodies are `application/json`; conversation identifiers are server-generated UUIDv4 values. Conversation state, profile payloads, and message content are encrypted with AES-256-GCM using the key configured by `DATA_ENCRYPTION_KEY_BASE64`.
+Base path: `/api/v1`. All response bodies are `application/json`. `POST /conversations` creates a server-generated UUIDv4; for `POST /conversations/{conversation_id}/messages`, the client may instead provide a UUIDv4 in the path and the first valid message atomically creates that conversation if it does not exist. Conversation state, profile payloads, message content, and stored replay responses are encrypted with AES-256-GCM using the key configured by `DATA_ENCRYPTION_KEY_BASE64`.
 
 ## Create a conversation
 
@@ -17,7 +17,7 @@ Base path: `/api/v1`. All response bodies are `application/json`; conversation i
 }
 ```
 
-A fresh checkpoint and profile are created atomically. The initial expiration is 30 days from creation. Successful writes are expected to renew the TTL; the current chat writer does not yet persist messages or renew it.
+A fresh checkpoint and profile are created atomically. The initial expiration is 30 days from creation. Each successfully committed chat turn persists the user and assistant messages, updates the checkpoint/version and replay response atomically, and renews the expiration to 30 days from that commit. Failed or uncommitted turns do not appear in message history.
 
 ## Read a conversation
 
@@ -50,6 +50,6 @@ A fresh checkpoint and profile are created atomically. The initial expiration is
 
 ## Current implementation boundaries
 
-The Alembic migration establishes conversations, profiles, encrypted messages, and the shared request ledger with database constraints. At present this API implements create/read/list/delete; the chat endpoint is not yet integrated with the ledger or persistence. So message history may be empty even after a successful streamed assistant response, and writes do not extend TTL. The profile projection is intentionally limited; slot filling and complete missing-slot derivation are not implemented yet. There is no authentication boundary beyond possession of the UUID, as scoped in `implement.md`; deploy only behind the intended trusted local API boundary.
+The Alembic migrations establish conversations, profiles, encrypted messages, and the shared request ledger with database constraints. The conversation API implements create/read/list/delete, while the chat endpoint is integrated with the ledger and persists successfully committed turns as described above. The profile projection is intentionally limited; a general-purpose slot-filling workflow and complete missing-slot derivation are not implemented. The estimate flow keeps its own typed state. There is no authentication boundary beyond possession of the UUID, as scoped in `implement.md`; deploy only behind the intended trusted local API boundary.
 
 `DATA_ENCRYPTION_KEY_BASE64` must decode to exactly 32 random bytes. Keep it outside version control and backups/config logs, and retain protected old key versions until encrypted data retention ends. Generate and provide the key through the operator's secret-management procedure before enabling these endpoints.

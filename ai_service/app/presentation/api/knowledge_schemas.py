@@ -61,6 +61,12 @@ class UploadMetadata(BaseModel):
         )
 
 
+class UpdateKnowledgeActivation(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    is_active: bool
+
+
 class KnowledgeDocumentResponse(BaseModel):
     document_id: UUID
     logical_document_id: UUID
@@ -69,6 +75,7 @@ class KnowledgeDocumentResponse(BaseModel):
     source_url: str | None
     review_status: str
     ingestion_status: IngestionStatus
+    is_active: bool
     error_code: str | None = None
 
     @classmethod
@@ -77,5 +84,5 @@ class KnowledgeDocumentResponse(BaseModel):
             document_id=document.id, logical_document_id=document.logical_document_id,
             version_no=document.version_no, title=document.title, source_url=document.source_url,
             review_status=document.review_status, ingestion_status=document.ingestion_status,
-            error_code=document.error_code,
+            is_active=document.is_active, error_code=document.error_code,
         )

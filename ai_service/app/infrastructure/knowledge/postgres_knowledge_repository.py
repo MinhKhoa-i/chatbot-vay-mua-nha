@@ -137,6 +137,23 @@ class PostgresKnowledgeRepository:
                                          {"id": document_id})).mappings().first()
             return self._to_document(row) if row else None
 
+    async def set_document_active(self, document_id: UUID, is_active: bool) -> StoredDocument | None:
+        async with self._sessions() as session, session.begin():
+            row = (await session.execute(text("""
+                SELECT * FROM knowledge_documents WHERE id = :id FOR UPDATE
+            """), {"id": document_id})).mappings().first()
+            if row is None:
+                return None
+            if row["is_active"] is is_active:
+                return self._to_document(row)
+            updated = (await session.execute(text("""
+                UPDATE knowledge_documents
+                SET is_active = :is_active
+                WHERE id = :id
+                RETURNING *
+            """), {"id": document_id, "is_active": is_active})).mappings().one()
+            return self._to_document(updated)
+
     async def claim_ingestion(self, document_id: UUID) -> IngestionJob | None:
         async with self._sessions() as session, session.begin():
             row = (await session.execute(text("""
@@ -208,6 +225,7 @@ class PostgresKnowledgeRepository:
                     JOIN knowledge_documents d ON d.id = c.document_id
                     WHERE d.review_status = 'approved'
                       AND d.ingestion_status = 'published'
+                      AND d.is_active = true
                       AND (d.effective_from IS NULL OR d.effective_from <= CURRENT_DATE)
                       AND (d.effective_to IS NULL OR d.effective_to > CURRENT_DATE)
                 )
@@ -260,5 +278,5 @@ class PostgresKnowledgeRepository:
             title=row["title"], source_url=row["source_url"], content_sha256=row["content_sha256"],
             snapshot_path=row["snapshot_path"], media_type=row["media_type"], size_bytes=row["size_bytes"],
             ingestion_status=IngestionStatus(row["ingestion_status"]), review_status=row["review_status"],
-            error_code=row.get("error_code"),
+            is_active=row["is_active"], error_code=row.get("error_code"),
         )

@@ -48,6 +48,8 @@ def test_app_lifespan_and_public_routes_without_external_services(monkeypatch):
         assert "post" in paths["/api/v1/conversations"]
         assert "post" in paths["/api/v1/conversations/{conversation_id}/messages"]
         assert "post" in paths["/api/v1/knowledge/documents"]
+        assert "get" in paths["/api/v1/knowledge/documents/{document_id}"]
+        assert "patch" in paths["/api/v1/knowledge/documents/{document_id}/activation"]
 
     dispose_database.assert_awaited_once_with()
 
@@ -62,4 +64,6 @@ def test_greeting_does_not_advertise_unimplemented_calculations():
     assert "cung cấp và xác nhận" in greeting
     assert "không phải đánh giá khả năng vay theo thu nhập" in greeting
     assert "Không tự tính tiền trả nợ" in system
+    assert "kết thúc bằng một câu disclaimer ngắn do bạn viết" in system
+    assert "không cần disclaimer này" in system
     assert "công cụ tính toán chưa được tích hợp" not in greeting

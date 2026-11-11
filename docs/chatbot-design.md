@@ -238,8 +238,9 @@ Prompt gồm instruction cố định, nhiệm vụ hiện tại, lịch sử gi
 3. Trích dẫn đặt cạnh phát biểu quan trọng, đặc biệt với số liệu/phí/lãi suất.
 4. Mốc hiệu lực hoặc thời điểm xác minh khi phù hợp.
 5. Câu hỏi tiếp theo nếu cần.
+6. Một câu disclaimer ngắn do model viết, sau nội dung trả lời; xác nhận thông tin chỉ mang tính tham khảo và khuyến nghị hỏi ngân hàng khi phù hợp.
 
-Không chỉ nối danh sách tất cả nguồn retrieval vào cuối rồi coi là đã kiểm chứng. Cần lưu document/chunk IDs thực sự hỗ trợ câu trả lời; chỉ hiển thị URL được lấy từ metadata đáng tin cậy. Kiểm tra citation ID tồn tại chưa đủ chứng minh entailment; phát biểu quan trọng cần đối chiếu nội dung và được đánh giá bằng bộ test/người review.
+Trong implementation hiện tại của `ai_service`, prompt yêu cầu model thêm disclaimer trong cùng lượt trả lời, còn hệ thống quản lý nhãn citation và nối footer “Nguồn tham khảo” phía sau toàn bộ output model. Sự hiện diện của disclaimer hiện chưa được kiểm tra cấu trúc ở runtime nên đây là hướng dẫn prompt, không phải bảo đảm tuyệt đối. Không chỉ nối danh sách tất cả nguồn retrieval vào cuối rồi coi là đã kiểm chứng. Cần lưu document/chunk IDs thực sự hỗ trợ câu trả lời; chỉ hiển thị URL được lấy từ metadata đáng tin cậy. Kiểm tra citation ID tồn tại chưa đủ chứng minh entailment; phát biểu quan trọng cần đối chiếu nội dung và được đánh giá bằng bộ test/người review.
 
 Với nội dung số liệu sản phẩm hoặc pháp lý nhạy cảm, đề xuất **buffer toàn bộ câu trả lời để kiểm tra trước khi phát nội dung**. Streaming trực tiếp phù hợp hơn với nội dung rủi ro thấp; không thể thu hồi điều người dùng đã đọc chỉ bằng việc gửi lỗi sau đó. Kiểm tra nguồn lần nữa trước khi hoàn tất turn nếu document có thể bị thu hồi trong khi model đang trả lời.
 
@@ -293,17 +294,7 @@ Quy ước mức độ cần thiết:
 
 ### 8.1. Trạng thái thực tế và ranh giới kiến trúc
 
-Nhánh hiện tại **chưa có `backend/finance/calculator.py`**, chưa có endpoint tính toán của backend và chưa có port calculator trong AI service. Tên đường dẫn trên là mục tiêu tích hợp module của bạn Định, không phải một import có thể dùng ngay. MVP chỉ hỏi đáp có nguồn; lời chào phải nói rõ chưa hỗ trợ tính toán, system prompt tiếp tục cấm LLM tự tính.
-
-Khi module sẵn sàng, tái sử dụng công thức ở backend thay vì viết lại trong prompt, endpoint chat hay frontend:
-
-- **Backend:** calculator là nơi duy nhất sở hữu công thức, quy tắc làm tròn và test nghiệp vụ; application use case của backend gọi module và presentation cung cấp API có version.
-- **AI domain:** khai báo input/output có kiểu dữ liệu và port `LoanCalculator`; domain không import FastAPI, HTTP client hoặc package `backend`.
-- **AI application:** use case thu thập/kiểm tra thông tin, yêu cầu xác nhận giả định, gọi port và xử lý lỗi. Tách khỏi use case hỏi đáp kiến thức hiện tại để không làm tăng phụ thuộc của mọi lượt chat.
-- **AI infrastructure:** adapter HTTP triển khai port và gọi API calculator của backend với timeout/retry có giới hạn; composition root inject adapter. Hai service triển khai độc lập, không import chéo source tree.
-- **AI presentation:** chỉ validation/serialize HTTP/SSE, không chứa công thức. LLM chỉ giải thích kết quả đã nhận; số tiền/kỳ hạn/lãi suất hiển thị từ output có cấu trúc, không để mô hình tạo lại con số.
-
-**Trạng thái triển khai hiện tại:** `ai_service` đã có luồng mô phỏng annuity với lãi suất cố định toàn kỳ, `EstimateLoanUseCase` và adapter gọi loan calculator backend. Calculator chỉ được gọi sau khi đã thu thập đủ số tiền vay, thời hạn, lãi suất và khách hàng xác nhận kịch bản. Đây là mô phỏng tham khảo, không đánh giá khả năng chi trả hoặc quyết định duyệt vay.
+**Trạng thái hiện tại:** `ai_service` đã có luồng mô phỏng khoản trả góp theo niên kim với lãi suất cố định toàn kỳ, `EstimateLoanUseCase` và adapter HTTP gọi loan calculator backend qua `POST /api/estimate`. Luồng này thu thập số tiền vay, thời hạn và lãi suất, yêu cầu người dùng xác nhận kịch bản rồi mới gọi calculator. Lời chào hoặc câu hỏi kiến thức không gọi calculator. Đây là mô phỏng tham khảo, không đánh giá khả năng chi trả hay quyết định duyệt vay.
 
 ### 8.2. Hợp đồng kết quả estimate trên SSE
 

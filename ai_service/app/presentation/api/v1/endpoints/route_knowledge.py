@@ -6,11 +6,24 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Response, UploadFile, status
 from pydantic import ValidationError
 
-from app.application.use_cases.upload_knowledge_document import GetKnowledgeDocument, UploadCommand, UploadKnowledgeDocument
+from app.application.use_cases.upload_knowledge_document import (
+    GetKnowledgeDocument,
+    SetKnowledgeDocumentActive,
+    UploadCommand,
+    UploadKnowledgeDocument,
+)
 from app.infrastructure.knowledge.local_snapshot_store import UploadRejected
 from app.infrastructure.knowledge.postgres_knowledge_repository import DocumentConflict
-from app.presentation.api.knowledge_schemas import KnowledgeDocumentResponse, UploadMetadata
-from app.presentation.api.knowledge_dependencies import get_document_reader, get_upload_use_case
+from app.presentation.api.knowledge_schemas import (
+    KnowledgeDocumentResponse,
+    UpdateKnowledgeActivation,
+    UploadMetadata,
+)
+from app.presentation.api.knowledge_dependencies import (
+    get_document_activation_updater,
+    get_document_reader,
+    get_upload_use_case,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/knowledge/documents", tags=["knowledge"])
@@ -56,6 +69,18 @@ async def upload_document(
         await file.close()
     response.status_code = status.HTTP_200_OK if not result.created else status.HTTP_202_ACCEPTED
     return KnowledgeDocumentResponse.from_domain(result.document)
+
+
+@router.patch("/{document_id}/activation", response_model=KnowledgeDocumentResponse)
+async def update_document_activation(
+    document_id: UUID,
+    payload: UpdateKnowledgeActivation,
+    use_case: Annotated[SetKnowledgeDocumentActive, Depends(get_document_activation_updater)],
+):
+    document = await use_case.execute(document_id, payload.is_active)
+    if document is None:
+        raise HTTPException(status_code=404, detail="DOCUMENT_NOT_FOUND")
+    return KnowledgeDocumentResponse.from_domain(document)
 
 
 @router.get("/{document_id}", response_model=KnowledgeDocumentResponse)

@@ -35,6 +35,9 @@ def test_retrieval_guidance_separates_examples_from_live_evidence():
     grounding = catalog.get(PromptName.GROUNDING)
     assert "không phải dữ liệu tư vấn" in guidance
     assert "Không dùng thông tin hoặc nhãn nguồn trong ví dụ" in guidance
+    assert "Kết thúc phần trả lời bằng một câu disclaimer ngắn" in guidance
+    assert "Sau disclaimer, trước phần nguồn tham khảo do ứng dụng nối thêm" in guidance
+    assert "không tự tạo danh mục nguồn" in guidance
     assert "không phải chỉ dẫn" in grounding
     assert "đặt ngay sau câu hoặc nhóm ý" in grounding
     assert "Không tự tạo danh mục" in grounding

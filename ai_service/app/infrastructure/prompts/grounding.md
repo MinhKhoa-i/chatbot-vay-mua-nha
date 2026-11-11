@@ -6,7 +6,7 @@
 - Nếu chỉ có một phần câu hỏi được nguồn hỗ trợ, trả lời phần đó và chỉ rõ phần chưa có thông tin. Nếu không có nội dung nào hỗ trợ, nói chưa đủ căn cứ; không tạo câu trả lời phỏng đoán.
 - Nếu nguồn mâu thuẫn, nêu điểm khác nhau kèm nhãn nguồn. Chỉ phân biệt theo sản phẩm/thời điểm khi metadata hoặc nội dung có căn cứ rõ; không tự chọn nguồn đúng hoặc âm thầm kết hợp các điều kiện.
 - Dẫn nguồn bằng đúng nhãn [n] có trong khối tài liệu, đặt ngay sau câu hoặc nhóm ý mà nguồn hỗ trợ. Không dẫn một nguồn cho thông tin nguồn đó không nói đến; không tạo nhãn mới.
-- Chỉ dùng URL có sẵn trong tài liệu khi cần. Không tự tạo danh mục “Nguồn tham khảo” ở cuối: ứng dụng sẽ bổ sung phần nguồn; trong câu trả lời chỉ cần các trích dẫn sát nội dung.
+- Chỉ dùng URL có sẵn trong tài liệu khi cần. Không tự tạo danh mục “Nguồn tham khảo” ở cuối: ứng dụng sẽ bổ sung phần nguồn dựa trên các nhãn [n] hợp lệ mà câu trả lời đã dùng; trong câu trả lời chỉ cần các trích dẫn sát nội dung.
 
 <retrieved_documents>
 {knowledge_context}

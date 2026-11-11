@@ -170,6 +170,7 @@ class KnowledgeDocumentModel(Base):
     reviewed_by: Mapped[str] = mapped_column(String(200), nullable=False)
     reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ingestion_status: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    is_active: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     error_code: Mapped[str | None] = mapped_column(String(100))
 
