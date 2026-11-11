@@ -82,7 +82,6 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
       "disclaimer": "Thông tin chỉ mang tính tham khảo. Lãi suất, hạn mức và điều kiện phê duyệt chính thức căn cứ theo thông báo phê duyệt tín dụng của Vietcombank tại thời điểm giải ngân."
     },
     {
@@ -164,7 +163,6 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
       "disclaimer": "Thông tin chỉ mang tính tham khảo. Điều kiện phê duyệt, lãi suất và hạn mức thực tế căn cứ theo quyết định cấp tín dụng của BIDV."
     },
     {
@@ -249,7 +247,6 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
       "disclaimer": "Thông tin chỉ mang tính tham khảo. Mức lãi suất khởi điểm 'chỉ từ 3.99%' và tỷ lệ cho vay phụ thuộc vào kết quả phê duyệt tín dụng của Techcombank cho từng khách hàng."
     },
     {
@@ -259,8 +256,8 @@
       "short_name": "VietinBank",
       "logo_url": null,
       "website": "https://www.vietinbank.vn",
-      "source_url": "https://www.vietinbank.vn/vn/ca-nhan/cho-vay/mua-xay-dung-sua-chua-nha-o-nhan-chuyen-nhuong-qsd-dat-20150529141014.html",
-      "package_name": "Cho vay mua, xây dựng, sửa chữa nhà ở và nhận chuyển nhượng QSD đất",
+      "source_url": "https://www.vietinbank.vn/ca-nhan/san-pham-dich-vu/cho-vay/cho-vay-nhan-quyen-su-dung-dat-mua-xay-dung-sua-chua-nha-va-hoac-cong-trinh-xay-dung-30-html",
+      "package_name": "Cho vay nhận quyền sử dụng đất, mua, xây dựng, sửa chữa nhà và/hoặc công trình xây dựng",
       "interest_rate": {
         "promo_rate": 5.8,
         "promo_duration_months": 12,
@@ -268,35 +265,14 @@
         "floating_rate_estimated": 9.3,
         "reference_rate_type": "Lãi suất tiền gửi tiết kiệm cá nhân 12 tháng trả sau của VietinBank",
         "adjustment_frequency_months": 3,
-        "rate_options": [
-          {
-            "duration_months": 12,
-            "rate": 5.8,
-            "conditions": "Áp dụng cố định 12 tháng đầu, thời hạn vay tối thiểu 36 tháng"
-          },
-          {
-            "duration_months": 24,
-            "rate": 6.8,
-            "conditions": "Áp dụng cố định 24 tháng đầu, thời hạn vay tối thiểu 48 tháng"
-          },
-          {
-            "duration_months": 36,
-            "rate": 7.5,
-            "conditions": "Áp dụng cố định 36 tháng đầu, thời hạn vay tối thiểu 60 tháng"
-          }
-        ]
+        "rate_options": []
       },
       "promotions": {
-        "summary": "Lãi suất ưu đãi chỉ từ 5.8%/năm, hạn mức vay đến 80% nhu cầu vốn, thời hạn vay linh hoạt đến 30 năm, ân hạn nợ gốc đến 12 tháng",
+        "summary": "Hỗ trợ vay vốn lên đến 100% nhu cầu vốn, thời hạn cho vay linh hoạt đối với từng mục đích lên tới 35 năm, ân hạn nợ gốc đến 12 tháng",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn theo quy định của VietinBank: Năm 1: 1.5%, Năm 2: 1.0%, Năm 3-5: 0.5%, Từ năm thứ 6 trở đi: 0% (miễn phí)",
-          "tiers": [
-            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
-            { "from_year": 2, "to_year": 2, "rate_percent": 1.0 },
-            { "from_year": 3, "to_year": 5, "rate_percent": 0.5 },
-            { "from_year": 6, "to_year": 30, "rate_percent": 0.0 }
-          ]
+          "description": "Áp dụng theo biểu phí hiện hành của VietinBank tại từng thời kỳ (chi tiết liên hệ chi nhánh giải ngân)",
+          "tiers": []
         },
         "special_offers": [
           "Miễn phí phát hành thẻ ghi nợ và thẻ tín dụng VietinBank",
@@ -305,9 +281,9 @@
         ]
       },
       "loan_limit": {
-        "max_ltv_percent": 80.0,
-        "max_ltv_note": "Tối đa 80% tổng nhu cầu vốn hoặc 70% giá trị tài sản bảo đảm là chính bất động sản mua; lên đến 100% nếu có tài sản bảo đảm độc lập khác",
-        "max_loan_term_years": 30,
+        "max_ltv_percent": 100.0,
+        "max_ltv_note": "Hỗ trợ vay vốn lên đến 100% nhu cầu vốn theo phương án vay; trên giá trị định giá TSBĐ thông thường tối đa 70% - 80% tùy loại tài sản bảo đảm",
+        "max_loan_term_years": 35,
         "min_loan_term_years": 3,
         "max_loan_amount": null,
         "min_loan_amount": 100000000
@@ -327,13 +303,12 @@
           "Có năng lực pháp luật dân sự và năng lực hành vi dân sự đầy đủ",
           "Có thu nhập thường xuyên ổn định đảm bảo khả năng trả nợ gốc và lãi",
           "Không có nợ xấu tại các tổ chức tín dụng tại thời điểm vay vốn",
-          "Có vốn tự có tham gia tối thiểu 20% tổng phương án vay vốn"
+          "Có vốn tự có tham gia thực hiện phương án theo quy định"
         ]
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Lãi suất, hạn mức và điều kiện cấp tín dụng chính thức căn cứ theo quyết định phê duyệt của VietinBank tại từng thời điểm."
+      "disclaimer": "Thông tin mang tính tham khảo trích xuất từ trang sản phẩm chính thức của VietinBank. Trang sản phẩm không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất và hạn mức thực tế căn cứ quyết định phê duyệt tín dụng của VietinBank tại thời điểm giải ngân."
     },
     {
       "id": "agribank",
@@ -342,8 +317,8 @@
       "short_name": "Agribank",
       "logo_url": null,
       "website": "https://www.agribank.com.vn",
-      "source_url": "https://www.agribank.com.vn/vn/ca-nhan/san-pham/vay-von-tin-dung/cho-vay-mua-nha-o",
-      "package_name": "Cho vay mua nhà ở, chuyển nhượng quyền sử dụng đất ở",
+      "source_url": "https://www.agribank.com.vn/vn/ca-nhan/san-pham-dich-vu/vay-von-agribank/vay-nha-o-thuong-mai",
+      "package_name": "Vay mua nhà ở thương mại",
       "interest_rate": {
         "promo_rate": 6.0,
         "promo_duration_months": 12,
@@ -351,39 +326,24 @@
         "floating_rate_estimated": 9.5,
         "reference_rate_type": "Lãi suất tiền gửi tiết kiệm 12 tháng trả sau của Agribank",
         "adjustment_frequency_months": 6,
-        "rate_options": [
-          {
-            "duration_months": 12,
-            "rate": 6.0,
-            "conditions": "Áp dụng cố định 12 tháng đầu, thời hạn vay tối thiểu 36 tháng"
-          },
-          {
-            "duration_months": 24,
-            "rate": 7.0,
-            "conditions": "Áp dụng cố định 24 tháng đầu, thời hạn vay tối thiểu 60 tháng"
-          }
-        ]
+        "rate_options": []
       },
       "promotions": {
-        "summary": "Mạng lưới rộng khắp cả nước, lãi suất ưu đãi ổn định từ 6.0%/năm, hạn mức cho vay lên tới 85% giá trị tài sản bảo đảm, thời hạn vay tối đa 30 năm",
+        "summary": "Đáp ứng nhu cầu vay vốn mua nhà ở thương mại, số tiền cho vay tối đa 100% giá trị hợp đồng/phương án, thời hạn vay lên đến 35 năm, trả nợ linh hoạt",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn theo biểu phí Agribank: Năm 1: 1.0%, Năm 2: 0.5%, Từ năm thứ 3 trở đi: 0% (miễn phí)",
-          "tiers": [
-            { "from_year": 1, "to_year": 1, "rate_percent": 1.0 },
-            { "from_year": 2, "to_year": 2, "rate_percent": 0.5 },
-            { "from_year": 3, "to_year": 30, "rate_percent": 0.0 }
-          ]
+          "description": "Áp dụng theo biểu phí hiện hành của Agribank tại từng thời kỳ",
+          "tiers": []
         },
         "special_offers": [
           "Hỗ trợ mở tài khoản thanh toán và dịch vụ Agribank E-Mobile Banking miễn phí",
-          "Thủ tục đơn giản, giải ngân linh hoạt tại hơn 2.200 chi nhánh toàn quốc"
+          "Thủ tục đơn giản, tiếp cận dễ dàng tại hơn 2.300 điểm giao dịch toàn quốc"
         ]
       },
       "loan_limit": {
-        "max_ltv_percent": 85.0,
-        "max_ltv_note": "Tối đa 85% giá trị tài sản bảo đảm hoặc chi phí hợp lý của phương án vay mua nhà",
-        "max_loan_term_years": 30,
+        "max_ltv_percent": 100.0,
+        "max_ltv_note": "Số tiền cho vay tối đa 100% giá trị hợp đồng chuyển nhượng/mua bán/phương án sử dụng vốn khi có tài sản bảo đảm hợp pháp",
+        "max_loan_term_years": 35,
         "min_loan_term_years": 3,
         "max_loan_amount": null,
         "min_loan_amount": 50000000
@@ -391,24 +351,22 @@
       "eligibility": {
         "min_age": 18,
         "max_age_at_loan_end": 65,
-        "borrower_scope": "Công dân Việt Nam có hộ khẩu thường trú hoặc tạm trú tại địa bàn có chi nhánh Agribank hoạt động",
+        "borrower_scope": "Khách hàng cá nhân mua nhà ở thương mại thuộc dự án đầu tư xây dựng nhà ở trong hệ thống Agribank",
         "min_monthly_income": 8000000,
         "accepted_collateral": [
-          "Quyền sử dụng đất, nhà ở và tài sản gắn liền với đất có đầy đủ giấy tờ hợp pháp",
+          "Quyền sử dụng đất, nhà ở và tài sản gắn liền với đất có đầy đủ giấy tờ hợp pháp (có thể sử dụng chính căn nhà mua làm tài sản đảm bảo)",
           "Sổ tiết kiệm, giấy tờ có giá do Agribank hoặc tổ chức tín dụng uy tín phát hành"
         ],
         "processing_time_days": "3 - 5 ngày làm việc",
         "general_requirements": [
           "Có mục đích sử dụng vốn vay hợp pháp, rõ ràng",
           "Có nguồn thu nhập ổn định bảo đảm khả năng thanh toán nợ vay đúng hạn",
-          "Không có nợ xấu tại Agribank và các tổ chức tín dụng khác",
-          "Vốn tự có tham gia tối thiểu 15% tổng nhu cầu vốn"
+          "Không có nợ xấu tại Agribank và các tổ chức tín dụng khác"
         ]
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Biểu lãi suất và điều kiện vay chính thức do chi nhánh Agribank quyết định theo từng hồ sơ khách hàng."
+      "disclaimer": "Thông tin trích dẫn từ trang sản phẩm Vay mua nhà ở thương mại của Agribank (thời hạn tối đa 35 năm, số tiền vay tối đa 100% HĐMB). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất áp dụng theo các gói tín dụng ưu đãi từng thời kỳ của Agribank."
     },
     {
       "id": "mbbank",
@@ -417,8 +375,8 @@
       "short_name": "MB Bank",
       "logo_url": null,
       "website": "https://www.mbbank.com.vn",
-      "source_url": "https://www.mbbank.com.vn/ca-nhan/vay/vay-mua-nha-dat/4",
-      "package_name": "Cho vay mua nhà đất, căn hộ dự án",
+      "source_url": "https://www.mbbank.com.vn/26/36/san-pham/cho-vay",
+      "package_name": "Cho vay mua nhà đất, căn hộ dự án (Gói MB Dream Home)",
       "interest_rate": {
         "promo_rate": 6.5,
         "promo_duration_months": 12,
@@ -426,41 +384,25 @@
         "floating_rate_estimated": 10.1,
         "reference_rate_type": "Lãi suất cơ sở MB áp dụng cho khách hàng cá nhân",
         "adjustment_frequency_months": 3,
-        "rate_options": [
-          {
-            "duration_months": 12,
-            "rate": 6.5,
-            "conditions": "Áp dụng cố định 12 tháng đầu, thời hạn vay tối thiểu 48 tháng"
-          },
-          {
-            "duration_months": 24,
-            "rate": 7.9,
-            "conditions": "Áp dụng cố định 24 tháng đầu, thời hạn vay tối thiểu 60 tháng"
-          }
-        ]
+        "rate_options": []
       },
       "promotions": {
-        "summary": "Hồ sơ thủ tục đơn giản, thẩm định và phê duyệt nhanh qua App MBBank, hạn mức vay đến 80% giá trị tài sản bảo đảm, thời hạn đến 30 năm, ân hạn gốc đến 24 tháng",
+        "summary": "Gói MB Dream Home cho vay đến 80% giá trị TSBĐ, thời hạn lên đến 35 năm, hỗ trợ chính sách miễn trả nợ gốc giai đoạn đầu",
         "grace_period_months": 24,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn theo biểu phí MB: Năm 1: 1.5%, Năm 2: 1.0%, Năm 3: 0.5%, Từ năm thứ 4 trở đi: 0% (miễn phí)",
-          "tiers": [
-            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
-            { "from_year": 2, "to_year": 2, "rate_percent": 1.0 },
-            { "from_year": 3, "to_year": 3, "rate_percent": 0.5 },
-            { "from_year": 4, "to_year": 30, "rate_percent": 0.0 }
-          ]
+          "description": "Áp dụng theo biểu phí tín dụng hiện hành của MB tại từng thời kỳ",
+          "tiers": []
         },
         "special_offers": [
           "Mở tài khoản số đẹp miễn phí theo số điện thoại hoặc tứ quý",
           "Tặng thẻ tín dụng MB Visa/Mastercard hạn mức hấp dẫn",
-          "Chính sách liên kết ưu đãi với các chủ đầu tư lớn (Vinhomes, Masterise, Novaland)"
+          "Đăng ký và quản lý khoản vay trực tuyến trên App MBBank"
         ]
       },
       "loan_limit": {
         "max_ltv_percent": 80.0,
-        "max_ltv_note": "Tối đa 80% giá trị tài sản bảo đảm thẩm định hoặc 100% nhu cầu vốn nếu có bất động sản độc lập bảo đảm",
-        "max_loan_term_years": 30,
+        "max_ltv_note": "Tối đa 80% giá trị tài sản bảo đảm thẩm định theo giá thị trường",
+        "max_loan_term_years": 35,
         "min_loan_term_years": 3,
         "max_loan_amount": null,
         "min_loan_amount": 100000000
@@ -469,7 +411,7 @@
         "min_age": 18,
         "max_age_at_loan_end": 70,
         "borrower_scope": "Khách hàng cá nhân là công dân Việt Nam từ đủ 18 tuổi và không quá 70 tuổi khi hết hạn khoản vay",
-        "min_monthly_income": 12000000,
+        "min_monthly_income": 10000000,
         "accepted_collateral": [
           "Nhà đất, căn hộ có Giấy chứng nhận quyền sở hữu hợp pháp",
           "Quyền tài sản phát sinh từ Hợp đồng mua bán căn hộ/nhà ở tại các dự án hợp tác",
@@ -484,8 +426,7 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Điều kiện cho vay, lãi suất cụ thể được xác định theo thông báo phê duyệt hạn mức tín dụng của MB."
+      "disclaimer": "Thông tin mang tính tham khảo từ trang danh mục cho vay của MB Bank và gói MB Dream Home (thời hạn đến 35 năm, LTV 80%). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất và phê duyệt chính thức căn cứ thông báo cấp tín dụng của MB."
     },
     {
       "id": "vpbank",
@@ -495,55 +436,34 @@
       "logo_url": null,
       "website": "https://www.vpbank.com.vn",
       "source_url": "https://www.vpbank.com.vn/ca-nhan/vay/vay-mua-nha",
-      "package_name": "Vay mua nhà đất, nhà phố, căn hộ chung cư",
+      "package_name": "Vay mua nhà đất, căn hộ",
       "interest_rate": {
-        "promo_rate": 5.9,
-        "promo_duration_months": 6,
+        "promo_rate": 4.6,
+        "promo_duration_months": 12,
         "floating_margin": 3.8,
         "floating_rate_estimated": 10.5,
         "reference_rate_type": "Lãi suất cơ sở VPBank áp dụng cho khoản vay thế chấp bất động sản",
         "adjustment_frequency_months": 3,
-        "rate_options": [
-          {
-            "duration_months": 6,
-            "rate": 5.9,
-            "conditions": "Áp dụng cố định 6 tháng đầu, thời hạn vay tối thiểu 36 tháng"
-          },
-          {
-            "duration_months": 12,
-            "rate": 7.5,
-            "conditions": "Áp dụng cố định 12 tháng đầu, thời hạn vay tối thiểu 48 tháng"
-          },
-          {
-            "duration_months": 24,
-            "rate": 8.5,
-            "conditions": "Áp dụng cố định 24 tháng đầu, thời hạn vay tối thiểu 60 tháng"
-          }
-        ]
+        "rate_options": []
       },
       "promotions": {
-        "summary": "Thời hạn vay kéo dài lên tới 35 năm, hỗ trợ LTV tối đa đến 85% giá trị tài sản bảo đảm, chấp nhận nguồn thu nhập linh hoạt đa dạng, ân hạn nợ gốc tối đa 12 tháng",
+        "summary": "Lãi suất ưu đãi chỉ từ 4.6%, duyệt vay cấp tốc chỉ trong 5 phút, vay lên đến 80% giá trị căn nhà, thời gian vay linh hoạt từ 25 đến 35 năm",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn theo quy định VPBank: Năm 1: 1.5%, Năm 2-3: 1.0%, Năm 4: 0.5%, Từ năm thứ 5 trở đi: 0% (miễn phí)",
-          "tiers": [
-            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
-            { "from_year": 2, "to_year": 3, "rate_percent": 1.0 },
-            { "from_year": 4, "to_year": 4, "rate_percent": 0.5 },
-            { "from_year": 5, "to_year": 35, "rate_percent": 0.0 }
-          ]
+          "description": "Áp dụng theo biểu phí hiện hành của VPBank tại từng thời kỳ",
+          "tiers": []
         },
         "special_offers": [
+          "Duyệt vay cấp tốc chỉ trong 5 phút",
           "Hỗ trợ định giá tài sản trực tuyến nhanh qua nền tảng VPBank NEO",
-          "Miễn phí phát hành thẻ tín dụng VPBank kèm hoàn tiền hấp dẫn",
-          "Chứng minh thu nhập linh hoạt: chấp nhận thu nhập từ hộ kinh doanh, cho thuê tài sản, cổ tức"
+          "Miễn phí phát hành thẻ tín dụng VPBank kèm hoàn tiền hấp dẫn"
         ]
       },
       "loan_limit": {
-        "max_ltv_percent": 85.0,
-        "max_ltv_note": "Tối đa 85% giá trị định giá tài sản bảo đảm; lên tới 100% nếu có tài sản bảo đảm bổ sung hợp pháp",
+        "max_ltv_percent": 80.0,
+        "max_ltv_note": "Vay số tiền lên đến 80% giá trị căn nhà theo công bố chính thức trên trang sản phẩm VPBank",
         "max_loan_term_years": 35,
-        "min_loan_term_years": 4,
+        "min_loan_term_years": 25,
         "max_loan_amount": null,
         "min_loan_amount": 100000000
       },
@@ -557,7 +477,7 @@
           "Căn hộ chung cư, nhà phố hình thành từ vốn vay tại dự án liên kết với VPBank",
           "Tài sản bảo đảm của bên thứ ba là bố mẹ, con cái, vợ chồng"
         ],
-        "processing_time_days": "Phê duyệt nhanh chóng trong 24 - 48 giờ làm việc",
+        "processing_time_days": "Duyệt vay cấp tốc chỉ trong 5 phút",
         "general_requirements": [
           "Có phương án vay vốn khả thi và mục đích vay tiêu dùng nhà ở hợp pháp",
           "Tổng thu nhập hộ gia đình đảm bảo khả năng trả nợ gốc và lãi hàng tháng",
@@ -566,8 +486,7 @@
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Tỷ lệ cho vay và mức lãi suất cụ thể phụ thuộc vào xếp hạng tín dụng của khách hàng theo quy định của VPBank."
+      "disclaimer": "Thông tin trích dẫn trực tiếp từ trang Vay mua nhà đất, căn hộ của VPBank (lãi suất ưu đãi chỉ từ 4.6%, thời hạn vay 25 - 35 năm, vay lên đến 80% giá trị căn nhà). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; lãi suất và hạn mức thực tế căn cứ kết quả phê duyệt của VPBank."
     },
     {
       "id": "acb",
@@ -576,8 +495,8 @@
       "short_name": "ACB",
       "logo_url": null,
       "website": "https://acb.com.vn",
-      "source_url": "https://acb.com.vn/khach-hang-ca-nhan/vay/vay-mua-nha-dat",
-      "package_name": "Vay mua nhà, đất ở",
+      "source_url": "https://acb.com.vn/vay-von/vay-mua-nha-dat",
+      "package_name": "Vay Mua Nhà Đất",
       "interest_rate": {
         "promo_rate": 6.5,
         "promo_duration_months": 12,
@@ -585,40 +504,24 @@
         "floating_rate_estimated": 10.0,
         "reference_rate_type": "Lãi suất cơ sở ACB kỳ hạn 12 tháng áp dụng cho vay cá nhân",
         "adjustment_frequency_months": 3,
-        "rate_options": [
-          {
-            "duration_months": 12,
-            "rate": 6.5,
-            "conditions": "Áp dụng cố định 12 tháng đầu, thời hạn vay tối thiểu 36 tháng"
-          },
-          {
-            "duration_months": 24,
-            "rate": 7.8,
-            "conditions": "Áp dụng cố định 24 tháng đầu, thời hạn vay tối thiểu 60 tháng"
-          }
-        ]
+        "rate_options": []
       },
       "promotions": {
-        "summary": "Dịch vụ tài chính chuyên nghiệp, lãi suất cạnh tranh minh bạch từ 6.5%/năm, phương thức trả nợ gốc linh hoạt (theo tháng hoặc quý), ân hạn nợ gốc đến 12 tháng",
+        "summary": "Hỗ trợ nguồn vốn cho các nhu cầu mua hoặc nhận chuyển nhượng nhà ở, đất ở, ân hạn trả vốn vay lên đến 01 năm, lãi trả hàng tháng, vốn trả định kỳ linh hoạt theo dòng tiền",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn theo biểu phí ACB: Năm 1: 1.5%, Năm 2: 1.0%, Năm 3: 0.5%, Từ năm thứ 4 trở đi: 0% (miễn phí)",
-          "tiers": [
-            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
-            { "from_year": 2, "to_year": 2, "rate_percent": 1.0 },
-            { "from_year": 3, "to_year": 3, "rate_percent": 0.5 },
-            { "from_year": 4, "to_year": 30, "rate_percent": 0.0 }
-          ]
+          "description": "Chính sách trả nợ trước hạn linh hoạt theo quy định biểu phí của ACB, ưu đãi phí khi trả định kỳ hàng tháng",
+          "tiers": []
         },
         "special_offers": [
           "Miễn phí chuyển khoản trọn đời trên ACB ONE",
-          "Tùy chọn phương thức trả gốc: định kỳ hàng tháng hoặc hàng quý giúp tối ưu dòng tiền",
-          "Ưu đãi phí bảo hiểm cháy nổ và bảo hiểm tài sản gắn liền"
+          "Phương thức trả nợ linh hoạt: định kỳ hàng tháng hoặc <= 6 tháng/lần theo góp đều hoặc góp bậc thang (tăng 10-20%/năm)",
+          "Ân hạn trả vốn vay lên đến 01 năm"
         ]
       },
       "loan_limit": {
         "max_ltv_percent": 80.0,
-        "max_ltv_note": "Tối đa 80% giá trị tài sản bảo đảm là bất động sản mua; tối đa 100% nếu có tài sản bảo đảm độc lập khác bổ sung",
+        "max_ltv_note": "Số tiền vay theo giá trị nhà đất mua và giá trị tài sản thế chấp (thông thường tối đa 80% giá trị TSBĐ)",
         "max_loan_term_years": 30,
         "min_loan_term_years": 3,
         "max_loan_amount": null,
@@ -627,24 +530,22 @@
       "eligibility": {
         "min_age": 18,
         "max_age_at_loan_end": 65,
-        "borrower_scope": "Công dân Việt Nam từ đủ 18 tuổi đến tối đa 65 tuổi tại thời điểm kết thúc thời hạn vay",
+        "borrower_scope": "Công dân Việt Nam, từ 18 tuổi trở lên",
         "min_monthly_income": 10000000,
         "accepted_collateral": [
-          "Bất động sản nhà ở, đất ở đã được cấp Giấy chứng nhận hợp pháp",
-          "Căn hộ chung cư có Giấy chứng nhận hoặc hợp đồng mua bán tại dự án có liên kết với ACB",
+          "Bất động sản nhà ở, đất ở đã được cấp Giấy chứng nhận hợp pháp (nhà đất dự định mua hoặc nhà đất khác)",
           "Sổ tiết kiệm, chứng chỉ tiền gửi do ACB phát hành"
         ],
         "processing_time_days": "3 - 5 ngày làm việc",
         "general_requirements": [
-          "Có nguồn thu nhập chứng minh ổn định đảm bảo trả nợ gốc và lãi đúng hạn",
-          "Lịch sử tín dụng tốt, không có nợ xấu tại các tổ chức tín dụng",
-          "Vốn tự có tham gia tối thiểu 20% giá trị bất động sản mua"
+          "Có nguồn thu nhập ổn định và đủ khả năng trả nợ",
+          "Có tài sản thế chấp là nhà đất dự định mua hoặc nhà đất khác",
+          "Lịch sử tín dụng tốt, không có nợ xấu tại các tổ chức tín dụng"
         ]
       },
       "repayment_methods": ["reducing_balance", "annuity"],
       "last_updated": "2026-11-11",
-      "updated_at": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Hạn mức và lãi suất chính thức được quyết định dựa trên kết quả thẩm định tín dụng của ACB."
+      "disclaimer": "Thông tin trích dẫn trực tiếp từ trang sản phẩm Vay Mua Nhà Đất của ACB (https://acb.com.vn/vay-von/vay-mua-nha-dat). Trang không niêm yết biểu bậc phạt trả trước hạn (tiers: []) và rate_options cụ thể; hạn mức và lãi suất chính thức căn cứ kết quả thẩm định tín dụng của ACB."
     }
   ]
 }

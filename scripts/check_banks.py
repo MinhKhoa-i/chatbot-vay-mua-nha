@@ -65,7 +65,6 @@ BANK_SCHEMA: Dict[str, Any] = {
                     "website": {"type": "string"},
                     "source_url": {"type": "string"},
                     "package_name": {"type": "string"},
-                    "updated_at": {"type": "string"},
                     "interest_rate": {
                         "type": "object",
                         "required": [
@@ -207,8 +206,7 @@ def validate_with_jsonschema(data: Any) -> List[str]:
             path = " -> ".join(str(p) for p in err.absolute_path) or "root"
             errors.append(f"[JSONSchema] {path}: {err.message}")
     except ImportError:
-        # Nếu chưa cài jsonschema thì fallback kiểm tra thủ công
-        pass
+        print("[CẢNH BÁO] Chưa cài jsonschema (pip install jsonschema), bỏ qua bước kiểm tra JSON Schema.")
     return errors
 
 
@@ -219,7 +217,7 @@ def validate_business_rules(data: Dict[str, Any]) -> Tuple[List[str], List[str]]
 
     # 1. Kiểm tra trường gốc
     if not isinstance(data, dict):
-        return ["[Root] File phải chứa một JSON Object.", []], warnings
+        return ["[Root] File phải chứa một JSON Object."], warnings
 
     for req_field in ["version", "updated_at", "banks"]:
         if req_field not in data:
@@ -270,17 +268,12 @@ def validate_business_rules(data: Dict[str, Any]) -> Tuple[List[str], List[str]]
                 f"{prefix} Trường 'source_url' ('{source_url}') không hợp lệ hoặc bị thiếu (bắt buộc theo yêu cầu nghiệp vụ)"
             )
 
-        # Kiểm tra last_updated và updated_at
+        # Kiểm tra last_updated
         last_updated = bank.get("last_updated")
         if not last_updated:
             errors.append(f"{prefix} Thiếu trường bắt buộc 'last_updated'")
         elif not is_valid_date(last_updated):
             errors.append(f"{prefix} Trường 'last_updated' ('{last_updated}') không đúng định dạng YYYY-MM-DD")
-
-        # Có trường updated_at nếu có
-        bank_updated_at = bank.get("updated_at")
-        if bank_updated_at and not is_valid_date(bank_updated_at):
-            errors.append(f"{prefix} Trường 'updated_at' ('{bank_updated_at}') không đúng định dạng YYYY-MM-DD")
 
         # Lãi suất
         ir = bank.get("interest_rate", {})
@@ -330,8 +323,16 @@ def validate_business_rules(data: Dict[str, Any]) -> Tuple[List[str], List[str]]
             penalty = promotions.get("early_repayment_penalty", {})
             if isinstance(penalty, dict):
                 tiers = penalty.get("tiers")
-                if not isinstance(tiers, list) or len(tiers) == 0:
-                    errors.append(f"{prefix} 'early_repayment_penalty.tiers' phải là danh sách bậc phí không rỗng")
+                if not isinstance(tiers, list):
+                    errors.append(f"{prefix} 'early_repayment_penalty.tiers' phải là danh sách (array)")
+                else:
+                    for t_idx, tier in enumerate(tiers):
+                        if not isinstance(tier, dict):
+                            errors.append(f"{prefix} Bậc phí #{t_idx + 1} phải là object")
+                        else:
+                            for f in ["from_year", "to_year", "rate_percent"]:
+                                if f not in tier:
+                                    errors.append(f"{prefix} Bậc phí #{t_idx + 1} thiếu trường '{f}'")
             else:
                 errors.append(f"{prefix} 'promotions.early_repayment_penalty' phải là object")
         else:
