@@ -1,14 +1,5 @@
 export const DEFAULT_RATE = 8.5; // %/năm, giả định minh họa, chưa phải lãi suất ngân hàng cụ thể
 
-// Trả đều gốc và lãi hằng tháng (niên kim). Chỉ dùng khi chạy mock: số chính thức lấy từ
-// backend (backend/finance/calculator.py). Sửa công thức thì sửa cả hai chỗ.
-export function annuity(amount, years, ratePct = DEFAULT_RATE) {
-  const n = years * 12;
-  const r = ratePct / 100 / 12;
-  const monthly = r === 0 ? amount / n : (amount * r) / (1 - Math.pow(1 + r, -n));
-  return { monthly, interest: monthly * n - amount };
-}
-
 // Bản JS của schedule() trong backend/finance/calculator.py, chỉ dùng khi chạy mock.
 // Giữ đúng công thức, cách làm tròn và câu báo lỗi của bản Python.
 export function schedule(principal, months, annualRate, method = "annuity", promoRate = null, promoMonths = 0) {
