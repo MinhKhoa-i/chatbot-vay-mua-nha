@@ -106,7 +106,7 @@ Chạy backend rồi thử ở Swagger `http://localhost:8000/docs`, hoặc ch�
 
 ## 6. Hàm tính khoản vay
 
-Đã có test tự động trong `backend/finance/test_calculator.py`. Các ca cần giữ:
+Đã có test tự động trong `backend/tests/test_calculator.py`. Các ca cần giữ:
 
 | ID      | Tình huống                        | Kết quả mong đợi                                                                                           | Mức độ |
 | ------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------- |
