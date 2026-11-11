@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 from collections.abc import AsyncIterator
 
 from app.application.services.chat_response_policy import ChatResponsePolicy
@@ -18,6 +19,16 @@ from app.domain.ports.knowledge_retrieval import KnowledgeRetriever
 from app.domain.ports.prompt_catalog import PromptCatalog
 
 logger = logging.getLogger(__name__)
+_CITATION_LABEL_PATTERN = re.compile(r"\[(\d+)\]")
+
+
+def _cited_sources(answer: str, citations: tuple[str, ...]) -> tuple[str, ...]:
+    """Return retrieved citations whose exact numeric labels appear in the answer."""
+    cited_labels = set(_CITATION_LABEL_PATTERN.findall(answer))
+    return tuple(
+        citation for index, citation in enumerate(citations, start=1)
+        if str(index) in cited_labels
+    )
 
 
 class StreamChatUseCase:
@@ -119,8 +130,9 @@ class StreamChatUseCase:
                 except TimeoutError as exc:
                     raise ChatProviderUnavailable(code="MODEL_TIMEOUT") from exc
             answer = "".join(answer_parts)
-            if grounded.citations and deterministic is None:
-                citation_footer = "\n\nNguồn tham khảo: " + "; ".join(grounded.citations)
+            cited_sources = _cited_sources(answer, grounded.citations)
+            if cited_sources and deterministic is None:
+                citation_footer = "\n\nNguồn tham khảo: " + "; ".join(cited_sources)
                 answer += citation_footer
                 yield ChatEvent("delta", {"text": citation_footer})
             stage = "commit"

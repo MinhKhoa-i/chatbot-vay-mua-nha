@@ -141,8 +141,8 @@ def test_unavailable_retrieval_fails_closed(retrieval, code):
     assert "private details" not in str(caught.value)
 
 
-def test_grounded_response_receives_sources_and_appends_citation(grounded_context):
-    completion = FakeCompletion("Tài liệu đã duyệt nêu mức 8%.")
+def test_grounded_response_receives_sources_and_appends_only_cited_sources(grounded_context):
+    completion = FakeCompletion("Tài liệu đã duyệt nêu mức 8%. [1]")
     retrieval = FakeRetrieval(grounded_context)
     events, repository = execute(completion, retrieval, "Chào bạn, lãi suất bao nhiêu?")
     assert completion.calls == 1
@@ -151,6 +151,44 @@ def test_grounded_response_receives_sources_and_appends_citation(grounded_contex
     assert "Nguồn tham khảo: [1] Lãi suất chính thức — https://bank.example/rates" in repository.committed_answer
     assert any(event.event == "delta" and "Nguồn tham khảo" in event.data.get("text", "") for event in events)
     assert "".join(event.data["text"] for event in events if event.event == "delta") == repository.committed_answer
+
+
+def test_grounded_response_omits_uncited_sources_from_footer(grounded_context):
+    second = KnowledgeEvidence(
+        chunk_id=uuid4(), document_id=uuid4(), title="Điều kiện vay",
+        source_url="https://bank.example/eligibility", body="Có điều kiện thu nhập.", score=0.8,
+    )
+    context = GroundedContext(
+        (*grounded_context.evidence, second), grounded_context.prompt_context,
+        (*grounded_context.citations, "[2] Điều kiện vay — https://bank.example/eligibility"),
+    )
+    completion = FakeCompletion("Mức lãi suất là 8%. [1]")
+    _, repository = execute(completion, FakeRetrieval(context), "Lãi suất bao nhiêu?")
+    assert "Nguồn tham khảo: [1] Lãi suất chính thức — https://bank.example/rates" in repository.committed_answer
+    assert "Điều kiện vay" not in repository.committed_answer
+
+
+def test_grounded_response_omits_footer_for_unknown_only_citation(grounded_context):
+    completion = FakeCompletion("Mức lãi suất là 8%. [9]")
+    _, repository = execute(completion, FakeRetrieval(grounded_context), "Lãi suất bao nhiêu?")
+    assert "Nguồn tham khảo:" not in repository.committed_answer
+    assert "[9]" in repository.committed_answer
+
+
+def test_grounded_response_keeps_multiple_valid_citations_once(grounded_context):
+    second = KnowledgeEvidence(
+        chunk_id=uuid4(), document_id=uuid4(), title="Điều kiện vay",
+        source_url=None, body="Có điều kiện thu nhập.", score=0.8,
+    )
+    context = GroundedContext(
+        (*grounded_context.evidence, second), grounded_context.prompt_context,
+        (*grounded_context.citations, "[2] Điều kiện vay"),
+    )
+    completion = FakeCompletion("Điều kiện được nêu. [2] Lãi suất là 8%. [1] [2]")
+    _, repository = execute(completion, FakeRetrieval(context), "Thông tin vay?")
+    assert repository.committed_answer.endswith(
+        "Nguồn tham khảo: [1] Lãi suất chính thức — https://bank.example/rates; [2] Điều kiện vay"
+    )
 
 
 def test_followups_use_history_without_workflow_state(grounded_context):

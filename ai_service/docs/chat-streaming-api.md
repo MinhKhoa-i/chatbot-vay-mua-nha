@@ -24,18 +24,18 @@ The stream is exposed as `POST /api/v1/conversations/{conversation_id}/messages`
 
 Every event has the shape `event: <name>` followed by a JSON `data:` line, then a blank line. Text is streamed as UTF-8 without wrapping the content in Markdown or another envelope. `delta` events are provisional until `done`; clients must discard them if the stream ends with `error`.
 
-A successful `done` event contains the persisted IDs and version, for example:
+A successful `done` event contains the persisted IDs and version, the user-facing `reply`, and `estimate` (an object when an estimate completed, otherwise `null`), for example:
 
 ```text
 event: done
-data: {"conversation_id":"...","client_request_id":"...","conversation_version":1,"user_message_id":"...","assistant_message_id":"...","reply":"Xin chào"}
+data: {"conversation_id":"...","client_request_id":"...","conversation_version":1,"user_message_id":"...","assistant_message_id":"...","reply":"Xin chào","estimate":null}
 ```
 
-A completed retry sends the same durable response in `done`, with no `delta` events and no second provider call.
+A completed retry sends the same durable response in `done`, with no `delta` events and no second provider or calculator call.
 
 Common error codes include `IDEMPOTENCY_CONFLICT`, `MESSAGE_PROCESSING`, `CONVERSATION_BUSY`, `VERSION_CONFLICT`, `REQUEST_LEASE_LOST`, and `MODEL_UNAVAILABLE`. Errors after the stream starts use SSE `error`; the HTTP status is then already 200. Retryable failures instruct the client to reuse the same request ID and payload.
 
-Example of a fresh streamed response:
+Example of a fresh streamed response (the completion event carries the committed response envelope):
 
 ```text
 event: delta
@@ -45,19 +45,20 @@ event: delta
 data: {"text":" bạn"}
 
 event: done
-data: {"status":"completed"}
+data: {"conversation_id":"<uuid>","client_request_id":"<uuid>","conversation_version":1,"user_message_id":"<uuid>","assistant_message_id":"<uuid>","reply":"Xin chào bạn","estimate":null}
 ```
 
 Malformed requests return HTTP 422 before streaming. Requests larger than 20 KiB return HTTP 413 when the content length is available; the validated body is also checked before the stream begins. Responses set `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and `X-Accel-Buffering: no`.
 
 ## Conversation context and orchestration
 
-Chat now has exactly two intents:
+Chat has three handled paths:
 
 - `general`: a complete greeting, thank-you or farewell message. The application answers locally without calling embeddings, retrieval or the chat model.
-- `retrieval`: every other message, including uncertain inputs and greetings mixed with questions. The application searches approved knowledge first; only usable evidence permits a model call.
+- `retrieval`: knowledge questions, including uncertain inputs and greetings mixed with questions. The application searches approved knowledge first; only usable evidence permits a model call.
+- `estimate`: a loan-payment estimate handled by the dedicated estimate use case. It collects amount, term and fixed rate, asks the user to confirm the scenario, and only then calls the backend calculator. It does not call knowledge retrieval or ask the chat model to calculate.
 
-The classifier normalizes case, Vietnamese accents and punctuation, then matches complete social phrases, not substrings. For example, `Xin chào!` is `general`, while `Chào bạn, lãi suất bao nhiêu?` and `Tôi muốn vay 10 tỷ` are `retrieval`. This is deliberately conservative, not a semantic multilingual classifier: unrecognized social phrasing also takes the retrieval path.
+The social-intent classifier normalizes case, Vietnamese accents and punctuation, then matches complete social phrases, not substrings. For example, `Xin chào!` is `general`, while `Chào bạn, lãi suất bao nhiêu?` and `Tôi muốn vay 10 tỷ` are knowledge `retrieval` unless an active estimate session handles the request. This is deliberately conservative, not a semantic multilingual classifier: unrecognized social phrasing also takes the retrieval path.
 
 For conversational searches, the application includes up to two recent non-social user questions (each capped at 1,000 characters, selected from the latest 20 history messages) alongside the current question. Assistant replies are never included as retrieval evidence. This lightweight context helps follow-up questions without introducing an extra model call; it does not guarantee reference resolution across topic changes. The answer model receives up to the latest 20 committed user/assistant messages, the current question and the retrieved context. Neither the conversation ID nor legacy task/profile state is sent to the model.
 
@@ -65,7 +66,7 @@ Generic slot extraction, task queues and the old multi-intent planner are no lon
 
 ## Trusted-source grounding
 
-For each new `retrieval` turn, the application embeds the contextualized query and retrieves up to five knowledge chunks using the existing retrieval service. Search is bounded by a 15-second application timeout. The repository query only includes documents whose review status is `approved`, ingestion status is `published`, and effective date range includes the current date. Retrieval context is bounded; a successful model answer includes the retrieved source title/URL as a citation. When no sufficiently relevant source or usable prompt context is found, the application returns a deterministic no-source reply without calling the chat model. Unconfigured, failed or timed-out retrieval/embedding is a technical error instead: the turn fails without committing a successful no-source reply. The SSE event names and JSON shapes remain unchanged; citations are part of the streamed/persisted reply text.
+For each new knowledge `retrieval` turn, the application embeds the contextualized query and retrieves up to five knowledge chunks using the existing retrieval service. Search is bounded by a 15-second application timeout. The repository query only includes documents whose review status is `approved`, ingestion status is `published`, `is_active` is true, and effective date range includes the current date. Retrieval context is bounded; a successful model answer is asked to cite source labels from the evidence. The application recognizes exact numeric labels such as `[1]` only when the corresponding label exists in the current turn's retrieved citation list, and appends a footer containing only those cited sources, in retrieval order. Unknown labels do not add sources to the footer; the application does not rewrite or remove the model's inline text. The footer's label check does not verify whether cited evidence semantically entails a claim. Because `delta` events are emitted while the model is generating, inline output (including an invalid label) may already have reached the client before the application can filter the footer. When no sufficiently relevant source or usable prompt context is found, the application returns a deterministic no-source reply without calling the chat model. Unconfigured, failed or timed-out retrieval/embedding is a technical error instead: the turn fails without committing a successful no-source reply. Valid-source footers are part of the streamed/persisted reply text.
 
 ## Markdown prompt resources
 

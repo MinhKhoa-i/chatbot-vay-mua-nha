@@ -48,6 +48,8 @@ def test_app_lifespan_and_public_routes_without_external_services(monkeypatch):
         assert "post" in paths["/api/v1/conversations"]
         assert "post" in paths["/api/v1/conversations/{conversation_id}/messages"]
         assert "post" in paths["/api/v1/knowledge/documents"]
+        assert "get" in paths["/api/v1/knowledge/documents/{document_id}"]
+        assert "patch" in paths["/api/v1/knowledge/documents/{document_id}/activation"]
 
     dispose_database.assert_awaited_once_with()
 

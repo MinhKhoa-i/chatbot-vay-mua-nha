@@ -5,7 +5,11 @@ from typing import Annotated
 
 from app.application.services.knowledge_chunker import KnowledgeChunker
 from app.application.use_cases.process_knowledge_document import ProcessKnowledgeDocument
-from app.application.use_cases.upload_knowledge_document import GetKnowledgeDocument, UploadKnowledgeDocument
+from app.application.use_cases.upload_knowledge_document import (
+    GetKnowledgeDocument,
+    SetKnowledgeDocumentActive,
+    UploadKnowledgeDocument,
+)
 from app.core.config import Settings
 from app.infrastructure.db.session import get_async_session_factory
 from app.infrastructure.knowledge.document_extractor import LocalDocumentExtractor
@@ -31,6 +35,10 @@ def get_upload_use_case() -> UploadKnowledgeDocument:
 
 def get_document_reader() -> GetKnowledgeDocument:
     return GetKnowledgeDocument(get_knowledge_repository())
+
+
+def get_document_activation_updater() -> SetKnowledgeDocumentActive:
+    return SetKnowledgeDocumentActive(get_knowledge_repository())
 
 
 def get_document_processor() -> ProcessKnowledgeDocument:

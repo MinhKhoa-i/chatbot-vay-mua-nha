@@ -39,5 +39,6 @@ class StoredDocument:
     size_bytes: int
     ingestion_status: IngestionStatus
     review_status: str = "approved"
+    is_active: bool = True
     error_code: str | None = None
     http_status: int = 202

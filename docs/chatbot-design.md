@@ -293,17 +293,7 @@ Quy ước mức độ cần thiết:
 
 ### 8.1. Trạng thái thực tế và ranh giới kiến trúc
 
-Nhánh hiện tại **chưa có `backend/finance/calculator.py`**, chưa có endpoint tính toán của backend và chưa có port calculator trong AI service. Tên đường dẫn trên là mục tiêu tích hợp module của bạn Định, không phải một import có thể dùng ngay. MVP chỉ hỏi đáp có nguồn; lời chào phải nói rõ chưa hỗ trợ tính toán, system prompt tiếp tục cấm LLM tự tính.
-
-Khi module sẵn sàng, tái sử dụng công thức ở backend thay vì viết lại trong prompt, endpoint chat hay frontend:
-
-- **Backend:** calculator là nơi duy nhất sở hữu công thức, quy tắc làm tròn và test nghiệp vụ; application use case của backend gọi module và presentation cung cấp API có version.
-- **AI domain:** khai báo input/output có kiểu dữ liệu và port `LoanCalculator`; domain không import FastAPI, HTTP client hoặc package `backend`.
-- **AI application:** use case thu thập/kiểm tra thông tin, yêu cầu xác nhận giả định, gọi port và xử lý lỗi. Tách khỏi use case hỏi đáp kiến thức hiện tại để không làm tăng phụ thuộc của mọi lượt chat.
-- **AI infrastructure:** adapter HTTP triển khai port và gọi API calculator của backend với timeout/retry có giới hạn; composition root inject adapter. Hai service triển khai độc lập, không import chéo source tree.
-- **AI presentation:** chỉ validation/serialize HTTP/SSE, không chứa công thức. LLM chỉ giải thích kết quả đã nhận; số tiền/kỳ hạn/lãi suất hiển thị từ output có cấu trúc, không để mô hình tạo lại con số.
-
-**Trạng thái triển khai hiện tại:** `ai_service` đã có luồng mô phỏng annuity với lãi suất cố định toàn kỳ, `EstimateLoanUseCase` và adapter gọi loan calculator backend. Calculator chỉ được gọi sau khi đã thu thập đủ số tiền vay, thời hạn, lãi suất và khách hàng xác nhận kịch bản. Đây là mô phỏng tham khảo, không đánh giá khả năng chi trả hoặc quyết định duyệt vay.
+**Trạng thái hiện tại:** `ai_service` đã có luồng mô phỏng khoản trả góp theo niên kim với lãi suất cố định toàn kỳ, `EstimateLoanUseCase` và adapter HTTP gọi loan calculator backend qua `POST /api/estimate`. Luồng này thu thập số tiền vay, thời hạn và lãi suất, yêu cầu người dùng xác nhận kịch bản rồi mới gọi calculator. Lời chào hoặc câu hỏi kiến thức không gọi calculator. Đây là mô phỏng tham khảo, không đánh giá khả năng chi trả hay quyết định duyệt vay.
 
 ### 8.2. Hợp đồng kết quả estimate trên SSE
 

@@ -14,7 +14,11 @@ from app.application.use_cases.upload_knowledge_document import UploadCommand, U
 from app.domain.entities.knowledge_document import IngestionStatus, StoredDocument, VerifiedDocumentMetadata
 from app.domain.ports.knowledge_ingestion import IngestionJob, UploadResult
 from app.infrastructure.knowledge.local_snapshot_store import LocalSnapshotStore, UploadRejected
-from app.presentation.api.knowledge_schemas import UploadMetadata
+from app.presentation.api.knowledge_schemas import (
+    KnowledgeDocumentResponse,
+    UpdateKnowledgeActivation,
+    UploadMetadata,
+)
 
 
 class WordTokenizer:
@@ -50,6 +54,23 @@ class FakeRepository:
 
     async def fail_ingestion(self, job, error_code):
         self.failure = (job, error_code)
+
+
+def test_activation_schema_requires_a_strict_boolean():
+    assert UpdateKnowledgeActivation(is_active=False).is_active is False
+    with pytest.raises(ValueError):
+        UpdateKnowledgeActivation(is_active="false")
+
+
+def test_document_response_includes_activation_state():
+    document = StoredDocument(
+        uuid4(), uuid4(), 1, "Terms", None, "a" * 64, "/snapshot", "text/markdown",
+        12, IngestionStatus.PUBLISHED, is_active=False,
+    )
+
+    response = KnowledgeDocumentResponse.from_domain(document)
+
+    assert response.is_active is False
 
 
 def test_metadata_requires_verified_operator_review_and_safe_url():

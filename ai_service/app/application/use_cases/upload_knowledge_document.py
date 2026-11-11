@@ -61,3 +61,11 @@ class GetKnowledgeDocument:
 
     async def execute(self, document_id: UUID) -> StoredDocument | None:
         return await self._repository.get_document(document_id)
+
+
+class SetKnowledgeDocumentActive:
+    def __init__(self, repository: KnowledgeRepository) -> None:
+        self._repository = repository
+
+    async def execute(self, document_id: UUID, is_active: bool) -> StoredDocument | None:
+        return await self._repository.set_document_active(document_id, is_active)
