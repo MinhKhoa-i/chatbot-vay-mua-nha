@@ -159,8 +159,8 @@ def max_loan(property_value, monthly_income, months, annual_rate, method=ANNUITY
         raise ValueError("Thu nhập phải lớn hơn 0")
     if existing_monthly_debt < 0:
         raise ValueError("Nợ hiện tại không được âm")
-    if not 0 < max_ltv <= 100:
-        raise ValueError("LTV tối đa (%) phải trong khoảng (0, 100]")
+    if not 1 <= max_ltv <= 100:
+        raise ValueError("LTV tối đa (%) phải trong khoảng [1, 100], ví dụ 80 = 80%")
     if not 0 < max_dti <= 1:
         raise ValueError("DTI tối đa phải trong khoảng (0, 1]")
 

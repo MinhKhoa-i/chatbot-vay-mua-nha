@@ -117,6 +117,7 @@ def test_max_loan_promo_uses_peak_payment():
 
 
 def test_max_loan_ltv_in_percent():
+    assert max_loan(3_000_000_000, 1_000_000_000, N, 10, max_ltv=1)["by_ltv"] == 30_000_000
     assert max_loan(3_000_000_000, 1_000_000_000, N, 10, max_ltv=100)["by_ltv"] == 3_000_000_000
     assert max_loan(3_000_000_000, 1_000_000_000, N, 10, max_ltv=65.5)["by_ltv"] == 1_965_000_000
 
@@ -132,6 +133,7 @@ def test_max_loan_custom_limits():
     ({"monthly_income": 0}, "Thu nhập"),
     ({"existing_monthly_debt": -1}, "Nợ hiện tại"),
     ({"max_ltv": 0}, "LTV tối đa"),
+    ({"max_ltv": 0.8}, "LTV tối đa"),
     ({"max_ltv": 100.5}, "LTV tối đa"),
     ({"max_ltv": -1}, "LTV tối đa"),
     ({"max_dti": 0}, "DTI tối đa"),
