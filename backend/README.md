@@ -66,5 +66,3 @@ Gồm test hàm tính (`tests/test_calculator.py`) và test hợp đồng API (`
 - Gửi đủ giá trị nhà + thu nhập thì gọi max_loan() của finance/calculator.py, trả thêm trường max_loan {max_loan, by_ltv, by_dti, limited_by, ...}; không gửi thì max_loan = null
 - Chỉ gửi một trong hai thì trả 422 kèm câu tiếng Việt
 - Cập nhật docs/api.md mục 3.3 và tests/test_api.py (27 passed)
-
-Dựa trên PR việc 16 (feature/chat-ai-service), nhờ merge PR 16 trước.
