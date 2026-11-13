@@ -83,7 +83,9 @@ Trả về:
 
 `estimate` có cùng các trường với response của `/api/estimate` (mục 3.3). Bắt buộc có `amount`, `years`, `rate`; nên có thêm `method`, `monthly_payment`, `total_interest`. Nếu thiếu `monthly_payment` hoặc `total_interest`, thẻ ước tính của frontend gọi `POST /api/estimate` với `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` để lấy số; frontend không tự tính khi chạy với backend thật.
 
-**Hiện trạng:** backend trả một câu cố định (dữ liệu mẫu). Kế hoạch nối với `ai_service` ở mục 5.
+**Hiện trạng:** đã đặt biến môi trường `AI_SERVICE_URL` thì backend hỏi `ai_service` theo mục 5; chưa đặt thì trả một câu cố định (dữ liệu mẫu).
+
+Lỗi riêng của endpoint này: `ai_service` lỗi, không kết nối được hoặc thử lại hết số lần thì trả **`502`** với `detail` là một câu tiếng Việt. Frontend hiện câu báo lỗi chung.
 
 ### 3.3. `POST /api/estimate`
 
@@ -101,6 +103,16 @@ Gửi lên:
 | `promo_duration_months` | integer | Không | `0` | ≥ 0, không vượt quá `years * 12` |
 
 `promo_rate` và `promo_duration_months` phải đi cùng nhau: có cái này thì phải có cái kia, nếu không sẽ bị lỗi 422.
+
+Hạn mức vay tối đa (không bắt buộc). Gửi **cả** `property_value` và `monthly_income` thì backend tính thêm `max_loan` bằng `max_loan()` của `calculator.py`, dùng cùng `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` ở trên. Chỉ gửi một trong hai thì lỗi 422.
+
+| Trường | Kiểu | Bắt buộc | Mặc định | Ràng buộc |
+|---|---|---|---|---|
+| `property_value` | integer | Không | `null` | > 0, giá trị nhà / tài sản bảo đảm (VND) |
+| `monthly_income` | integer | Không | `null` | > 0, thu nhập ròng hằng tháng (VND) |
+| `existing_monthly_debt` | integer | Không | `0` | ≥ 0, nợ khác đang trả hằng tháng (VND) |
+| `max_ltv_percent` | number | Không | `80` | (0, 100]. Form gửi `loan_limit.max_ltv_percent` của ngân hàng đã chọn |
+| `max_dti_percent` | number | Không | `50` | (0, 100] |
 
 Ví dụ:
 
@@ -120,7 +132,21 @@ Trả về:
   "promo_duration_months": 0,
   "monthly_payment": 13017349,
   "total_interest": 1624163639,
+  "max_loan": null,
   "updated_at": "2026-10-31"
+}
+```
+
+Khi gửi thêm `"property_value": 3000000000, "monthly_income": 40000000, "max_ltv_percent": 70`, trường `max_loan` có dạng:
+
+```json
+"max_loan": {
+  "max_loan": 2100000000,
+  "by_ltv": 2100000000,
+  "by_dti": 2304616796,
+  "limited_by": "ltv",
+  "max_ltv_percent": 70.0,
+  "max_dti_percent": 50.0
 }
 ```
 
@@ -129,6 +155,7 @@ Trả về:
 | `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` | Trả lại đúng giá trị đã gửi. `ai_service` dùng các trường này để kiểm tra response có đúng là của request mình gửi không |
 | `monthly_payment` | Tiền trả **tháng đầu tiên**, VND, số nguyên. Niên kim: số tiền đều hằng tháng (trong thời gian ưu đãi). Gốc đều: tháng cao nhất |
 | `total_interest` | Tổng lãi cả kỳ hạn, VND, số nguyên |
+| `max_loan` | `null` nếu không gửi `property_value` và `monthly_income`. Nếu có: `max_loan` = hạn mức tối đa (VND) = min(`by_ltv`, `by_dti`); `by_ltv` = theo giá trị nhà; `by_dti` = theo thu nhập (tính với tháng phải trả **cao nhất**); `limited_by` = `"ltv"` hoặc `"dti"` cho biết bị giới hạn bởi cái nào; kèm hai tỷ lệ đã dùng |
 | `updated_at` | Ngày cập nhật dữ liệu |
 
 Làm tròn đến đồng; phần chênh do làm tròn dồn vào tháng cuối nên tổng tiền gốc luôn bằng `amount`.
@@ -204,14 +231,23 @@ Event SSE `done` chứa `estimate` có cấu trúc khi lượt chat hoàn tất 
 
 `estimate` dùng cùng cấu trúc phẳng với response `POST /api/estimate` (mục 3.3): đầu vào gồm `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`; kết quả gồm `monthly_payment`, `total_interest`, `updated_at`. `rate` là số. Vì `ai_service` hiện chỉ hỗ trợ niên kim lãi cố định, `method` luôn là `"annuity"`, `promo_rate` là `null` và `promo_duration_months` là `0`. Khi lượt chat không tạo kết quả estimate, trường này là `null`.
 
-## 5. Nối backend với AI service (việc của tuần 2)
+## 5. Nối backend với AI service
 
-Mục tiêu: frontend **không đổi** gì, vẫn gọi `POST /api/chat`.
+Mục tiêu: frontend **không đổi** gì, vẫn gọi `POST /api/chat`. Code nằm trong `backend/app/main.py` (phần "Nối /api/chat với ai_service").
 
 1. Backend nhận `{ message, session_id }`.
-2. Backend gọi `POST {AI_SERVICE_URL}/api/v1/conversations/{session_id}/messages` với `{ "client_request_id": <uuid mới>, "text": message }`.
-3. Backend đọc SSE đến event `done`, lấy `reply`, rồi trả `{ reply, updated_at, estimate }` cho frontend. Gặp event `error` có `retryable: true` thì thử lại với **cùng** `client_request_id`.
-4. Chưa đặt `AI_SERVICE_URL` thì backend giữ câu trả lời mẫu như hiện nay.
+2. Backend gọi `POST {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}/messages` với `{ "client_request_id": <uuid v4 mới>, "text": message }`.
+   - `conversation_id` = `session_id` nếu đó là UUID (frontend dùng `crypto.randomUUID()`). Nếu `session_id` là chuỗi khác thì backend đổi thành một UUID cố định theo chuỗi đó (uuid5), nên cùng `session_id` vẫn cùng cuộc trò chuyện. Không gửi `session_id` thì mỗi tin nhắn là một cuộc trò chuyện mới.
+3. Backend đọc SSE đến event `done`, lấy `reply`, rồi trả `{ reply, updated_at, estimate }` cho frontend. Event `delta` bị bỏ qua.
+4. Thử lại tối đa **3 lần** (tính cả lần đầu) với **cùng** `client_request_id` khi: event `error` có `retryable: true` (chờ `retry_after` giây nếu có), lỗi mạng, hết giờ, HTTP 5xx, hoặc luồng kết thúc mà không có `done`. Lỗi `retryable: false` hoặc HTTP 4xx thì dừng ngay. Hết số lần thì backend trả `502`.
+5. Chưa đặt `AI_SERVICE_URL` thì backend giữ câu trả lời mẫu.
+
+Biến môi trường của backend:
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `AI_SERVICE_URL` | (trống) | Ví dụ `http://127.0.0.1:8001`. Để trống thì dùng câu trả lời mẫu |
+| `AI_SERVICE_TIMEOUT` | `60` | Số giây chờ `ai_service` trả lời mỗi lần gửi |
 
 Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) không. Nếu có thì thêm endpoint `POST /api/chat/stream` riêng, giữ `POST /api/chat` như cũ. Event `done` đã trả `estimate` có cấu trúc như mô tả ở trên; backend có thể dùng trường này để cung cấp thẻ ước tính cho frontend khi nối hai service.
 
@@ -232,7 +268,6 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 
 ## 7. Việc còn mở
 
-- Nối `/api/chat` với `ai_service` theo mục 5 (Hiếu và Hoàn).
 - Cho bot hỏi phương thức trả nợ và ưu đãi rồi gửi `method`, `promo_rate`, `promo_duration_months`, vì backend đã hỗ trợ (Hoàn).
 - Ân hạn nợ gốc (`grace_period_months`) chưa có trong `calculator.py` (Định).
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).

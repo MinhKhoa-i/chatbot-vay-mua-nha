@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from finance.calculator import ANNUITY, schedule
+from finance.calculator import ANNUITY, max_loan, schedule
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +43,18 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
 
 
-# Nối /api/chat với ai_service (docs/api.md)
-AI_DEFAULT_TIMEOUT = 60.0     # giây chờ ai_service trả lời 
+# ---------------------------------------------------------------------------
+# Nối /api/chat với ai_service (docs/api.md mục 5)
+#   Backend gửi POST {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}/messages
+#   rồi đọc SSE (delta, done, error) tới event `done` và lấy `reply`.
+#   - Lỗi `retryable`, lỗi mạng, hết giờ, HTTP 5xx: thử lại với CÙNG client_request_id.
+#   - Chưa đặt AI_SERVICE_URL: giữ câu trả lời mẫu.
+# ---------------------------------------------------------------------------
+AI_DEFAULT_TIMEOUT = 60.0     # giây chờ ai_service trả lời (LLM có thể chậm)
 AI_MAX_ATTEMPTS = 3           # tổng số lần gửi, kể cả lần đầu
 SESSION_NAMESPACE = uuid5(NAMESPACE_URL, "chatbot-vay-mua-nha/session")
 
+# Cho phép test thay thế (không phải chờ thật, không gọi mạng thật)
 _sleep = time.sleep
 _transport: httpx.BaseTransport | None = None
 
@@ -166,7 +173,7 @@ def chat(req: ChatRequest):
     return {"reply": done["reply"], "updated_at": DATA_UPDATED, "estimate": None}
 
 
-# /api/estimate
+# /api/estimate: dùng chung backend/finance/calculator.py, không tự tính lại
 class EstimateRequest(BaseModel):
     amount: int = Field(gt=0, description="Số tiền vay (VND, số nguyên)")
     years: int = Field(gt=0, le=35)
@@ -174,6 +181,26 @@ class EstimateRequest(BaseModel):
     method: Literal["annuity", "reducing_balance"] = ANNUITY
     promo_rate: Optional[float] = Field(None, ge=0, description="Lãi ưu đãi %/năm")
     promo_duration_months: int = Field(0, ge=0, description="Số tháng ưu đãi")
+    # Hạn mức vay tối đa (không bắt buộc): gửi đủ giá trị nhà và thu nhập thì backend tính thêm
+    property_value: Optional[int] = Field(None, gt=0, description="Giá trị nhà / tài sản bảo đảm (VND)")
+    monthly_income: Optional[int] = Field(None, gt=0, description="Thu nhập ròng hằng tháng (VND)")
+    existing_monthly_debt: int = Field(0, ge=0, description="Nợ khác phải trả hằng tháng (VND)")
+    max_ltv_percent: float = Field(80, gt=0, le=100, description="Tỷ lệ cho vay tối đa / giá trị nhà (%)")
+    max_dti_percent: float = Field(50, gt=0, le=100, description="Tỷ lệ trả nợ tối đa / thu nhập (%)")
+
+
+def _max_loan(req: EstimateRequest) -> Optional[dict]:
+    """Gọi max_loan() của calculator.py; thiếu giá trị nhà và thu nhập thì trả None."""
+    if req.property_value is None and req.monthly_income is None:
+        return None
+    if req.property_value is None or req.monthly_income is None:
+        raise ValueError("Cần nhập cả giá trị nhà và thu nhập hằng tháng để tính hạn mức vay tối đa")
+    result = max_loan(req.property_value, req.monthly_income, req.years * 12, req.rate,
+                      req.method, req.promo_rate, req.promo_duration_months,
+                      existing_monthly_debt=req.existing_monthly_debt,
+                      max_ltv=req.max_ltv_percent / 100, max_dti=req.max_dti_percent / 100)
+    return {**result, "max_ltv_percent": float(req.max_ltv_percent),
+            "max_dti_percent": float(req.max_dti_percent)}
 
 
 @app.post("/api/estimate")
@@ -181,6 +208,7 @@ def estimate(req: EstimateRequest):
     try:
         rows = schedule(req.amount, req.years * 12, req.rate, req.method,
                         req.promo_rate, req.promo_duration_months)
+        limit = _max_loan(req)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {
@@ -192,11 +220,12 @@ def estimate(req: EstimateRequest):
         "promo_duration_months": req.promo_duration_months,
         "monthly_payment": rows[0]["payment"],  # tháng đầu (gốc đều: tháng cao nhất)
         "total_interest": sum(r["interest"] for r in rows),
+        "max_loan": limit,
         "updated_at": DATA_UPDATED,
     }
 
 
-# /api/banks
+# /api/banks: đọc dữ liệu mẫu do nhóm Dữ liệu nhập tay (docs/schema.md)
 @lru_cache(maxsize=1)
 def _load_banks() -> dict:
     with BANKS_FILE.open(encoding="utf-8") as f:

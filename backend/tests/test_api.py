@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 import app.main as main_module
 from app.main import SAMPLE_REPLY, app
-from finance.calculator import monthly_payment, total_interest
+from finance.calculator import max_loan, monthly_payment, total_interest
 
 client = TestClient(app)
 
@@ -60,6 +60,53 @@ def test_banks_theo_schema():
         assert {"promo_rate", "promo_duration_months", "floating_margin"} <= set(bank["interest_rate"])
         assert {"max_ltv_percent", "max_loan_term_years"} <= set(bank["loan_limit"])
         assert set(bank["repayment_methods"]) <= {"annuity", "reducing_balance"}
+
+
+# --- Hạn mức vay tối đa (STT 17 tuần 2) ---
+def test_estimate_khong_gui_gia_tri_nha_thi_max_loan_null():
+    body = client.post("/api/estimate", json={"amount": 1_500_000_000, "years": 20}).json()
+    assert body["max_loan"] is None
+
+
+def test_estimate_tra_han_muc_vay_toi_da_dung_calculator():
+    body = client.post("/api/estimate", json={
+        "amount": 1_500_000_000, "years": 20, "rate": 9.2,
+        "promo_rate": 5.2, "promo_duration_months": 12,
+        "property_value": 3_000_000_000, "monthly_income": 40_000_000,
+        "existing_monthly_debt": 2_000_000, "max_ltv_percent": 70,
+    }).json()
+    expected = max_loan(3_000_000_000, 40_000_000, 240, 9.2, "annuity", 5.2, 12,
+                        existing_monthly_debt=2_000_000, max_ltv=0.7, max_dti=0.5)
+    limit = body["max_loan"]
+    assert {k: limit[k] for k in expected} == expected
+    assert limit["max_ltv_percent"] == 70 and limit["max_dti_percent"] == 50
+    assert limit["max_loan"] == min(limit["by_ltv"], limit["by_dti"])
+    assert limit["by_ltv"] == 2_100_000_000  # 70% giá trị nhà
+
+
+def test_estimate_han_muc_bi_gioi_han_boi_thu_nhap():
+    limit = client.post("/api/estimate", json={
+        "amount": 1_000_000_000, "years": 20,
+        "property_value": 10_000_000_000, "monthly_income": 20_000_000,
+    }).json()["max_loan"]
+    assert limit["limited_by"] == "dti" and limit["max_loan"] == limit["by_dti"]
+
+
+@pytest.mark.parametrize("payload", [
+    {"property_value": 3_000_000_000},                       # thiếu thu nhập
+    {"monthly_income": 40_000_000},                          # thiếu giá trị nhà
+    {"property_value": 3e9, "monthly_income": 4e7, "max_ltv_percent": 0},
+    {"property_value": 3e9, "monthly_income": 4e7, "max_dti_percent": 120},
+    {"property_value": 3e9, "monthly_income": 4e7, "existing_monthly_debt": -1},
+])
+def test_estimate_han_muc_dau_vao_sai(payload):
+    res = client.post("/api/estimate", json={"amount": 1_000_000_000, "years": 20, **payload})
+    assert res.status_code == 422
+
+
+def test_estimate_thieu_mot_trong_hai_thi_bao_cau_tieng_viet():
+    res = client.post("/api/estimate", json={"amount": 1e9, "years": 20, "monthly_income": 40_000_000})
+    assert isinstance(res.json()["detail"], str)
 
 
 # ---------------------------------------------------------------------------
