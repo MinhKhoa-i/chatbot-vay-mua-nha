@@ -225,7 +225,7 @@ Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) khôn
 | Số tháng ưu đãi | `interest_rate.promo_duration_months` | `promo_duration_months` | `promo_duration_months` | | |
 | Lãi sau ưu đãi | `floating_rate_estimated` hoặc lãi cơ sở + `floating_margin` | `annual_rate` | `rate` | `estimate.rate` | `rate` |
 | Phương thức | `repayment_methods[]` | `method` | `method` | `estimate.method` | `"annuity"` |
-| Tỷ lệ cho vay | `max_ltv_percent` (đơn vị %, 70 = 70%) | `ltv()` trả tỷ lệ (0.7 = 70%) | | | |
+| Tỷ lệ cho vay | `max_ltv_percent` (đơn vị %, 70 = 70%) | max_loan() nhận `max_ltv` theo % (80) còn `max_dti` theo tỷ lệ (0.5) | | | |
 | Ngày cập nhật | `updated_at` (file), `last_updated` (từng gói) | | `updated_at` | `updated_at` | `updated_at` |
 
 Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ lệ** (0.7). So sánh hai giá trị thì nhân hoặc chia cho 100.
@@ -234,6 +234,5 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 
 - Nối `/api/chat` với `ai_service` theo mục 5 (Hiếu và Hoàn).
 - Cho bot hỏi phương thức trả nợ và ưu đãi rồi gửi `method`, `promo_rate`, `promo_duration_months`, vì backend đã hỗ trợ (Hoàn).
-- Ân hạn nợ gốc (`grace_period_months`) chưa có trong `calculator.py` (Định).
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.
