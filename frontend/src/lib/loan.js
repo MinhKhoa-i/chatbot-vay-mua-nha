@@ -2,7 +2,8 @@ export const DEFAULT_RATE = 8.5; // %/năm, giả định minh họa, chưa ph�
 
 // Bản JS của schedule() trong backend/finance/calculator.py, chỉ dùng khi chạy mock.
 // Giữ đúng công thức, cách làm tròn và câu báo lỗi của bản Python.
-export function schedule(principal, months, annualRate, method = "annuity", promoRate = null, promoMonths = 0) {
+// gracePeriodMonths = grace_period_months: số tháng đầu chỉ trả lãi (ân hạn nợ gốc), nằm trong `months`.
+export function schedule(principal, months, annualRate, method = "annuity", promoRate = null, promoMonths = 0, gracePeriodMonths = 0) {
   if (!(principal > 0)) throw new RangeError("Số tiền vay phải lớn hơn 0");
   if (!Number.isInteger(months) || months <= 0) throw new RangeError("Số tháng vay phải là số nguyên dương");
   if (annualRate < 0) throw new RangeError("Lãi suất không được âm");
@@ -12,6 +13,8 @@ export function schedule(principal, months, annualRate, method = "annuity", prom
   if (promoMonths > months) throw new RangeError("Số tháng ưu đãi không được lớn hơn số tháng vay");
   if (promoRate != null && promoMonths === 0) throw new RangeError("Có lãi suất ưu đãi thì số tháng ưu đãi phải lớn hơn 0");
   if (promoRate == null && promoMonths > 0) throw new RangeError("Có số tháng ưu đãi thì phải nhập lãi suất ưu đãi");
+  if (!Number.isInteger(gracePeriodMonths) || gracePeriodMonths < 0) throw new RangeError("Số tháng ân hạn gốc phải là số nguyên không âm");
+  if (gracePeriodMonths >= months) throw new RangeError("Số tháng ân hạn gốc phải nhỏ hơn số tháng vay");
 
   const rows = [];
   let balance = principal;
@@ -20,9 +23,11 @@ export function schedule(principal, months, annualRate, method = "annuity", prom
     const r = (k <= promoMonths ? promoRate : annualRate) / 100 / 12;
     const interestF = balance * r;
     const left = months - k + 1;
-    const paymentF = method === "annuity"
-      ? (r === 0 ? balance / left : (balance * r) / (1 - Math.pow(1 + r, -left)))
-      : principal / months + interestF;
+    const paymentF = k <= gracePeriodMonths
+      ? interestF
+      : method === "annuity"
+        ? (r === 0 ? balance / left : (balance * r) / (1 - Math.pow(1 + r, -left)))
+        : principal / (months - gracePeriodMonths) + interestF;
     balance -= paymentF - interestF;
 
     const interest = roundHalfEven(interestF);

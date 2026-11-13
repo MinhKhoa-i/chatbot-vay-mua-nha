@@ -60,6 +60,10 @@ def test_ltv_dti():
     ({"promo_rate": 7, "promo_duration_months": 0}, "phải lớn hơn 0"),
     ({"promo_duration_months": 12}, "phải nhập lãi suất ưu đãi"),
     ({"promo_rate": 7, "promo_duration_months": 6.5}, "số nguyên không âm"),
+    ({"grace_period_months": -1}, "ân hạn gốc phải là số nguyên không âm"),
+    ({"grace_period_months": 6.5}, "ân hạn gốc phải là số nguyên không âm"),
+    ({"grace_period_months": N}, "ân hạn gốc phải nhỏ hơn số tháng vay"),
+    ({"grace_period_months": N + 60}, "ân hạn gốc phải nhỏ hơn số tháng vay"),
 ])
 def test_invalid_input(kwargs, msg):
     args = {"principal": P, "months": N, "annual_rate": 10, **kwargs}
@@ -112,8 +116,13 @@ def test_max_loan_promo_uses_peak_payment():
     assert _peak(r, annual_rate=11, **kw) <= 10_000_000  # đỉnh sau khi thả nổi vẫn đạt DTI
 
 
+def test_max_loan_ltv_in_percent():
+    assert max_loan(3_000_000_000, 1_000_000_000, N, 10, max_ltv=100)["by_ltv"] == 3_000_000_000
+    assert max_loan(3_000_000_000, 1_000_000_000, N, 10, max_ltv=65.5)["by_ltv"] == 1_965_000_000
+
+
 def test_max_loan_custom_limits():
-    r = max_loan(3_000_000_000, 100_000_000, N, 10, max_ltv=0.7, max_dti=0.4)
+    r = max_loan(3_000_000_000, 100_000_000, N, 10, max_ltv=70, max_dti=0.4)
     assert r["by_ltv"] == 2_100_000_000
     assert r["by_dti"] < max_loan(3_000_000_000, 100_000_000, N, 10)["by_dti"]
 
@@ -123,14 +132,65 @@ def test_max_loan_custom_limits():
     ({"monthly_income": 0}, "Thu nhập"),
     ({"existing_monthly_debt": -1}, "Nợ hiện tại"),
     ({"max_ltv": 0}, "LTV tối đa"),
-    ({"max_ltv": 1.2}, "LTV tối đa"),
+    ({"max_ltv": 100.5}, "LTV tối đa"),
+    ({"max_ltv": -1}, "LTV tối đa"),
     ({"max_dti": 0}, "DTI tối đa"),
     ({"months": 240.5}, "số nguyên dương"),
     ({"annual_rate": -5}, "Lãi suất không được âm"),
     ({"promo_rate": 7}, "phải lớn hơn 0"),
+    ({"grace_period_months": N}, "nhỏ hơn số tháng vay"),
 ])
 def test_max_loan_invalid_input(kwargs, msg):
     args = {"property_value": 3_000_000_000, "monthly_income": 50_000_000,
             "months": N, "annual_rate": 10, **kwargs}
     with pytest.raises(ValueError, match=msg):
         max_loan(**args)
+
+
+G = 12  # tháng ân hạn dùng trong test
+
+
+@pytest.mark.parametrize("method", [ANNUITY, REDUCING_BALANCE])
+def test_grace_period_interest_only_then_amortize(method):
+    rows = schedule(P, N, 10, method, grace_period_months=G)
+    after = schedule(P, N - G, 10, method)  # sau ân hạn = vay P trong N - G tháng
+    for r in rows[:G]:
+        assert r["principal"] == 0 and r["payment"] == r["interest"] == 8_333_333
+        assert r["balance"] == P
+    assert rows[G]["payment"] == after[0]["payment"]
+    assert rows[G]["principal"] == after[0]["principal"]
+
+
+def test_grace_period_zero_is_default():
+    assert schedule(P, N, 10, grace_period_months=0) == schedule(P, N, 10)
+
+
+@pytest.mark.parametrize("method", [ANNUITY, REDUCING_BALANCE])
+def test_grace_period_invariants(method):
+    for kwargs in ({"grace_period_months": G},
+                   {"promo_rate": 7, "promo_duration_months": 24, "grace_period_months": G},
+                   {"promo_rate": 7, "promo_duration_months": 6, "grace_period_months": G},
+                   {"grace_period_months": N - 1}):
+        rows = schedule(P, N, 10, method, **kwargs)
+        assert sum(r["principal"] for r in rows) == P
+        assert rows[-1]["balance"] == 0
+        assert all(r["payment"] == r["principal"] + r["interest"] for r in rows)
+
+
+def test_grace_period_costs_more():
+    assert total_interest(P, N, 10, grace_period_months=G) > total_interest(P, N, 10)
+    assert _peak(P, annual_rate=10, grace_period_months=G) > _peak(P, annual_rate=10)
+
+
+def test_grace_period_with_promo():
+    # ưu đãi 12 tháng trùng ân hạn 12 tháng: 12 tháng đầu chỉ trả lãi 7%
+    rows = schedule(P, N, 11, promo_rate=7, promo_duration_months=12, grace_period_months=12)
+    assert all(r["payment"] == r["interest"] == 5_833_333 for r in rows[:12])
+    assert rows[12]["principal"] > 0
+
+
+def test_max_loan_grace_period():
+    base = max_loan(5_000_000_000, 20_000_000, N, 10)["max_loan"]
+    r = max_loan(5_000_000_000, 20_000_000, N, 10, grace_period_months=G)["max_loan"]
+    assert r < base  # tiền trả sau ân hạn cao hơn nên vay được ít hơn
+    assert _peak(r, annual_rate=10, grace_period_months=G) <= 10_000_000
