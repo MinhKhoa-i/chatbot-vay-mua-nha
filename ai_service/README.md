@@ -93,83 +93,34 @@ Trước khi nạp, khởi động database, API và đúng một worker theo c�
 
 ### Nạp `data/faq.json` — mỗi FAQ là một tài liệu
 
-Script đọc JSON, tạo Markdown trong bộ nhớ và upload riêng từng FAQ qua `POST /api/v1/knowledge/documents`. Trường `source_name` được dùng làm `title` trong metadata và heading Markdown, nên phần nguồn tham khảo tự động hiển thị tên nguồn thay vì mã FAQ/câu hỏi. Tên nguồn được bỏ khoảng trắng ở hai đầu, phải có từ 1 đến 500 ký tự; script dừng nếu không hợp lệ thay vì cắt mất tên nguồn. FAQ ID, category, câu hỏi, câu trả lời, phạm vi, URL nguồn chính, nguồn bổ sung, ngày cập nhật và disclaimer vẫn được giữ trong nội dung; `source_url` và `last_updated` vẫn được gửi trong metadata. API hiện không có metadata riêng cho FAQ ID/category. Script đang đặt `LIMIT = None` để nạp toàn bộ; đổi thành `LIMIT = 1` nếu muốn thử FAQ đầu tiên.
+Script đọc JSON, tạo Markdown trong bộ nhớ và upload riêng từng FAQ qua `POST /api/v1/knowledge/documents`. Trường `source_name` được dùng làm `title` trong metadata và heading Markdown, nên phần nguồn tham khảo tự động hiển thị tên nguồn thay vì mã FAQ/câu hỏi. Tên nguồn được bỏ khoảng trắng ở hai đầu, phải có từ 1 đến 500 ký tự; script dừng nếu không hợp lệ thay vì cắt mất tên nguồn. FAQ ID, category, câu hỏi, câu trả lời, phạm vi, URL nguồn chính, nguồn bổ sung, ngày cập nhật và disclaimer vẫn được giữ trong nội dung; `source_url` và `last_updated` vẫn được gửi trong metadata. API hiện không có metadata riêng cho FAQ ID/category. Thêm `--limit 1` nếu muốn thử FAQ đầu tiên.
 
-Tạo file `scripts/ingest_faq.py` (tạo thư mục `scripts/` nếu chưa có) với nội dung sau. Sau khi lưu file, chạy lệnh ở cuối khối từ thư mục `ai_service/`.
-
-```python
-import json
-from datetime import datetime
-from pathlib import Path
-from uuid import NAMESPACE_URL, uuid5
-
-import httpx
-
-BASE_URL = "http://127.0.0.1:8001"
-REVIEWED_AT = datetime.now().astimezone().isoformat()
-LIMIT = None
-
-while True:
-    REVIEWED_BY = input("Nhập tên người review tài liệu: ").strip()
-    if REVIEWED_BY:
-        break
-    print("Tên không được để trống; hãy nhập tên người review.")
-reviewed_at = datetime.fromisoformat(REVIEWED_AT)
-if reviewed_at.tzinfo is None or reviewed_at.utcoffset() is None:
-    raise SystemExit("REVIEWED_AT phải có múi giờ, ví dụ +07:00 hoặc Z.")
-
-source = Path("../data/faq.json")
-data = json.loads(source.read_text(encoding="utf-8"))
-items = data["faqs"] if LIMIT is None else data["faqs"][:LIMIT]
-
-with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
-    for item in items:
-        faq_id = item["id"]
-        title = item["source_name"].strip()
-        if not 1 <= len(title) <= 500:
-            raise SystemExit(f"{faq_id}: source_name phải có từ 1 đến 500 ký tự.")
-        lines = [
-            f"# {title}", "", f"FAQ ID: {faq_id}",
-            f"Chủ đề: {item['category']}", "",
-            f"Câu hỏi: {item['question']}", "",
-            f"Trả lời: {item['answer']}", "",
-            f"Phạm vi áp dụng: {item.get('applicable_scope', '')}",
-            f"Nguồn: {item.get('source_name', '')}",
-            f"URL: {item.get('source_url', '')}",
-            "Nguồn bổ sung: " + ", ".join(item.get("additional_sources", [])),
-            f"Cập nhật nội dung: {item.get('last_updated', '')}", "",
-            data.get("disclaimer", ""),
-        ]
-        body = "\n".join(lines).encode("utf-8")
-        logical_id = uuid5(NAMESPACE_URL, faq_id)
-        metadata = {
-            "title": title,
-            "verified": True,
-            "reviewed_by": REVIEWED_BY,
-            "reviewed_at": REVIEWED_AT,
-            "logical_document_id": str(logical_id),
-        }
-        if item.get("source_url"):
-            metadata["source_url"] = item["source_url"]
-        if item.get("last_updated"):
-            metadata["last_updated"] = item["last_updated"]
-
-        response = client.post(
-            "/api/v1/knowledge/documents",
-            data={"metadata": json.dumps(metadata, ensure_ascii=False)},
-            files={"file": (f"{faq_id}.md", body, "text/markdown")},
-        )
-        if response.is_error:
-            raise SystemExit(f"{faq_id}: HTTP {response.status_code}\n{response.text}")
-        result = response.json()
-        print(f"{faq_id}: document_id={result['document_id']} status={result['ingestion_status']}")
-```
-
-Chạy từ thư mục `ai_service/`:
+Script nằm sẵn ở `scripts/ingest_faq.py`. Chạy từ thư mục `ai_service/`:
 
 ```bash
-uv run python scripts/ingest_faq.py
+# Kiểm tra file FAQ và xem 50 tài liệu sẽ gửi, chưa gửi gì
+uv run python scripts/ingest_faq.py --dry-run
+
+# Nạp thật và đợi worker xử lý xong
+uv run python scripts/ingest_faq.py --reviewed-by "<tên người review>" --wait
 ```
+
+- `--reviewed-by` là người đã đối chiếu nội dung FAQ với nguồn. `--reviewed-at` mặc định là thời điểm chạy; chạy lại cho **cùng lần review** thì truyền lại đúng giá trị cũ (in trong file danh sách) để tránh `DOCUMENT_METADATA_CONFLICT`.
+- `--wait` đợi tới khi mọi tài liệu `published` hoặc `failed` (tối đa `--wait-timeout` giây, mặc định 600) và trả mã lỗi 1 nếu có tài liệu `failed`.
+- Mỗi lần chạy thật ghi danh sách `document_id` vào `data/snapshots/faq_ingest_<thời gian>.json` (thư mục này không commit).
+
+**Nạp lại sau khi FAQ thay đổi.** FAQ nào đổi nội dung sẽ có phiên bản mới, nhưng retrieval hiện lấy mọi phiên bản `published` và `is_active`, nên phiên bản cũ vẫn có thể được trích dẫn. Sau khi các bản mới đã `published`, tắt các phiên bản đã có bản mới hơn (script cũng in câu lệnh này ở cuối):
+
+```sql
+UPDATE knowledge_documents d SET is_active = false
+WHERE d.is_active AND EXISTS (
+    SELECT 1 FROM knowledge_documents n
+    WHERE n.logical_document_id = d.logical_document_id
+      AND n.version_no > d.version_no AND n.ingestion_status = 'published'
+);
+```
+
+Chạy bằng `docker compose exec db psql -U <user> -d <db>` với user/database trong `.env`.
 
 `logical_document_id = uuid5(NAMESPACE_URL, faq_id)` là UUID ổn định với đầu vào tên chỉ là ID trong JSON (ví dụ `FAQ-01`). UUID v5 vẫn cần namespace cố định `NAMESPACE_URL`; giữ nguyên namespace và FAQ ID để các lần nạp sau nhận diện cùng tài liệu logic. Không dùng lại một FAQ ID cho nội dung độc lập ở bộ dữ liệu khác khi dùng cùng namespace. `document_id` là UUID riêng do API tạo cho từng phiên bản, không phải chuỗi `FAQ-01`. Các FAQ khác ID có thể có cùng `title`; title không phải khóa định danh và các mục nguồn vẫn được nhóm theo `document_id`.
 
@@ -295,7 +246,7 @@ Chat request yêu cầu `client_request_id` UUID và `text` từ 1–4000 ký t�
 
 ## Giới hạn và lưu ý bảo mật
 
-- Đây là demo, chưa phải hệ thống tư vấn tín dụng/duyệt vay. Có mô phỏng trả góp niên kim lãi suất cố định qua backend; không có đánh giá khả năng chi trả hoặc endpoint phê duyệt vay trong AI service. Không coi nội dung chatbot là báo giá, lãi suất hiện hành hoặc cam kết duyệt vay.
+- Đây là demo, chưa phải hệ thống tư vấn tín dụng/duyệt vay. Có mô phỏng trả góp qua backend (niên kim hoặc gốc đều, lãi cố định hoặc một giai đoạn ưu đãi rồi một mức lãi); không có đánh giá khả năng chi trả hoặc endpoint phê duyệt vay trong AI service. Không coi nội dung chatbot là báo giá, lãi suất hiện hành hoặc cam kết duyệt vay.
 - Demo không có xác thực/ủy quyền cho API hội thoại, upload hoặc endpoint `PATCH /api/v1/knowledge/documents/{document_id}/activation` để bật/tắt tài liệu tri thức. Không mở cổng ra Internet, không đưa dữ liệu khách hàng thật lên môi trường chia sẻ và chỉ cho người vận hành đáng tin dùng endpoint upload hoặc bật/tắt tài liệu. CORS cho phép origin frontend local, nhưng CORS không phải cơ chế xác thực.
 - Nội dung hội thoại được mã hóa AES-256-GCM bằng `DATA_ENCRYPTION_KEY_BASE64`; hãy bảo vệ và sao lưu khóa an toàn. Mất khóa đồng nghĩa không đọc được payload đã mã hóa. Không đặt khóa thật trong git, log, issue hoặc lệnh shell được chia sẻ.
 - FAQ demo phải được đối chiếu với nguồn gốc và tình trạng hiệu lực trước khi đánh dấu verified. Tài liệu không được review không nên upload dưới dạng tài liệu đã duyệt; câu trả lời retrieval chỉ nên căn cứ vào nguồn đã được nạp/duyệt. API/provider vẫn có thể lỗi hoặc dữ liệu có thể cũ.
