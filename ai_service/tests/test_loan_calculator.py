@@ -45,7 +45,9 @@ def test_estimate_posts_contract_and_maps_response():
     assert len(seen) == 1
     assert str(seen[0].url) == "http://backend.test/api/estimate"
     assert seen[0].method == "POST"
-    assert seen[0].read().decode() == '{"amount":12000000,"years":20,"rate":8.5}'
+    assert seen[0].read().decode() == (
+        '{"amount":12000000,"years":20,"rate":8.5,"method":"annuity","promo_rate":null,"promo_duration_months":0}'
+    )
     assert result.request == request()
     assert result.monthly_payment == 104_000
     assert result.total_interest == 12_960_000

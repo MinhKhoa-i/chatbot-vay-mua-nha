@@ -294,14 +294,14 @@ Quy ước mức độ cần thiết:
 
 ### 8.1. Trạng thái thực tế và ranh giới kiến trúc
 
-**Trạng thái hiện tại:** `ai_service` đã có luồng mô phỏng khoản trả góp theo niên kim với lãi suất cố định toàn kỳ, `EstimateLoanUseCase` và adapter HTTP gọi loan calculator backend qua `POST /api/estimate`. Luồng này thu thập số tiền vay, thời hạn và lãi suất, yêu cầu người dùng xác nhận kịch bản rồi mới gọi calculator. Lời chào hoặc câu hỏi kiến thức không gọi calculator. Đây là mô phỏng tham khảo, không đánh giá khả năng chi trả hay quyết định duyệt vay.
+**Trạng thái hiện tại:** `ai_service` đã có luồng mô phỏng khoản trả góp, `EstimateLoanUseCase` và adapter HTTP gọi loan calculator backend qua `POST /api/estimate`. Luồng này thu thập số tiền vay, thời hạn, phương thức trả nợ (niên kim hoặc gốc đều), lãi ưu đãi giai đoạn đầu nếu có (mức và số tháng) và lãi suất (lãi cả kỳ, hoặc lãi sau ưu đãi), yêu cầu người dùng xác nhận kịch bản rồi mới gọi calculator. Lời chào hoặc câu hỏi kiến thức không gọi calculator. Đây là mô phỏng tham khảo, không đánh giá khả năng chi trả hay quyết định duyệt vay.
 
 ### 8.2. Hợp đồng kết quả estimate trên SSE
 
 Khi lượt chat hoàn tất, `ai_service` phát event SSE `done`. Payload giữ các trường hội thoại hiện có (`conversation_id`, `client_request_id`, `conversation_version`, `user_message_id`, `assistant_message_id`, `reply`) và có thêm trường `estimate`:
 
 - Nếu calculator trả kết quả thành công sau xác nhận, `estimate` là object phẳng theo cùng cấu trúc với response `POST /api/estimate`: `amount` (số nguyên VND), `years` (số nguyên năm), `rate` (number, %/năm), `method`, `promo_rate`, `promo_duration_months`, `monthly_payment` (số nguyên VND), `total_interest` (số nguyên VND) và `updated_at`.
-- Với luồng hiện được hỗ trợ (niên kim, lãi cố định), `method` là `"annuity"`, `promo_rate` là `null` và `promo_duration_months` là `0`.
+- `method`, `promo_rate`, `promo_duration_months` là đúng giá trị người dùng đã xác nhận; không có ưu đãi thì `promo_rate` là `null` và `promo_duration_months` là `0`.
 - Với lượt không tạo ra kết quả tính toán — ví dụ chat kiến thức, thu thập dữ liệu, chờ xác nhận hoặc hủy — `estimate` là `null`.
 - `reply` vẫn là nội dung thân thiện để hiển thị cho người dùng; frontend dùng `estimate` để hiển thị/định dạng các giá trị số, không phân tích ngược số từ `reply`.
 - Các giá trị kết quả lấy từ response của calculator backend; LLM không tự tính, sửa hoặc suy diễn kết quả.
@@ -335,8 +335,8 @@ Response hoàn tất được lưu cùng request ledger để replay trả lại
 ### 8.3. Luồng tính toán hiện tại và các ràng buộc mở rộng
 
 1. Xác định khách muốn lịch trả nợ hay đánh giá ngân sách/khả năng vay. Tận dụng thông tin đã xác nhận trong hội thoại, hỏi từng dữ kiện còn thiếu theo mục 7; không hỏi cả bộ hồ sơ khi chỉ cần kiến thức chung.
-2. Với lịch trả nợ hiện tại: cần tiền vay, thời hạn, lãi suất cố định và xác nhận kịch bản; hệ thống chỉ hỗ trợ phương thức niên kim. Đánh giá ngân sách/khả năng vay cần thêm thu nhập ròng, nợ hiện tại, chi phí sinh hoạt và chính sách/ngân sách do khách chọn, nhưng không được xem là quyết định duyệt vay. Không mặc định một ngưỡng DTI chung cho mọi ngân hàng.
-3. Xác nhận kịch bản và đơn vị trước khi tính. Nếu yêu cầu lãi thay đổi, ưu đãi, ân hạn hoặc phương thức chưa được calculator hỗ trợ, từ chối kịch bản đó thay vì âm thầm thay bằng giả định lãi cố định/niên kim.
+2. Với lịch trả nợ hiện tại: cần tiền vay, thời hạn, phương thức trả nợ (niên kim hoặc gốc đều), có ưu đãi hay không (nếu có: lãi ưu đãi và số tháng), lãi suất và xác nhận kịch bản. Đánh giá ngân sách/khả năng vay cần thêm thu nhập ròng, nợ hiện tại, chi phí sinh hoạt và chính sách/ngân sách do khách chọn, nhưng không được xem là quyết định duyệt vay. Không mặc định một ngưỡng DTI chung cho mọi ngân hàng.
+3. Xác nhận kịch bản và đơn vị trước khi tính. Nếu yêu cầu nhiều hơn hai giai đoạn lãi, ân hạn nợ gốc, trả trước hoặc điều kiện chưa được luồng chat hỗ trợ, từ chối kịch bản đó thay vì âm thầm thay bằng giả định khác.
 4. Application gọi calculator qua port. Không dùng con số trong văn bản RAG chưa kiểm duyệt trực tiếp làm tham số. Khi mở rộng tích hợp, thống nhất với backend phiên bản công thức, đơn vị, quy tắc làm tròn, giả định, lịch trả nợ và các kết quả tổng hợp.
 5. Nếu calculator thiếu dữ liệu, timeout hoặc lỗi validation: hỏi bổ sung/báo chưa tính được; **không chuyển sang cho LLM tự tính**. Không ghi thành kết quả mô phỏng thành công.
 6. Hiển thị kết quả tham khảo, giả định và nguồn chính sách; phân biệt “khoản có thể trả theo ngân sách” với “hạn mức ngân hàng chấp thuận”. Không hứa đủ điều kiện vay.

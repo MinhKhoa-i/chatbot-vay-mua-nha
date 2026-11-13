@@ -31,6 +31,9 @@ class HttpLoanCalculator:
                     "amount": request.amount,
                     "years": request.years,
                     "rate": float(request.rate),
+                    "method": request.method,
+                    "promo_rate": None if request.promo_rate is None else float(request.promo_rate),
+                    "promo_duration_months": request.promo_duration_months,
                 })
                 response.raise_for_status()
                 payload = response.json()
@@ -53,8 +56,16 @@ class HttpLoanCalculator:
         rate = cls._parse_number(payload.get("rate"), "rate")
         if amount != Decimal(request.amount) or years != request.years or rate != request.rate:
             raise ValueError("response does not match request")
-        if payload.get("method") != "annuity":
+        if payload.get("method") != request.method:
             raise ValueError("unexpected calculation method")
+        promo_rate = payload.get("promo_rate")
+        if request.promo_rate is None:
+            if promo_rate is not None:
+                raise ValueError("unexpected promo_rate")
+        elif cls._parse_number(promo_rate, "promo_rate") != request.promo_rate:
+            raise ValueError("response does not match request")
+        if cls._parse_integer(payload.get("promo_duration_months", 0), "promo_duration_months")                 != request.promo_duration_months:
+            raise ValueError("response does not match request")
         return LoanEstimateResult(
             request=request,
             monthly_payment=cls._parse_integer(payload.get("monthly_payment"), "monthly_payment"),
