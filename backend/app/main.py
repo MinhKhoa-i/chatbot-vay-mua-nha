@@ -198,7 +198,7 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
     result = max_loan(req.property_value, req.monthly_income, req.years * 12, req.rate,
                       req.method, req.promo_rate, req.promo_duration_months,
                       existing_monthly_debt=req.existing_monthly_debt,
-                      max_ltv=req.max_ltv_percent / 100, max_dti=req.max_dti_percent / 100)
+                      max_ltv=req.max_ltv_percent, max_dti=req.max_dti_percent / 100)
     return {**result, "max_ltv_percent": float(req.max_ltv_percent),
             "max_dti_percent": float(req.max_dti_percent)}
 

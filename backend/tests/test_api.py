@@ -76,7 +76,7 @@ def test_estimate_tra_han_muc_vay_toi_da_dung_calculator():
         "existing_monthly_debt": 2_000_000, "max_ltv_percent": 70,
     }).json()
     expected = max_loan(3_000_000_000, 40_000_000, 240, 9.2, "annuity", 5.2, 12,
-                        existing_monthly_debt=2_000_000, max_ltv=0.7, max_dti=0.5)
+                        existing_monthly_debt=2_000_000, max_ltv=70, max_dti=0.5)
     limit = body["max_loan"]
     assert {k: limit[k] for k in expected} == expected
     assert limit["max_ltv_percent"] == 70 and limit["max_dti_percent"] == 50
