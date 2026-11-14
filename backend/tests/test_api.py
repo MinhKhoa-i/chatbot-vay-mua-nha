@@ -1,8 +1,13 @@
 """Kiểm tra hợp đồng API trong docs/api.md."""
+import json
+from uuid import UUID
+
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+import app.main as main_module
+from app.main import SAMPLE_REPLY, app
 from finance.calculator import monthly_payment, total_interest
 
 client = TestClient(app)
@@ -55,3 +60,113 @@ def test_banks_theo_schema():
         assert {"promo_rate", "promo_duration_months", "floating_margin"} <= set(bank["interest_rate"])
         assert {"max_ltv_percent", "max_loan_term_years"} <= set(bank["loan_limit"])
         assert set(bank["repayment_methods"]) <= {"annuity", "reducing_balance"}
+
+
+# ---------------------------------------------------------------------------
+# /api/chat nối ai_service (STT 16, docs/api.md mục 5)
+# Không gọi ai_service thật: thay transport của httpx bằng MockTransport.
+# ---------------------------------------------------------------------------
+AI_URL = "http://ai.test"
+SESSION = "2dd4d22a-993d-4a2e-b544-91409ebfb17b"
+
+
+def sse(*events):
+    """Ghép các event thành nội dung text/event-stream."""
+    return "".join(f"event: {name}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+                   for name, data in events)
+
+
+def done(reply="Xin chào bạn", estimate=None):
+    return ("done", {"conversation_id": SESSION, "client_request_id": "x",
+                     "conversation_version": 1, "reply": reply, "estimate": estimate})
+
+
+@pytest.fixture
+def ai(monkeypatch):
+    """Giả lập ai_service. Gán `ai.responses` là danh sách câu trả lời theo thứ tự;
+    mỗi phần tử là chuỗi SSE, số mã HTTP, hoặc một exception của httpx."""
+    class Fake:
+        responses: list = []
+        requests: list = []
+        sleeps: list = []
+
+    def handler(request: httpx.Request):
+        Fake.requests.append(request)
+        item = Fake.responses.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        if isinstance(item, int):
+            return httpx.Response(item, json={"detail": "loi"})
+        return httpx.Response(200, text=item, headers={"content-type": "text/event-stream"})
+
+    Fake.responses, Fake.requests, Fake.sleeps = [], [], []
+    monkeypatch.setenv("AI_SERVICE_URL", AI_URL + "/")
+    monkeypatch.setattr(main_module, "_transport", httpx.MockTransport(handler))
+    monkeypatch.setattr(main_module, "_sleep", Fake.sleeps.append)
+    return Fake
+
+
+def ask_chat(message="Hồ sơ vay gồm gì?", session_id=SESSION):
+    return client.post("/api/chat", json={"message": message, "session_id": session_id})
+
+
+def test_chua_dat_ai_service_url_thi_tra_cau_mau(monkeypatch):
+    monkeypatch.delenv("AI_SERVICE_URL", raising=False)
+    body = ask_chat().json()
+    assert body["reply"] == SAMPLE_REPLY and body["estimate"] is None
+
+
+def test_doc_sse_lay_reply_trong_done(ai):
+    ai.responses = [sse(("delta", {"text": "Xin"}), ("delta", {"text": " chào"}), done("Xin chào bạn"))]
+    res = ask_chat()
+    assert res.status_code == 200
+    assert res.json()["reply"] == "Xin chào bạn"
+    assert set(res.json()) == {"reply", "updated_at", "estimate"}
+
+    req = ai.requests[0]
+    assert req.url == f"{AI_URL}/api/v1/conversations/{SESSION}/messages"
+    payload = json.loads(req.content)
+    assert payload["text"] == "Hồ sơ vay gồm gì?"
+    assert UUID(payload["client_request_id"]).version == 4
+
+
+def test_loi_retryable_thi_thu_lai_cung_client_request_id(ai):
+    ai.responses = [sse(("error", {"code": "CONVERSATION_BUSY", "retryable": True, "retry_after": 1})),
+                    sse(done("Đã xong"))]
+    assert ask_chat().json()["reply"] == "Đã xong"
+    ids = [json.loads(r.content)["client_request_id"] for r in ai.requests]
+    assert len(ids) == 2 and ids[0] == ids[1]
+    assert ai.sleeps == [1.0]
+
+
+def test_loi_mang_va_5xx_cung_duoc_thu_lai(ai):
+    ai.responses = [httpx.ConnectError("mat ket noi"), 503, sse(done("Ổn rồi"))]
+    assert ask_chat().json()["reply"] == "Ổn rồi"
+    assert len(ai.requests) == 3
+
+
+def test_loi_khong_retryable_thi_bao_502_ngay(ai):
+    ai.responses = [sse(("error", {"code": "MODEL_NOT_CONFIGURED", "retryable": False}))]
+    res = ask_chat()
+    assert res.status_code == 502 and isinstance(res.json()["detail"], str)
+    assert len(ai.requests) == 1
+
+
+def test_thu_lai_het_so_lan_thi_bao_502(ai):
+    ai.responses = [sse(("error", {"code": "MODEL_TIMEOUT", "retryable": True}))] * main_module.AI_MAX_ATTEMPTS
+    assert ask_chat().status_code == 502
+    assert len(ai.requests) == main_module.AI_MAX_ATTEMPTS
+
+
+def test_luong_ket_thuc_khong_co_done_thi_thu_lai(ai):
+    ai.responses = [sse(("delta", {"text": "dang tra loi"})), sse(done("Hoàn tất"))]
+    assert ask_chat().json()["reply"] == "Hoàn tất"
+
+
+def test_session_id_khong_phai_uuid_van_giu_ngu_canh(ai):
+    ai.responses = [sse(done()), sse(done())]
+    ask_chat(session_id="phien-1")
+    ask_chat(session_id="phien-1")
+    paths = [r.url.path for r in ai.requests]
+    assert paths[0] == paths[1]
+    UUID(paths[0].split("/")[4])  # là UUID hợp lệ

@@ -83,7 +83,9 @@ Trả về:
 
 `estimate` có cùng các trường với response của `/api/estimate` (mục 3.3). Bắt buộc có `amount`, `years`, `rate`; nên có thêm `method`, `monthly_payment`, `total_interest`. Nếu thiếu `monthly_payment` hoặc `total_interest`, thẻ ước tính của frontend gọi `POST /api/estimate` với `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` để lấy số; frontend không tự tính khi chạy với backend thật.
 
-**Hiện trạng:** backend trả một câu cố định (dữ liệu mẫu). Kế hoạch nối với `ai_service` ở mục 5.
+**Hiện trạng:** đã đặt biến môi trường `AI_SERVICE_URL` thì backend hỏi `ai_service` theo mục 5; chưa đặt thì trả một câu cố định (dữ liệu mẫu).
+
+Lỗi riêng của endpoint này: `ai_service` lỗi, không kết nối được hoặc thử lại hết số lần thì trả **`502`** với `detail` là một câu tiếng Việt. Frontend hiện câu báo lỗi chung.
 
 ### 3.3. `POST /api/estimate`
 
@@ -204,14 +206,23 @@ Event SSE `done` chứa `estimate` có cấu trúc khi lượt chat hoàn tất 
 
 `estimate` dùng cùng cấu trúc phẳng với response `POST /api/estimate` (mục 3.3): đầu vào gồm `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`; kết quả gồm `monthly_payment`, `total_interest`, `updated_at`. `rate` là số. `method`, `promo_rate`, `promo_duration_months` là đúng giá trị khách đã xác nhận; không có ưu đãi thì `promo_rate` là `null` và `promo_duration_months` là `0`. Khi lượt chat không tạo kết quả estimate, trường này là `null`.
 
-## 5. Nối backend với AI service (việc của tuần 2)
+## 5. Nối backend với AI service
 
-Mục tiêu: frontend **không đổi** gì, vẫn gọi `POST /api/chat`.
+Mục tiêu: frontend **không đổi** gì, vẫn gọi `POST /api/chat`. Code nằm trong `backend/app/main.py` (phần "Nối /api/chat với ai_service").
 
 1. Backend nhận `{ message, session_id }`.
-2. Backend gọi `POST {AI_SERVICE_URL}/api/v1/conversations/{session_id}/messages` với `{ "client_request_id": <uuid mới>, "text": message }`.
-3. Backend đọc SSE đến event `done`, lấy `reply`, rồi trả `{ reply, updated_at, estimate }` cho frontend. Gặp event `error` có `retryable: true` thì thử lại với **cùng** `client_request_id`.
-4. Chưa đặt `AI_SERVICE_URL` thì backend giữ câu trả lời mẫu như hiện nay.
+2. Backend gọi `POST {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}/messages` với `{ "client_request_id": <uuid v4 mới>, "text": message }`.
+   - `conversation_id` = `session_id` nếu đó là UUID (frontend dùng `crypto.randomUUID()`). Nếu `session_id` là chuỗi khác thì backend đổi thành một UUID cố định theo chuỗi đó (uuid5), nên cùng `session_id` vẫn cùng cuộc trò chuyện. Không gửi `session_id` thì mỗi tin nhắn là một cuộc trò chuyện mới.
+3. Backend đọc SSE đến event `done`, lấy `reply`, rồi trả `{ reply, updated_at, estimate }` cho frontend. Event `delta` bị bỏ qua.
+4. Thử lại tối đa **3 lần** (tính cả lần đầu) với **cùng** `client_request_id` khi: event `error` có `retryable: true` (chờ `retry_after` giây nếu có), lỗi mạng, hết giờ, HTTP 5xx, hoặc luồng kết thúc mà không có `done`. Lỗi `retryable: false` hoặc HTTP 4xx thì dừng ngay. Hết số lần thì backend trả `502`.
+5. Chưa đặt `AI_SERVICE_URL` thì backend giữ câu trả lời mẫu.
+
+Biến môi trường của backend:
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `AI_SERVICE_URL` | (trống) | Ví dụ `http://127.0.0.1:8001`. Để trống thì dùng câu trả lời mẫu |
+| `AI_SERVICE_TIMEOUT` | `60` | Số giây chờ `ai_service` trả lời mỗi lần gửi |
 
 Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) không. Nếu có thì thêm endpoint `POST /api/chat/stream` riêng, giữ `POST /api/chat` như cũ. Event `done` đã trả `estimate` có cấu trúc như mô tả ở trên; backend có thể dùng trường này để cung cấp thẻ ước tính cho frontend khi nối hai service.
 
@@ -232,6 +243,5 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 
 ## 7. Việc còn mở
 
-- Nối `/api/chat` với `ai_service` theo mục 5 (Hiếu và Hoàn).
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.
