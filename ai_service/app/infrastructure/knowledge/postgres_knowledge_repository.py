@@ -215,19 +215,23 @@ class PostgresKnowledgeRepository:
         vector_literal = "[" + ",".join(format(float(value), ".9g") for value in query.embedding) + "]"
         async with self._sessions() as session:
             rows = (await session.execute(text("""
-                WITH candidates AS (
+                WITH latest_documents AS (
+                    SELECT DISTINCT ON (d.logical_document_id) d.*
+                    FROM knowledge_documents d
+                    WHERE d.review_status = 'approved'
+                      AND d.ingestion_status = 'published'
+                      AND d.is_active = true
+                      AND (d.effective_from IS NULL OR d.effective_from <= CURRENT_DATE)
+                      AND (d.effective_to IS NULL OR d.effective_to > CURRENT_DATE)
+                    ORDER BY d.logical_document_id, d.version_no DESC
+                ), candidates AS (
                     SELECT c.id AS chunk_id, d.id AS document_id, d.title, d.source_url,
                            d.bank_code, d.product_type, d.effective_from, d.effective_to,
                            c.body,
                            (1 - (c.embedding <=> CAST(:embedding AS vector))) AS vector_score,
                            ts_rank_cd(c.textsearch, plainto_tsquery('simple', :query_text)) AS text_score
                     FROM knowledge_chunks c
-                    JOIN knowledge_documents d ON d.id = c.document_id
-                    WHERE d.review_status = 'approved'
-                      AND d.ingestion_status = 'published'
-                      AND d.is_active = true
-                      AND (d.effective_from IS NULL OR d.effective_from <= CURRENT_DATE)
-                      AND (d.effective_to IS NULL OR d.effective_to > CURRENT_DATE)
+                    JOIN latest_documents d ON d.id = c.document_id
                 )
                 SELECT *, GREATEST(vector_score, LEAST(text_score, 1.0)) AS score
                 FROM candidates

@@ -240,7 +240,7 @@ Nội dung thực tế và mã trích dẫn phụ thuộc các chunks được t
 - `POST /api/v1/conversations/{conversation_id}/messages` — gửi lượt chat SSE.
 - `POST /api/v1/knowledge/documents` — tải tài liệu multipart; metadata form field là JSON string.
 - `GET /api/v1/knowledge/documents/{document_id}` — kiểm tra trạng thái ingestion và cờ `is_active`.
-- `PATCH /api/v1/knowledge/documents/{document_id}/activation` — bật/tắt tài liệu khỏi retrieval, body ví dụ `{"is_active": false}`. Chỉ tài liệu được `approved`, `published`, đang active và còn hiệu lực mới được truy xuất.
+- `PATCH /api/v1/knowledge/documents/{document_id}/activation` — bật/tắt tài liệu khỏi retrieval, body ví dụ `{"is_active": false}`. Chỉ tài liệu được `approved`, `published`, đang active và còn hiệu lực mới được truy xuất. Muốn ẩn hẳn một tài liệu khỏi retrieval, cần tắt tất cả phiên bản có cùng `logical_document_id`; chỉ tắt phiên bản mới nhất thì phiên bản cũ hơn còn bật và đủ điều kiện có thể được dùng lại.
 
 Chat request yêu cầu `client_request_id` UUID và `text` từ 1–4000 ký tự; không cho phép field lạ. Thân request tối đa 20 KiB. Lỗi validate thường trả HTTP 422; ID/version cũ có thể tạo event `error` như `CONVERSATION_NOT_FOUND` hoặc `VERSION_CONFLICT`. Provider/migration/config chưa sẵn sàng có thể dẫn đến HTTP 503 hoặc event SSE `error`; các mã thường gặp gồm `MODEL_NOT_CONFIGURED`, `MODEL_UNAVAILABLE`, `MODEL_RATE_LIMITED`, `RETRIEVAL_NOT_CONFIGURED`, `EMBEDDING_UNAVAILABLE`, `KNOWLEDGE_SEARCH_UNAVAILABLE`, `STATE_UNAVAILABLE` và `INTERNAL_ERROR`. Event lỗi bên trong stream có thể vẫn đi cùng HTTP 200 vì response SSE đã bắt đầu; đọc event `error`, không chỉ dựa vào status HTTP. Không gửi lại cùng request ID với nội dung khác.
 
