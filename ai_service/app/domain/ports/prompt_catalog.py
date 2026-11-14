@@ -9,6 +9,7 @@ class PromptName(StrEnum):
     ESTIMATE_RESULT = "estimate_result"
     ESTIMATE_CANCELLED = "estimate_cancelled"
     ESTIMATE_UNSUPPORTED = "estimate_unsupported"
+    ESTIMATE_PROMO_TOO_LONG = "estimate_promo_too_long"
     INTENT_CLASSIFICATION = "intent_classification"
     CHAT_SYSTEM = "chat_system"
     TURN_GUIDANCE = "turn_guidance"

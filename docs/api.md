@@ -181,7 +181,7 @@ Gửi tin nhắn:
 { "client_request_id": "<uuid v4, mỗi tin nhắn một mã>", "text": "Hồ sơ vay mua nhà gồm gì?" }
 ```
 
-`ai_service` gọi `POST {LOAN_BACKEND_BASE_URL}/api/estimate` khi khách nhờ tính khoản vay. `LOAN_BACKEND_BASE_URL` đặt trong `ai_service/.env`, mặc định `http://127.0.0.1:8000`. Hiện bot chỉ gửi `amount`, `years`, `rate` (niên kim, lãi cố định) và kiểm tra response có `method == "annuity"`.
+`ai_service` gọi `POST {LOAN_BACKEND_BASE_URL}/api/estimate` khi khách nhờ tính khoản vay. `LOAN_BACKEND_BASE_URL` đặt trong `ai_service/.env`, mặc định `http://127.0.0.1:8000`. Bot hỏi đủ số tiền vay, thời hạn, phương thức trả nợ (`annuity` hoặc `reducing_balance`), có lãi ưu đãi hay không (nếu có: `promo_rate` và `promo_duration_months`) và lãi suất (`rate`; có ưu đãi thì là lãi sau ưu đãi). Khách xác nhận xong, bot gửi đủ `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`, rồi kiểm tra response trả lại đúng các giá trị này. Chưa hỗ trợ ân hạn nợ gốc, trả trước, phí và hạn mức vay qua chat.
 
 Event SSE `done` chứa `estimate` có cấu trúc khi lượt chat hoàn tất phép tính thành công; nếu lượt chat không tạo estimate thì trường này là `null`. Ví dụ phần `data` của event:
 
@@ -202,7 +202,7 @@ Event SSE `done` chứa `estimate` có cấu trúc khi lượt chat hoàn tất 
 }
 ```
 
-`estimate` dùng cùng cấu trúc phẳng với response `POST /api/estimate` (mục 3.3): đầu vào gồm `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`; kết quả gồm `monthly_payment`, `total_interest`, `updated_at`. `rate` là số. Vì `ai_service` hiện chỉ hỗ trợ niên kim lãi cố định, `method` luôn là `"annuity"`, `promo_rate` là `null` và `promo_duration_months` là `0`. Khi lượt chat không tạo kết quả estimate, trường này là `null`.
+`estimate` dùng cùng cấu trúc phẳng với response `POST /api/estimate` (mục 3.3): đầu vào gồm `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`; kết quả gồm `monthly_payment`, `total_interest`, `updated_at`. `rate` là số. `method`, `promo_rate`, `promo_duration_months` là đúng giá trị khách đã xác nhận; không có ưu đãi thì `promo_rate` là `null` và `promo_duration_months` là `0`. Khi lượt chat không tạo kết quả estimate, trường này là `null`.
 
 ## 5. Nối backend với AI service (việc của tuần 2)
 
@@ -221,11 +221,11 @@ Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) khôn
 |---|---|---|---|---|---|
 | Số tiền vay | `min_loan_amount`, `max_loan_amount` (hạn mức) | `principal` | `amount` | `estimate.amount` | `amount` |
 | Thời hạn | `max_loan_term_years` | `months` | `years` | `estimate.years` | `years` |
-| Lãi ưu đãi | `interest_rate.promo_rate` | `promo_rate` | `promo_rate` | | |
-| Số tháng ưu đãi | `interest_rate.promo_duration_months` | `promo_duration_months` | `promo_duration_months` | | |
+| Lãi ưu đãi | `interest_rate.promo_rate` | `promo_rate` | `promo_rate` | | `promo_rate` |
+| Số tháng ưu đãi | `interest_rate.promo_duration_months` | `promo_duration_months` | `promo_duration_months` | | `promo_duration_months` |
 | Lãi sau ưu đãi | `floating_rate_estimated` hoặc lãi cơ sở + `floating_margin` | `annual_rate` | `rate` | `estimate.rate` | `rate` |
-| Phương thức | `repayment_methods[]` | `method` | `method` | `estimate.method` | `"annuity"` |
-| Tỷ lệ cho vay | `max_ltv_percent` (đơn vị %, 70 = 70%) | `ltv()` trả tỷ lệ (0.7 = 70%) | | | |
+| Phương thức | `repayment_methods[]` | `method` | `method` | `estimate.method` | `method` |
+| Tỷ lệ cho vay | `max_ltv_percent` (đơn vị %, 70 = 70%) | max_loan() nhận `max_ltv` theo % (80) còn `max_dti` theo tỷ lệ (0.5) | | | |
 | Ngày cập nhật | `updated_at` (file), `last_updated` (từng gói) | | `updated_at` | `updated_at` | `updated_at` |
 
 Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ lệ** (0.7). So sánh hai giá trị thì nhân hoặc chia cho 100.
@@ -233,7 +233,5 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 ## 7. Việc còn mở
 
 - Nối `/api/chat` với `ai_service` theo mục 5 (Hiếu và Hoàn).
-- Cho bot hỏi phương thức trả nợ và ưu đãi rồi gửi `method`, `promo_rate`, `promo_duration_months`, vì backend đã hỗ trợ (Hoàn).
-- Ân hạn nợ gốc (`grace_period_months`) chưa có trong `calculator.py` (Định).
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.

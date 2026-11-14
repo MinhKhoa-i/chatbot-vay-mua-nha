@@ -55,10 +55,11 @@ class OpenAIEstimateExtractor:
             if not isinstance(payload["updates"], dict):
                 raise ValueError("Invalid updates")
             updates = payload["updates"]
-            if "rate" in updates:
-                if isinstance(updates["rate"], bool) or updates["rate"] is None:
-                    raise ValueError("Invalid rate")
-                updates["rate"] = Decimal(str(updates["rate"]))
+            for name in ("rate", "promo_rate"):
+                if name in updates:
+                    if isinstance(updates[name], (bool, str)) or updates[name] is None:
+                        raise ValueError(f"Invalid {name}")
+                    updates[name] = Decimal(str(updates[name]))
             return EstimateExtraction(payload["action"], updates)
         except (ValueError, TypeError, ArithmeticError) as exc:
             raise EstimateExtractionError("ESTIMATE_EXTRACTION_INVALID_RESPONSE") from exc
