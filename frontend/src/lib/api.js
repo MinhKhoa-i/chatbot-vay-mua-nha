@@ -1,5 +1,5 @@
 import { API_URL, DATA_UPDATED, USE_MOCK } from "../config.js";
-import { schedule } from "./loan.js";
+import { maxLoan, schedule } from "./loan.js";
 
 // Lỗi có câu tiếng Việt để hiện thẳng cho người dùng (422 từ backend hoặc kiểm tra ở mock)
 export class ApiError extends Error {}
@@ -43,7 +43,9 @@ export async function getBanks() {
 }
 
 // POST /api/estimate (docs/api.md, mục 3.3)
-// params: { amount, years, rate, method, promo_rate?, promo_duration_months? }
+// params: { amount, years, rate, method, promo_rate?, promo_duration_months?,
+//           property_value?, monthly_income?, existing_monthly_debt?, max_ltv_percent?, max_dti_percent? }
+// Gửi cả property_value và monthly_income thì response có max_loan (hạn mức vay tối đa), không thì null.
 export async function estimateLoan(params) {
   const body = { method: "annuity", promo_rate: null, promo_duration_months: 0, ...params };
   if (!USE_MOCK) {
@@ -58,21 +60,36 @@ export async function estimateLoan(params) {
 }
 
 // ---- Dữ liệu mẫu (chỉ dùng khi VITE_USE_MOCK=true) ----
+// Giống backend/app/main.py: cùng trường trả về, cùng câu báo lỗi
 function mockEstimate(body) {
   const { amount, years, rate, method, promo_rate, promo_duration_months } = body;
   if (!Number.isInteger(years) || years < 1 || years > 35) throw new ApiError("Thời hạn vay phải từ 1 đến 35 năm");
   let rows;
+  let limit = null;
   try {
     rows = schedule(amount, years * 12, rate, method, promo_rate, promo_duration_months);
+    limit = mockMaxLoan(body);
   } catch (e) {
     throw new ApiError(e.message);
   }
   return {
-    ...body,
+    amount, years, rate, method, promo_rate, promo_duration_months,
     monthly_payment: rows[0].payment,
     total_interest: rows.reduce((t, r) => t + r.interest, 0),
+    max_loan: limit,
     updated_at: DATA_UPDATED,
   };
+}
+
+function mockMaxLoan(body) {
+  const { property_value: value = null, monthly_income: income = null } = body;
+  if (value == null && income == null) return null;
+  if (value == null || income == null) throw new RangeError("Cần nhập cả giá trị nhà và thu nhập hằng tháng để tính hạn mức vay tối đa");
+  const ltv = body.max_ltv_percent ?? 80;
+  const dti = body.max_dti_percent ?? 50;
+  const result = maxLoan(value, income, body.years * 12, body.rate, body.method, body.promo_rate,
+    body.promo_duration_months, 0, body.existing_monthly_debt ?? 0, ltv, dti / 100);
+  return { ...result, max_ltv_percent: ltv, max_dti_percent: dti };
 }
 
 function parseLoan(text) {
