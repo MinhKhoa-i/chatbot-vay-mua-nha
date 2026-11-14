@@ -109,7 +109,7 @@ uv run python scripts/ingest_faq.py --reviewed-by "<tên người review>" --wai
 - `--wait` đợi tới khi mọi tài liệu `published` hoặc `failed` (tối đa `--wait-timeout` giây, mặc định 600) và trả mã lỗi 1 nếu có tài liệu `failed`.
 - Mỗi lần chạy thật ghi danh sách `document_id` vào `data/snapshots/faq_ingest_<thời gian>.json` (thư mục này không commit).
 
-**Nạp lại sau khi FAQ thay đổi.** FAQ nào đổi nội dung sẽ có phiên bản mới, nhưng retrieval hiện lấy mọi phiên bản `published` và `is_active`, nên phiên bản cũ vẫn có thể được trích dẫn. Sau khi các bản mới đã `published`, tắt các phiên bản đã có bản mới hơn (script cũng in câu lệnh này ở cuối):
+**Nạp lại sau khi FAQ thay đổi.** FAQ nào đổi nội dung sẽ có phiên bản mới. Retrieval chỉ dùng **phiên bản mới nhất còn hợp lệ** (đã duyệt, `published`, đang bật, còn hiệu lực) của mỗi `logical_document_id`, nên không cần làm gì thêm để bản cũ ngừng được trích dẫn. Nếu muốn dọn dẹp, có thể tắt các phiên bản đã có bản mới hơn (script cũng in câu lệnh này ở cuối); bước này không bắt buộc, nhưng giúp tránh trường hợp tắt bản mới nhất rồi bản cũ được dùng lại:
 
 ```sql
 UPDATE knowledge_documents d SET is_active = false

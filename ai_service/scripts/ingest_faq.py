@@ -5,7 +5,8 @@ Chạy từ thư mục ai_service/ (cần API và đúng một worker đang ch�
     uv run python scripts/ingest_faq.py --reviewed-by "Minh Khoa" --wait
 
 Cùng FAQ ID luôn có cùng logical_document_id; nội dung đổi thì API tạo phiên bản mới.
-Phiên bản cũ KHÔNG tự tắt: xem SQL in ra ở cuối để tắt các phiên bản đã có bản mới hơn.
+Retrieval chỉ dùng phiên bản mới nhất còn hợp lệ của mỗi tài liệu; SQL in ra ở cuối chỉ để dọn
+các phiên bản cũ (không bắt buộc).
 """
 
 import argparse
@@ -174,9 +175,9 @@ def main(argv: list[str] | None = None) -> int:
     counts = Counter(final.values())
     summary = ", ".join(f"{k}: {v}" for k, v in sorted(counts.items()))
     print(f"Kết quả: {summary} | Danh sách: {manifest}")
-    print("Tài liệu FAQ đã sửa nội dung có thêm phiên bản mới, nhưng phiên bản cũ vẫn được truy xuất.\n"
-          "Sau khi các bản mới published, tắt bản cũ bằng SQL (ví dụ: docker compose exec db psql "
-          "-U <user> -d <db>):\n" + DEACTIVATE_OLD_SQL)
+    print("FAQ đổi nội dung đã có phiên bản mới; retrieval chỉ dùng phiên bản mới nhất còn hợp lệ.\n"
+          "Không bắt buộc: muốn dọn các phiên bản cũ, tắt chúng bằng SQL "
+          "(ví dụ: docker compose exec db psql -U <user> -d <db>):\n" + DEACTIVATE_OLD_SQL)
     return 0 if set(final.values()) <= {"published"} or not args.wait else 1
 
 
