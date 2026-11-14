@@ -35,10 +35,12 @@ class MarkdownPromptCatalog:
                 PromptName.GROUNDING: {"knowledge_context": ""},
                 PromptName.RETRIEVAL_QUERY: {"previous_questions": "", "text": ""},
                 PromptName.ESTIMATE_QUESTIONS: {"fields": ""},
-                PromptName.ESTIMATE_CONFIRMATION: {"amount": "", "years": "", "rate": ""},
+                PromptName.ESTIMATE_CONFIRMATION: {"amount": "", "years": "", "rate_text": "", "method_text": ""},
                 PromptName.ESTIMATE_RESULT: {
-                    "amount": "", "years": "", "rate": "", "monthly_payment": "", "total_interest": "",
+                    "amount": "", "years": "", "rate_text": "", "method_text": "", "payment_label": "",
+                    "monthly_payment": "", "total_interest": "", "payment_note": "",
                 },
+                PromptName.ESTIMATE_PROMO_TOO_LONG: {"promo_duration_months": "", "years": ""},
             }
             if name in template_values:
                 try:

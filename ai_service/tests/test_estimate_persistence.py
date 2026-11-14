@@ -41,7 +41,9 @@ async def test_estimate_commit_encrypts_profile_and_next_claim_restores_state():
         id=request_id, status="processing", lease_token=token, snapshot_version=0,
         lease_expires_at=now + timedelta(seconds=90),
     )
-    state = EstimateSession(1_000_000_000, 20, Decimal("8.5"), "awaiting_confirmation")
+    state = EstimateSession(
+        1_000_000_000, 20, Decimal("10"), "awaiting_confirmation", "reducing_balance", Decimal("6.5"), 12,
+    )
     session = FakeSession([conversation, now, ledger, now, 0, profile_row])
     repository = PostgresConversationRepository(lambda: session, cipher)
     await repository.commit(

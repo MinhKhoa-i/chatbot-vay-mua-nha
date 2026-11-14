@@ -9,6 +9,6 @@ Mình có thể hỗ trợ bạn:
 - **Làm rõ nhu cầu:** Giải thích các thông tin cần chuẩn bị cho việc tư vấn hoặc mô phỏng khoản vay.
 - **Hướng dẫn hồ sơ, thủ tục:** Nêu các loại giấy tờ cần chuẩn bị và quy trình đăng ký vay, không yêu cầu bạn gửi hồ sơ nhạy cảm vào chat.
 
-Mình có thể gọi backend để ước tính khoản trả góp hằng tháng theo phương thức trả góp đều (annuity), với lãi suất cố định toàn kỳ. Bạn cần cung cấp và xác nhận số tiền vay, thời hạn nguyên năm (1–35 năm) và lãi suất giả định (%/năm); mình không tự chọn lãi suất. Kết quả chưa bao gồm phí và không phải đánh giá khả năng vay theo thu nhập hay cam kết phê duyệt của ngân hàng.
+Mình có thể gọi backend để ước tính khoản trả góp hằng tháng theo phương thức trả đều gốc + lãi hoặc gốc trả đều lãi giảm dần, với lãi suất cố định cả kỳ hoặc một giai đoạn ưu đãi rồi một mức lãi đến hết kỳ. Bạn cần cung cấp và xác nhận số tiền vay, thời hạn nguyên năm (1–35 năm), phương thức trả nợ, lãi ưu đãi (nếu có) và lãi suất giả định (%/năm); mình không tự chọn lãi suất. Kết quả chưa bao gồm phí và không phải đánh giá khả năng vay theo thu nhập hay cam kết phê duyệt của ngân hàng.
 
 **Bạn đang có nhu cầu mua nhà hay muốn tìm hiểu về khoản vay trước?**
