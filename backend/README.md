@@ -60,4 +60,13 @@ pip install -r requirements-dev.txt
 python -m pytest
 ```
 
+<<<<<<< HEAD
+## 5. /api/estimate trả thêm hạn mức vay tối đa
 Gồm test hàm tính (`tests/test_calculator.py`) và test hợp đồng API (`tests/test_api.py`). Test `/api/chat` dùng `ai_service` giả, không cần chạy `ai_service` thật.
+- Nhận thêm (không bắt buộc): property_value, monthly_income, existing_monthly_debt, max_ltv_percent (mặc định 80), max_dti_percent (mặc định 50)
+- Gửi đủ giá trị nhà + thu nhập thì gọi max_loan() của finance/calculator.py, trả thêm trường max_loan {max_loan, by_ltv, by_dti, limited_by, ...}; không gửi thì max_loan = null
+- Chỉ gửi một trong hai thì trả 422 kèm câu tiếng Việt
+- Cập nhật docs/api.md mục 3.3 và tests/test_api.py (27 passed)
+=======
+Gồm test hàm tính (`tests/test_calculator.py`) và test hợp đồng API (`tests/test_api.py`). Test `/api/chat` dùng `ai_service` giả, không cần chạy `ai_service` thật.
+>>>>>>> 6c24c66ce4549bf6154a1405dc4bbcf4a0c3c538

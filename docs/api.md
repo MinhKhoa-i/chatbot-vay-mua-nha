@@ -104,6 +104,16 @@ Gửi lên:
 
 `promo_rate` và `promo_duration_months` phải đi cùng nhau: có cái này thì phải có cái kia, nếu không sẽ bị lỗi 422.
 
+Hạn mức vay tối đa (không bắt buộc). Gửi **cả** `property_value` và `monthly_income` thì backend tính thêm `max_loan` bằng `max_loan()` của `calculator.py`, dùng cùng `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` ở trên. Chỉ gửi một trong hai thì lỗi 422.
+
+| Trường | Kiểu | Bắt buộc | Mặc định | Ràng buộc |
+|---|---|---|---|---|
+| `property_value` | integer | Không | `null` | > 0, giá trị nhà / tài sản bảo đảm (VND) |
+| `monthly_income` | integer | Không | `null` | > 0, thu nhập ròng hằng tháng (VND) |
+| `existing_monthly_debt` | integer | Không | `0` | ≥ 0, nợ khác đang trả hằng tháng (VND) |
+| `max_ltv_percent` | number | Không | `80` | (0, 100]. Form gửi `loan_limit.max_ltv_percent` của ngân hàng đã chọn |
+| `max_dti_percent` | number | Không | `50` | (0, 100] |
+
 Ví dụ:
 
 ```json
@@ -122,7 +132,21 @@ Trả về:
   "promo_duration_months": 0,
   "monthly_payment": 13017349,
   "total_interest": 1624163639,
+  "max_loan": null,
   "updated_at": "2026-10-31"
+}
+```
+
+Khi gửi thêm `"property_value": 3000000000, "monthly_income": 40000000, "max_ltv_percent": 70`, trường `max_loan` có dạng:
+
+```json
+"max_loan": {
+  "max_loan": 2100000000,
+  "by_ltv": 2100000000,
+  "by_dti": 2304616796,
+  "limited_by": "ltv",
+  "max_ltv_percent": 70.0,
+  "max_dti_percent": 50.0
 }
 ```
 
@@ -131,6 +155,7 @@ Trả về:
 | `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` | Trả lại đúng giá trị đã gửi. `ai_service` dùng các trường này để kiểm tra response có đúng là của request mình gửi không |
 | `monthly_payment` | Tiền trả **tháng đầu tiên**, VND, số nguyên. Niên kim: số tiền đều hằng tháng (trong thời gian ưu đãi). Gốc đều: tháng cao nhất |
 | `total_interest` | Tổng lãi cả kỳ hạn, VND, số nguyên |
+| `max_loan` | `null` nếu không gửi `property_value` và `monthly_income`. Nếu có: `max_loan` = hạn mức tối đa (VND) = min(`by_ltv`, `by_dti`); `by_ltv` = theo giá trị nhà; `by_dti` = theo thu nhập (tính với tháng phải trả **cao nhất**); `limited_by` = `"ltv"` hoặc `"dti"` cho biết bị giới hạn bởi cái nào; kèm hai tỷ lệ đã dùng |
 | `updated_at` | Ngày cập nhật dữ liệu |
 
 Làm tròn đến đồng; phần chênh do làm tròn dồn vào tháng cuối nên tổng tiền gốc luôn bằng `amount`.
@@ -242,6 +267,5 @@ Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) khôn
 Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ lệ** (0.7). So sánh hai giá trị thì nhân hoặc chia cho 100.
 
 ## 7. Việc còn mở
-
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.
