@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import Markdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
+import remarkGfm from "remark-gfm";
 import { ApiError, estimateLoan } from "../lib/api.js";
 import { DEFAULT_RATE, fmtDate, vnd } from "../lib/loan.js";
 import { Icon, Orb } from "./icons.jsx";
@@ -125,6 +128,33 @@ function Typing() {
   );
 }
 
+// Câu trả lời của bot viết bằng Markdown (**đậm**, danh sách "- ", link nguồn).
+// react-markdown không chạy HTML thô trong câu trả lời, nên hiển thị an toàn.
+const MD = {
+  p: (props) => <p className="my-0 [&:not(:first-child)]:mt-3" {...props} />,
+  strong: (props) => <strong className="font-semibold" {...props} />,
+  ul: (props) => <ul className="mt-2 list-disc space-y-1.5 pl-6 first:mt-0" {...props} />,
+  ol: (props) => <ol className="mt-2 list-decimal space-y-1.5 pl-6 first:mt-0" {...props} />,
+  li: (props) => <li className="pl-1" {...props} />,
+  h1: (props) => <h3 className="mt-4 font-semibold first:mt-0" {...props} />,
+  h2: (props) => <h3 className="mt-4 font-semibold first:mt-0" {...props} />,
+  h3: (props) => <h3 className="mt-4 font-semibold first:mt-0" {...props} />,
+  a: ({ node, ...props }) => (
+    <a className="break-words text-brand underline underline-offset-2" target="_blank" rel="noopener noreferrer" {...props} />
+  ),
+  table: (props) => <div className="mt-3 overflow-x-auto"><table className="w-full border-collapse text-[15px]" {...props} /></div>,
+  th: (props) => <th className="border border-line bg-soft px-3 py-1.5 text-left font-semibold" {...props} />,
+  td: (props) => <td className="border border-line px-3 py-1.5" {...props} />,
+};
+
+function BotText({ text }) {
+  return (
+    <div className="text-[17px] leading-[1.6]">
+      <Markdown remarkPlugins={[remarkGfm, remarkBreaks]} components={MD}>{text}</Markdown>
+    </div>
+  );
+}
+
 export default function Messages({ messages, loading, onRate, onRegenerate, onAsk, onAdjust }) {
   const endRef = useRef(null);
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [messages.length, loading]);
@@ -140,7 +170,9 @@ export default function Messages({ messages, loading, onRate, onRegenerate, onAs
             <div key={m.id} className="flex gap-3.5">
               <div className="mt-0.5"><Orb size={28} /></div>
               <div className="flex min-w-0 flex-1 flex-col gap-5">
-                <p className={`whitespace-pre-line text-[17px] leading-[1.6] ${m.error ? "text-[#c0443f]" : ""}`}>{m.text}</p>
+                {m.error
+                  ? <p className="whitespace-pre-line text-[17px] leading-[1.6] text-[#c0443f]">{m.text}</p>
+                  : <BotText text={m.text} />}
                 {m.estimate && (
                   <EstimateCard estimate={m.estimate} onCompare={() => onAsk("So sánh lãi suất ngân hàng")} onAdjust={() => onAdjust(m.estimate)} />
                 )}

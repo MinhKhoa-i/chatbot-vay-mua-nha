@@ -65,6 +65,7 @@ Quy ước:
 | CHAT-18 | Thẻ ước tính lấy số từ backend | Chế độ thật; `/api/chat` trả `estimate` chỉ có `amount` 1500000000, `years` 20, `rate` 8.5 (giả lập bằng DevTools > Network > Override khi `/api/chat` chưa nối ai_service) | Thẻ gọi `POST /api/estimate`, hiện `13.017.349 đ / tháng`, tổng lãi `1.624.163.639 đ`, có ngày cập nhật | Cao | Đạt (14/11) |
 | CHAT-19 | Thẻ dùng số có sẵn | Chế độ thật; `/api/chat` trả `estimate` đã có `monthly_payment` và `total_interest` | Thẻ hiện đúng số đó, không gọi thêm `/api/estimate` | TB | Đạt (14/11) |
 | CHAT-20 | Thẻ không tính được | Như CHAT-18 nhưng `/api/estimate` lỗi (tắt backend sau khi chat trả lời), rồi bật lại và bấm "Thử lại" | Thẻ báo "Không kết nối được máy chủ để tính khoản vay...", bấm "Thử lại" thì hiện số; frontend không tự tính | Cao | Đạt (14/11) |
+| CHAT-21 | Câu trả lời có định dạng | Chế độ thật, gõ "Xin chào" (câu chào có chữ đậm và gạch đầu dòng), rồi hỏi "Hồ sơ vay mua nhà cần những gì?" | Chữ đậm hiện in đậm, gạch đầu dòng thành danh sách có chấm, link nguồn bấm được và mở tab mới; không còn dấu `**` hay `- ` thô; câu nhiều dòng vẫn xuống dòng như cũ | TB | Chưa chạy |
 
 ## 4. Form nhập thông tin khách
 
