@@ -45,6 +45,10 @@ function checkNotes({ est, bank, price, income, debts }) {
   const out = [];
   const ltv = price ? (est.amount / price) * 100 : null;
   const dti = income ? ((est.monthly_payment + (debts ?? 0)) / income) * 100 : null;
+  const limit = est.max_loan;
+  if (limit && est.amount > limit.max_loan) {
+    out.push(`Số tiền muốn vay ${shortVnd(est.amount)} lớn hơn hạn mức vay tối đa ước tính ${shortVnd(limit.max_loan)}.`);
+  }
   if (dti !== null && dti > DTI_REF) out.push(`Tổng tiền trả nợ mỗi tháng bằng ${pct(dti)} thu nhập, cao hơn mức ${DTI_REF}% thường được xem là an toàn.`);
   if (!bank) return { ltv, dti, notes: out };
   const lim = bank.loan_limit ?? {};
@@ -105,6 +109,44 @@ function Section({ title, note, children }) {
   );
 }
 
+function MaxLoan({ est, bank, hasInputs }) {
+  const limit = est.max_loan;
+  if (!limit) {
+    if (hasInputs || est.max_loan === undefined) return null;
+    return <p className="text-[13px] text-muted">Nhập cả giá trị nhà và thu nhập để xem hạn mức vay tối đa.</p>;
+  }
+  const ltvSource = bank?.loan_limit?.max_ltv_percent != null ? `theo ${bank.short_name}` : "mức tham khảo";
+  const rows = [
+    [`Theo giá trị nhà (cho vay tối đa ${pct(limit.max_ltv_percent)}, ${ltvSource})`, limit.by_ltv, "ltv"],
+    [`Theo thu nhập (trả nợ tối đa ${pct(limit.max_dti_percent)} thu nhập)`, limit.by_dti, "dti"],
+  ];
+  const within = est.amount <= limit.max_loan;
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-line px-4 py-3.5">
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <p className="text-sm font-medium">Hạn mức vay tối đa ước tính</p>
+        <p className="whitespace-nowrap text-xl font-medium">{vnd(limit.max_loan)}</p>
+      </div>
+      <dl className="flex flex-col gap-1.5 text-[13px]">
+        {rows.map(([label, value, key]) => (
+          <div key={key} className="flex justify-between gap-3">
+            <dt className={limit.limited_by === key ? "font-medium" : "text-muted"}>
+              {label}{limit.limited_by === key && " · đang giới hạn"}
+            </dt>
+            <dd className="whitespace-nowrap text-right font-medium">{vnd(value)}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className={`text-[13px] ${within ? "text-brand" : "text-[#9a5b00]"}`}>
+        {within ? "Số tiền muốn vay nằm trong hạn mức ước tính." : "Số tiền muốn vay đang vượt hạn mức ước tính."}
+      </p>
+      <p className="text-xs leading-relaxed text-muted">
+        Tính theo tháng phải trả cao nhất trong kỳ hạn. Đây là ước tính theo tỷ lệ tham khảo, không phải hạn mức ngân hàng phê duyệt.
+      </p>
+    </div>
+  );
+}
+
 function Result({ result, onAsk }) {
   const { est, bank } = result;
   const { ltv, dti, notes } = checkNotes(result);
@@ -136,6 +178,7 @@ function Result({ result, onAsk }) {
           </div>
         ))}
       </dl>
+      <MaxLoan est={est} bank={bank} hasInputs={Boolean(result.price && result.income)} />
       {notes.length > 0 && (
         <div className="rounded-xl border border-[#f0d9a8] bg-[#fdf7ea] px-4 py-3">
           <p className="text-sm font-medium">Cần lưu ý</p>
@@ -181,6 +224,7 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk }) {
   const bank = banks?.find((b) => b.id === v.bankId) ?? null;
   const ir = bank?.interest_rate;
   const needRate = !bank || ir.floating_rate_estimated == null;
+  const bankPromo = Boolean(bank && ir.promo_rate != null && ir.promo_duration_months > 0);
   const set = (k) => (val) => {
     onChange({ ...v, [k]: val });
     if (errors[k]) setErrors((e) => ({ ...e, [k]: undefined }));
@@ -196,11 +240,18 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk }) {
     if (first) { document.getElementById(`f-${first}`)?.focus(); return; }
 
     const params = { amount: Number(v.amount), years: Number(v.years), method: v.method };
-    if (bank && ir.promo_rate != null && ir.promo_duration_months > 0) {
+    if (bankPromo) {
       params.promo_rate = ir.promo_rate;
       params.promo_duration_months = ir.promo_duration_months;
     }
     params.rate = needRate ? toRate(v.rate) : ir.floating_rate_estimated;
+    if (toInt(v.price) && toInt(v.income)) {
+      params.property_value = toInt(v.price);
+      params.monthly_income = toInt(v.income);
+      params.existing_monthly_debt = toInt(v.debts) ?? 0;
+      params.max_dti_percent = DTI_REF;
+      if (bank?.loan_limit?.max_ltv_percent != null) params.max_ltv_percent = bank.loan_limit.max_ltv_percent;
+    }
 
     setBusy(true);
     try {
@@ -253,7 +304,7 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk }) {
         </div>
 
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
-          <Section title="Căn nhà dự định mua" note="Không bắt buộc. Giá trị nhà dùng để tính tỷ lệ cho vay.">
+          <Section title="Căn nhà dự định mua" note="Không bắt buộc. Giá trị nhà dùng để tính tỷ lệ cho vay và hạn mức vay tối đa.">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="f-propertyType" label="Loại nhà">
                 <select id="f-propertyType" value={v.propertyType} onChange={setFromEvent("propertyType")} className={inputCls()}>
@@ -307,7 +358,8 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk }) {
                 </select>
               </Field>
               {needRate && (
-                <Field id="f-rate" label={bank ? "Lãi suất sau ưu đãi (%/năm) *" : "Lãi suất (%/năm) *"} hint="Ví dụ 8,5. Áp dụng cố định cả kỳ hạn." error={errors.rate}>
+                <Field id="f-rate" label={bankPromo ? "Lãi suất sau ưu đãi (%/năm) *" : "Lãi suất (%/năm) *"}
+                  hint={bankPromo ? "Ví dụ 9,5. Áp dụng từ khi hết ưu đãi đến hết kỳ hạn." : "Ví dụ 8,5. Áp dụng cố định cả kỳ hạn."} error={errors.rate}>
                   <input id="f-rate" inputMode="decimal" value={v.rate} onChange={(e) => set("rate")(e.target.value.replace(/[^\d.,]/g, "").slice(0, 6))}
                     aria-invalid={!!errors.rate} aria-describedby={errors.rate ? "f-rate-err" : "f-rate-hint"} className={inputCls(errors.rate)} />
                 </Field>
@@ -327,7 +379,7 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk }) {
             )}
           </Section>
 
-          <Section title="Thu nhập và nghĩa vụ trả nợ" note="Không bắt buộc. Dùng để tính tỷ lệ trả nợ trên thu nhập.">
+          <Section title="Thu nhập và nghĩa vụ trả nợ" note="Không bắt buộc. Dùng để tính tỷ lệ trả nợ trên thu nhập và hạn mức vay tối đa.">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="f-income" label="Thu nhập ròng mỗi tháng" hint="Sau thuế, có thể gồm thu nhập người cùng trả nợ." error={errors.income}>
                 <MoneyInput id="f-income" value={v.income} onChange={set("income")} error={errors.income} placeholder="Ví dụ: 40.000.000" />
