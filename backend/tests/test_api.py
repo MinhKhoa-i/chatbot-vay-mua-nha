@@ -52,6 +52,35 @@ def test_estimate_dau_vao_sai(payload):
     assert client.post("/api/estimate", json=payload).status_code == 422
 
 
+def test_estimate_uu_dai_thieu_so_thang_bao_cau_tieng_viet():
+    """API-07: chỉ gửi promo_rate, thiếu promo_duration_months."""
+    res = client.post("/api/estimate", json={"amount": 1_500_000_000, "years": 20, "promo_rate": 5.2})
+    assert res.status_code == 422
+    assert res.json()["detail"] == "Có lãi suất ưu đãi thì số tháng ưu đãi phải lớn hơn 0"
+
+
+@pytest.mark.parametrize("origin", [
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    "http://localhost:5174", "http://127.0.0.1:5174",
+])
+def test_cors_cho_phep_frontend(origin):
+    """API-10: frontend ở cổng 5173, 5174 gọi được backend."""
+    res = client.options("/api/estimate", headers={
+        "Origin": origin, "Access-Control-Request-Method": "POST",
+    })
+    assert res.status_code == 200
+    assert res.headers["access-control-allow-origin"] == origin
+
+
+def test_cors_chan_origin_khac():
+    """API-10: origin khác (ví dụ cổng 3000) bị chặn."""
+    res = client.options("/api/estimate", headers={
+        "Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST",
+    })
+    assert res.status_code == 400
+    assert "access-control-allow-origin" not in res.headers
+
+
 def test_banks_theo_schema():
     body = client.get("/api/banks").json()
     assert body["is_sample"] is True and body["updated_at"]
@@ -96,6 +125,7 @@ def test_estimate_han_muc_bi_gioi_han_boi_thu_nhap():
     {"property_value": 3_000_000_000},                       # thiếu thu nhập
     {"monthly_income": 40_000_000},                          # thiếu giá trị nhà
     {"property_value": 3e9, "monthly_income": 4e7, "max_ltv_percent": 0},
+    {"property_value": 3e9, "monthly_income": 4e7, "max_ltv_percent": 0.5},   # LTV theo %, tối thiểu 1
     {"property_value": 3e9, "monthly_income": 4e7, "max_dti_percent": 120},
     {"property_value": 3e9, "monthly_income": 4e7, "existing_monthly_debt": -1},
 ])
@@ -217,3 +247,46 @@ def test_session_id_khong_phai_uuid_van_giu_ngu_canh(ai):
     paths = [r.url.path for r in ai.requests]
     assert paths[0] == paths[1]
     UUID(paths[0].split("/")[4])  # là UUID hợp lệ
+
+
+# ---------------------------------------------------------------------------
+# /api/chat trả estimate lấy từ event done (STT 18)
+# ---------------------------------------------------------------------------
+ESTIMATE = {"amount": 1_000_000_000, "years": 20, "rate": 9.5, "method": "annuity",
+            "promo_rate": None, "promo_duration_months": 0,
+            "monthly_payment": 9_321_347, "total_interest": 1_237_123_280, "updated_at": "2026-11-11"}
+
+
+def test_chat_tra_estimate_lay_tu_event_done(ai):
+    ai.responses = [sse(done("Khoản vay 1 tỷ...", ESTIMATE))]
+    body = ask_chat("Tôi muốn vay 1 tỷ trong 20 năm").json()
+    assert body["estimate"] == ESTIMATE
+    assert body["updated_at"] == "2026-11-11"
+
+
+def test_chat_estimate_null_khi_khong_tinh(ai):
+    ai.responses = [sse(done("Hồ sơ gồm...", None))]
+    body = ask_chat().json()
+    assert body["estimate"] is None and body["updated_at"]
+
+
+def test_chat_estimate_thieu_so_tien_tra_thi_backend_tu_tinh(ai):
+    partial = {"amount": 1_000_000_000, "years": 20, "rate": 9.5}
+    ai.responses = [sse(done("Khoản vay 1 tỷ...", partial))]
+    est = ask_chat().json()["estimate"]
+    assert est["monthly_payment"] == monthly_payment(1_000_000_000, 240, 9.5)
+    assert est["total_interest"] == total_interest(1_000_000_000, 240, 9.5)
+    assert est["method"] == "annuity"
+
+
+@pytest.mark.parametrize("bad", ["chuoi", {"years": 20}, {"amount": -5, "years": 20, "rate": 9}])
+def test_chat_estimate_sai_thi_bo_qua_van_tra_loi(ai, bad):
+    ai.responses = [sse(done("Vẫn trả lời", bad))]
+    body = ask_chat().json()
+    assert body["reply"] == "Vẫn trả lời" and body["estimate"] is None
+
+def test_chat_estimate_bo_truong_la_khong_co_trong_hop_dong(ai):
+    ai.responses = [sse(done("Khoản vay 1 tỷ...", {**ESTIMATE, "cccd": "0123"}))]
+    est = ask_chat().json()["estimate"]
+    assert "cccd" not in est
+    assert est == ESTIMATE

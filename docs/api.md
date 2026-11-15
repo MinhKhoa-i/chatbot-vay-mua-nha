@@ -111,7 +111,7 @@ Hạn mức vay tối đa (không bắt buộc). Gửi **cả** `property_value`
 | `property_value` | integer | Không | `null` | > 0, giá trị nhà / tài sản bảo đảm (VND) |
 | `monthly_income` | integer | Không | `null` | > 0, thu nhập ròng hằng tháng (VND) |
 | `existing_monthly_debt` | integer | Không | `0` | ≥ 0, nợ khác đang trả hằng tháng (VND) |
-| `max_ltv_percent` | number | Không | `80` | (0, 100]. Form gửi `loan_limit.max_ltv_percent` của ngân hàng đã chọn |
+| `max_ltv_percent` | number | Không | `80` | [1, 100], theo % (70 = 70%). Form gửi `loan_limit.max_ltv_percent` của ngân hàng đã chọn |
 | `max_dti_percent` | number | Không | `50` | (0, 100] |
 
 Ví dụ:
