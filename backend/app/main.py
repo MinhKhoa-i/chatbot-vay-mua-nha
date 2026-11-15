@@ -207,7 +207,7 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
 
 # estimate trong event `done` của ai_service (STT 18): frontend dùng để hiện thẻ ước tính
 ESTIMATE_INPUTS = ("amount", "years", "rate", "method", "promo_rate", "promo_duration_months")
-
+ESTIMATE_OUTPUTS = ("monthly_payment", "total_interest")
 
 def _estimate_from_done(raw) -> Optional[dict]:
     """Lấy `estimate` trong event `done`, cùng cấu trúc với response /api/estimate.
@@ -226,7 +226,8 @@ def _estimate_from_done(raw) -> Optional[dict]:
         req = EstimateRequest(**params)
         if raw.get("monthly_payment") is None or raw.get("total_interest") is None:
             return estimate(req)
-        return {**raw, **req.model_dump(include=set(ESTIMATE_INPUTS)),
+        return {**req.model_dump(include=set(ESTIMATE_INPUTS)),
+                **{key: raw[key] for key in ESTIMATE_OUTPUTS},
                 "updated_at": raw.get("updated_at") or DATA_UPDATED}
     except (AttributeError, TypeError, ValueError, HTTPException) as exc:
         logger.warning("Bỏ qua estimate không hợp lệ từ ai_service: %r (%s)", raw, exc)

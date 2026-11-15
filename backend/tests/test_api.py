@@ -284,3 +284,9 @@ def test_chat_estimate_sai_thi_bo_qua_van_tra_loi(ai, bad):
     ai.responses = [sse(done("Vẫn trả lời", bad))]
     body = ask_chat().json()
     assert body["reply"] == "Vẫn trả lời" and body["estimate"] is None
+
+def test_chat_estimate_bo_truong_la_khong_co_trong_hop_dong(ai):
+    ai.responses = [sse(done("Khoản vay 1 tỷ...", {**ESTIMATE, "cccd": "0123"}))]
+    est = ask_chat().json()["estimate"]
+    assert "cccd" not in est
+    assert est == ESTIMATE
