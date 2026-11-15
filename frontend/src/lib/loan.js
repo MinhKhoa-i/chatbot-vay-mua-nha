@@ -1,9 +1,9 @@
 export const DEFAULT_RATE = 8.5; // %/năm, giả định minh họa, chưa phải lãi suất ngân hàng cụ thể
 
-// Bản JS của schedule() trong backend/finance/calculator.py, chỉ dùng khi chạy mock.
+// Bản JS của backend/finance/calculator.py (schedule, max_loan), chỉ dùng khi chạy mock.
 // Giữ đúng công thức, cách làm tròn và câu báo lỗi của bản Python.
 // gracePeriodMonths = grace_period_months: số tháng đầu chỉ trả lãi (ân hạn nợ gốc), nằm trong `months`.
-export function schedule(principal, months, annualRate, method = "annuity", promoRate = null, promoMonths = 0, gracePeriodMonths = 0) {
+function validate(principal, months, annualRate, method, promoRate, promoMonths, gracePeriodMonths) {
   if (!(principal > 0)) throw new RangeError("Số tiền vay phải lớn hơn 0");
   if (!Number.isInteger(months) || months <= 0) throw new RangeError("Số tháng vay phải là số nguyên dương");
   if (annualRate < 0) throw new RangeError("Lãi suất không được âm");
@@ -15,10 +15,11 @@ export function schedule(principal, months, annualRate, method = "annuity", prom
   if (promoRate == null && promoMonths > 0) throw new RangeError("Có số tháng ưu đãi thì phải nhập lãi suất ưu đãi");
   if (!Number.isInteger(gracePeriodMonths) || gracePeriodMonths < 0) throw new RangeError("Số tháng ân hạn gốc phải là số nguyên không âm");
   if (gracePeriodMonths >= months) throw new RangeError("Số tháng ân hạn gốc phải nhỏ hơn số tháng vay");
+}
 
-  const rows = [];
+// _raw_payments(): [tiền trả, tiền lãi] từng tháng dạng số thực, chưa làm tròn
+function* rawPayments(principal, months, annualRate, method, promoRate, promoMonths, gracePeriodMonths) {
   let balance = principal;
-  let paidTotal = 0;
   for (let k = 1; k <= months; k++) {
     const r = (k <= promoMonths ? promoRate : annualRate) / 100 / 12;
     const interestF = balance * r;
@@ -29,7 +30,17 @@ export function schedule(principal, months, annualRate, method = "annuity", prom
         ? (r === 0 ? balance / left : (balance * r) / (1 - Math.pow(1 + r, -left)))
         : principal / (months - gracePeriodMonths) + interestF;
     balance -= paymentF - interestF;
+    yield [paymentF, interestF];
+  }
+}
 
+export function schedule(principal, months, annualRate, method = "annuity", promoRate = null, promoMonths = 0, gracePeriodMonths = 0) {
+  validate(principal, months, annualRate, method, promoRate, promoMonths, gracePeriodMonths);
+  const rows = [];
+  let paidTotal = 0;
+  let k = 0;
+  for (const [paymentF, interestF] of rawPayments(principal, months, annualRate, method, promoRate, promoMonths, gracePeriodMonths)) {
+    k += 1;
     const interest = roundHalfEven(interestF);
     let payment = roundHalfEven(paymentF);
     let paid = payment - interest;
@@ -38,6 +49,23 @@ export function schedule(principal, months, annualRate, method = "annuity", prom
     rows.push({ month: k, payment, interest, principal: paid, balance: Math.round(principal - paidTotal) });
   }
   return rows;
+}
+
+// max_loan(): hạn mức vay tối đa = min(theo LTV, theo DTI). maxLtv theo % (80), maxDti theo tỷ lệ (0.5)
+export function maxLoan(propertyValue, monthlyIncome, months, annualRate, method = "annuity", promoRate = null,
+  promoMonths = 0, gracePeriodMonths = 0, existingMonthlyDebt = 0, maxLtv = 80, maxDti = 0.5) {
+  validate(1, months, annualRate, method, promoRate, promoMonths, gracePeriodMonths);
+  if (!(propertyValue > 0)) throw new RangeError("Giá trị tài sản phải lớn hơn 0");
+  if (!(monthlyIncome > 0)) throw new RangeError("Thu nhập phải lớn hơn 0");
+  if (existingMonthlyDebt < 0) throw new RangeError("Nợ hiện tại không được âm");
+  if (!(maxLtv >= 1 && maxLtv <= 100)) throw new RangeError("LTV tối đa (%) phải trong khoảng [1, 100], ví dụ 80 = 80%");
+  if (!(maxDti > 0 && maxDti <= 1)) throw new RangeError("DTI tối đa phải trong khoảng (0, 1]");
+  let unit = -Infinity;
+  for (const [p] of rawPayments(1, months, annualRate, method, promoRate, promoMonths, gracePeriodMonths)) unit = Math.max(unit, p);
+  const affordable = maxDti * monthlyIncome - existingMonthlyDebt;
+  const byLtv = roundHalfEven(propertyValue * maxLtv / 100);
+  const byDti = affordable > 0 ? Math.trunc(affordable / unit) : 0;
+  return { max_loan: Math.min(byLtv, byDti), by_ltv: byLtv, by_dti: byDti, limited_by: byLtv <= byDti ? "ltv" : "dti" };
 }
 
 // round() của Python làm tròn .5 về số chẵn; dùng cùng cách để số mock khớp backend
