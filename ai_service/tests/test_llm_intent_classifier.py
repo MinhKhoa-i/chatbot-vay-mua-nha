@@ -154,13 +154,14 @@ async def test_orchestration_classifies_once_with_committed_history():
 def test_prompts_distinguish_prepayment_knowledge_from_calculation_requests():
     intent_prompt = get_prompt_catalog().get("intent_classification")
     estimate_prompt = get_prompt_catalog().get("estimate_extraction")
-    assert "THỰC HIỆN" in intent_prompt
-    assert '"trả trước"' in intent_prompt and "retrieval" in intent_prompt
-    assert "không đủ để chọn estimate" in intent_prompt
-    assert "không yêu cầu tạo mô phỏng" in intent_prompt
-    assert "chỉ hỏi kiến thức" in estimate_prompt
-    assert "unrelated" in estimate_prompt
-    assert "THỰC HIỆN" in estimate_prompt
+    assert "estimate: người dùng yêu cầu thực hiện phép tính/mô phỏng" in intent_prompt
+    assert "retrieval: người dùng muốn tìm hiểu kiến thức" in intent_prompt
+    assert "Không phân loại chỉ dựa vào từ khóa như phí, tất toán, trả trước" in intent_prompt
+    assert "Một khẳng định có số liệu cần được kiểm chứng không tự động khởi tạo mô phỏng" in intent_prompt
+    assert "unrelated: khách chỉ hỏi kiến thức" in estimate_prompt
+    assert "Có nhắc số tiền, phí hoặc trả trước không đồng nghĩa yêu cầu thực hiện phép tính" in estimate_prompt
+    assert "unsupported: khách thực sự yêu cầu thực hiện phép tính/mô phỏng ngoài phạm vi" in estimate_prompt
+    assert "Không dùng unsupported chỉ vì câu hỏi kiến thức có nhắc các chủ đề này" in estimate_prompt
 
 
 @pytest.mark.parametrize("error", [IntentClassificationError(), TimeoutError()])
