@@ -149,8 +149,45 @@ const MD = {
 
 function BotText({ text }) {
   return (
-    <div className="text-[17px] leading-[1.6]">
+    <div className="text-[length:var(--chat-fs,17px)] leading-[1.6]">
       <Markdown remarkPlugins={[remarkGfm, remarkBreaks]} components={MD}>{text}</Markdown>
+    </div>
+  );
+}
+
+// V3 - 9. Lỗi kết nối: câu hỏi chưa được trả lời, cho thử lại hoặc sao chép câu hỏi
+const ERROR_INFO = {
+  NETWORK_ERROR: ["Không kết nối được máy chủ", "Câu hỏi của bạn chưa được xử lý. Hãy kiểm tra kết nối mạng và máy chủ đang chạy rồi thử lại."],
+  server: ["Máy chủ chưa trả lời được", "Dịch vụ trợ lý đang lỗi hoặc quá tải nên câu hỏi chưa được trả lời. Bạn thử lại sau ít phút nhé."],
+};
+export const errorInfo = (code) => ERROR_INFO[code] ?? ERROR_INFO.server;
+
+function ErrorCard({ m, canRetry, onRetry }) {
+  const [copied, setCopied] = useState(false);
+  const [title, text] = errorInfo(m.code);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(m.question ?? ""); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* trình duyệt chặn clipboard */ }
+  };
+  return (
+    <div role="alert" className="flex gap-4 rounded-[20px] border border-[#f1c9c6] bg-[#fdf1f0] p-5 sm:p-6">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#c0443f]"><Icon name="wifiOff" size={18} /></span>
+      <div className="min-w-0 flex-1">
+        <p className="font-medium">{title}</p>
+        <p className="mt-1 text-sm leading-relaxed">{text}</p>
+        <p className="mt-1.5 text-xs text-muted">Mã lỗi: {m.code ?? "UNKNOWN"}{m.time ? ` · ${m.time}` : ""}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+          {canRetry && (
+            <button onClick={onRetry} className="flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              <Icon name="redo" size={15} /> Thử lại
+            </button>
+          )}
+          {m.question && (
+            <button onClick={copy} className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
+              {copied ? "Đã sao chép" : "Sao chép câu hỏi"}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -165,13 +202,13 @@ export default function Messages({ messages, loading, onRate, onRegenerate, onAs
       <div className="mx-auto flex max-w-[740px] flex-col gap-8">
         {messages.map((m, i) =>
           m.role === "user" ? (
-            <p key={m.id} className="max-w-[85%] self-end whitespace-pre-line rounded-[20px] bg-soft px-5 py-3.5 leading-relaxed sm:max-w-[75%]">{m.text}</p>
+            <p key={m.id} className="max-w-[85%] self-end whitespace-pre-line rounded-[20px] bg-soft px-5 py-3.5 text-[length:calc(var(--chat-fs,17px)-1px)] leading-relaxed sm:max-w-[75%]">{m.text}</p>
           ) : (
             <div key={m.id} className="flex gap-3.5">
               <div className="mt-0.5"><Orb size={28} /></div>
               <div className="flex min-w-0 flex-1 flex-col gap-5">
                 {m.error
-                  ? <p className="whitespace-pre-line text-[17px] leading-[1.6] text-[#c0443f]">{m.text}</p>
+                  ? <ErrorCard m={m} canRetry={i === last && !loading} onRetry={onRegenerate} />
                   : <BotText text={m.text} />}
                 {m.estimate && (
                   <EstimateCard estimate={m.estimate} onCompare={() => onAsk("So sánh lãi suất ngân hàng")} onAdjust={() => onAdjust(m.estimate)} />

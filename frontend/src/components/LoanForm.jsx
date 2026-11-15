@@ -205,7 +205,7 @@ function Result({ result, onAsk }) {
   );
 }
 
-export default function LoanForm({ values: v, onChange, onBack, onAsk }) {
+export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = EMPTY_LOAN_FORM }) {
   const [banks, setBanks] = useState(null);
   const [banksError, setBanksError] = useState(false);
   const [errors, setErrors] = useState({});
@@ -267,7 +267,7 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk }) {
   }
 
   function reset() {
-    onChange(EMPTY_LOAN_FORM);
+    onChange(empty); // giá trị trống theo Cài đặt (phương thức, lãi suất mặc định)
     setErrors({});
     setSubmitError("");
     setResult(null);

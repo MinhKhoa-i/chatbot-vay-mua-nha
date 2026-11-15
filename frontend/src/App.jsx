@@ -5,25 +5,32 @@ import { getReply } from "./lib/api.js";
 import { Icon, Orb } from "./components/icons.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import Welcome from "./components/Welcome.jsx";
-import Messages from "./components/Messages.jsx";
+import Messages, { errorInfo } from "./components/Messages.jsx";
 import Composer from "./components/Composer.jsx";
 import LoanForm, { EMPTY_LOAN_FORM } from "./components/LoanForm.jsx";
 import Home from "./components/Home.jsx";
+import { ConfirmClearDialog, HistoryDialog, SettingsDialog } from "./components/Dialogs.jsx";
+import { DEFAULT_SETTINGS, FONT_SIZES, clearSettings, loadSettings, saveSettings } from "./lib/settings.js";
 
 const uid = () => crypto.randomUUID();
 // Màn hiện tại nằm trên địa chỉ (#/tro-chuyen, #/nhap-thong-tin) để nút Back của trình duyệt dùng được
 const ROUTES = { home: "#/", chat: "#/tro-chuyen", form: "#/nhap-thong-tin" };
 const viewFromHash = () => Object.keys(ROUTES).find((k) => ROUTES[k] === window.location.hash) ?? "home";
-const ERROR_TEXT = "Không kết nối được máy chủ. Hãy kiểm tra backend đang chạy và địa chỉ API trong file .env, rồi gửi lại.";
+// Form mới (hoặc sau khi xóa dữ liệu) lấy phương thức và lãi suất mặc định từ Cài đặt
+const emptyForm = (s) => ({ ...EMPTY_LOAN_FORM, method: s.method, rate: String(s.rate).replace(".", ",") });
+const clock = () => new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
 export default function App() {
-  const [convos, setConvos] = useState([]);   // { id, title, messages[] }, chỉ lưu trong bộ nhớ, không lưu trình duyệt
+  const [convos, setConvos] = useState([]);   // { id, title, updatedAt, messages[] }, chỉ lưu trong bộ nhớ, không lưu trình duyệt
   const [activeId, setActiveId] = useState(null);
   const [pendingId, setPendingId] = useState(null);
   const [draft, setDraft] = useState("");
   const [menu, setMenu] = useState(false);
   const [view, setViewState] = useState(viewFromHash); // "home" | "chat" | "form"
-  const [loanForm, setLoanForm] = useState(EMPTY_LOAN_FORM); // chỉ giữ trong bộ nhớ như hội thoại
+  const [settings, setSettings] = useState(loadSettings); // cài đặt thì lưu trình duyệt (xem lib/settings.js)
+  const [loanForm, setLoanForm] = useState(() => emptyForm(settings)); // chỉ giữ trong bộ nhớ như hội thoại
+  const [collapsed, setCollapsed] = useState(false); // thanh bên thu gọn trên màn hình rộng
+  const [dialog, setDialog] = useState(null); // "history" | "settings" | "clear" | null
 
   useEffect(() => {
     const onHash = () => setViewState(viewFromHash());
@@ -40,15 +47,17 @@ export default function App() {
   const lastBot = active ? [...active.messages].reverse().find((m) => m.role === "bot" && m.updatedAt) : null;
 
   const patch = (id, fn) => setConvos((cs) => cs.map((c) => (c.id === id ? { ...c, messages: fn(c.messages) } : c)));
-  const push = (id, m) => patch(id, (ms) => [...ms, { id: uid(), ...m }]);
+  const push = (id, m) => setConvos((cs) => cs.map((c) => (c.id === id ? { ...c, updatedAt: Date.now(), messages: [...c.messages, { id: uid(), ...m }] } : c)));
 
   async function ask(id, text) {
     setPendingId(id);
     try {
       const r = await getReply({ message: text, sessionId: id });
       push(id, { role: "bot", text: r.reply, estimate: r.estimate, updatedAt: r.updated_at });
-    } catch {
-      push(id, { role: "bot", text: ERROR_TEXT, error: true });
+    } catch (err) {
+      const code = err?.code ?? "UNKNOWN";
+      const [title, detail] = errorInfo(code);
+      push(id, { role: "bot", text: `${title}. ${detail}`, error: true, code, time: clock(), question: text });
     } finally {
       setPendingId((p) => (p === id ? null : p));
     }
@@ -61,7 +70,7 @@ export default function App() {
     if (!id) {
       id = uid();
       const title = text.length > 40 ? text.slice(0, 40) + "..." : text;
-      setConvos((cs) => [{ id, title, messages: [{ id: uid(), role: "user", text }] }, ...cs]);
+      setConvos((cs) => [{ id, title, updatedAt: Date.now(), messages: [{ id: uid(), role: "user", text }] }, ...cs]);
       setActiveId(id);
     } else {
       push(id, { role: "user", text });
@@ -89,20 +98,40 @@ export default function App() {
     setView("form");
     setMenu(false);
   };
+  const openDialog = (name) => { setMenu(false); setDialog(name); };
   const clearAll = () => {
-    if (window.confirm("Xóa toàn bộ cuộc trò chuyện trên trình duyệt này?")) { setConvos([]); setActiveId(null); setPendingId(null); setDraft(""); setMenu(false); setLoanForm(EMPTY_LOAN_FORM); }
+    setConvos([]); setActiveId(null); setPendingId(null); setDraft(""); setMenu(false); setDialog(null);
+    clearSettings(); setSettings(DEFAULT_SETTINGS); setLoanForm(emptyForm(DEFAULT_SETTINGS));
   };
+  const applySettings = (s) => {
+    setSettings(s); saveSettings(s); setDialog(null);
+    // Form chưa nhập gì thì đổi luôn theo mặc định mới
+    setLoanForm((f) => (f.amount === "" && f.bankId === "" ? { ...f, method: s.method, rate: String(s.rate).replace(".", ",") } : f));
+  };
+  const lastMsg = active?.messages.at(-1);
+  const failing = view === "chat" && lastMsg?.error ? lastMsg.code : null;
 
   if (view === "home") return <Home onChat={() => setView("chat")} onForm={() => openForm()} />;
+
+  const dialogs = (
+    <>
+      <HistoryDialog open={dialog === "history"} onClose={() => setDialog(null)} convos={convos} activeId={activeId}
+        onSelect={(id) => { setActiveId(id); setDialog(null); setView("chat"); }} />
+      <SettingsDialog open={dialog === "settings"} onClose={() => setDialog(null)} value={settings} onSave={applySettings} />
+      <ConfirmClearDialog open={dialog === "clear"} onClose={() => setDialog(null)} onConfirm={clearAll} count={convos.length} />
+    </>
+  );
 
   const composer = <Composer value={draft} onChange={setDraft} onSend={() => send(draft)} disabled={loading} />;
 
   return (
-    <div className="h-dvh">
+    <div className="h-dvh" style={{ "--chat-fs": `${FONT_SIZES[settings.fontSize]}px` }}>
       <div className="flex h-full gap-3 p-2 sm:p-3" style={{ background: "linear-gradient(135deg,#F3FAD6,#DCF3E6)" }}>
         <Sidebar convos={convos} activeId={view === "chat" ? activeId : null} open={menu} onClose={() => setMenu(false)} onNew={newChat}
-          onSelect={(id) => { setActiveId(id); setMenu(false); setView("chat"); }} onClear={clearAll}
-          formActive={view === "form"} onForm={() => openForm()} onHome={() => { setMenu(false); setView("home"); }} />
+          onSelect={(id) => { setActiveId(id); setMenu(false); setView("chat"); }} onClear={() => openDialog("clear")}
+          formActive={view === "form"} onForm={() => openForm()} onHome={() => { setMenu(false); setView("home"); }}
+          collapsed={collapsed} onToggleCollapse={() => setCollapsed((c) => !c)}
+          onHistory={() => openDialog("history")} onSettings={() => openDialog("settings")} />
 
         <main className="dots flex min-w-0 flex-1 flex-col rounded-[22px] bg-white">
           <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6">
@@ -115,14 +144,21 @@ export default function App() {
                 <span className="text-[15px] font-medium">Trợ lý vay mua nhà</span>
               </button>
             </div>
-            <p className="flex items-center gap-2 rounded-full border border-line bg-white px-3.5 py-2 text-[13px] text-muted">
-              <span className="size-1.5 rounded-full bg-[#4fc47a]" aria-hidden="true" />
-              <span><span className="hidden sm:inline">Dữ liệu </span>cập nhật {fmtDate(lastBot?.updatedAt ?? DATA_UPDATED)}</span>
-            </p>
+            {failing ? (
+              <p className="flex items-center gap-2 rounded-full border border-[#f1c9c6] bg-[#fdf1f0] px-3.5 py-2 text-[13px] text-[#c0443f]">
+                <span className="size-1.5 rounded-full bg-[#c0443f]" aria-hidden="true" />
+                {failing === "NETWORK_ERROR" ? "Mất kết nối máy chủ" : "Máy chủ đang lỗi"}
+              </p>
+            ) : (
+              <p className="flex items-center gap-2 rounded-full border border-line bg-white px-3.5 py-2 text-[13px] text-muted">
+                <span className="size-1.5 rounded-full bg-[#4fc47a]" aria-hidden="true" />
+                <span><span className="hidden sm:inline">Dữ liệu </span>cập nhật {fmtDate(lastBot?.updatedAt ?? DATA_UPDATED)}</span>
+              </p>
+            )}
           </header>
 
           {view === "form" ? (
-            <LoanForm values={loanForm} onChange={setLoanForm} onBack={() => setView("chat")}
+            <LoanForm values={loanForm} onChange={setLoanForm} empty={emptyForm(settings)} onBack={() => setView("chat")}
               onAsk={(text) => { setView("chat"); send(text); }} />
           ) : active ? (
             <>
@@ -135,6 +171,7 @@ export default function App() {
           )}
         </main>
       </div>
+      {dialogs}
     </div>
   );
 }

@@ -3,6 +3,10 @@ import { maxLoan, schedule } from "./loan.js";
 
 // Lỗi có câu tiếng Việt để hiện thẳng cho người dùng (422 từ backend hoặc kiểm tra ở mock)
 export class ApiError extends Error {}
+// Lỗi khi hỏi /api/chat, `code` hiện trên thẻ lỗi: NETWORK_ERROR (không tới được backend) hoặc HTTP_<mã>
+export class ChatError extends Error {
+  constructor(code) { super(code); this.code = code; }
+}
 
 async function request(path, init) {
   const res = await fetch(`${API_URL}${path}`, init);
@@ -22,12 +26,17 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
    Thiếu monthly_payment thì EstimateCard gọi estimateLoan() để backend tính. */
 export async function getReply({ message, sessionId }) {
   if (!USE_MOCK) {
-    const res = await fetch(`${API_URL}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, session_id: sessionId }),
-    });
-    if (!res.ok) throw new Error("HTTP " + res.status);
+    let res;
+    try {
+      res = await fetch(`${API_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, session_id: sessionId }),
+      });
+    } catch {
+      throw new ChatError("NETWORK_ERROR");
+    }
+    if (!res.ok) throw new ChatError("HTTP_" + res.status);
     return res.json();
   }
   await new Promise((r) => setTimeout(r, 1400));
