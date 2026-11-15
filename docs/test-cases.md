@@ -7,7 +7,7 @@ Danh sách kiểm thử . Phạm vi gồm trang chủ, giao diện chat, form nh
 - **Ngày 14/11/2026**, STT 22 tuần 2. Code: `dev` sau PR #26, cộng STT 21 (PR #27). Chrome trên Windows, chế độ mock (`npm run dev`) và backend thật (`npm run dev:backend` + `uvicorn` cổng 8000, chưa đặt `AI_SERVICE_URL`). Trường hợp "tắt backend" được giả lập bằng cách chặn request trong trình duyệt.
 - **Kết quả:** 89/91 ca đạt, không phát hiện lỗi code. Nhóm API chạy bằng HTTP trực tiếp; nhóm CALC chạy `pytest tests/test_calculator.py` (51 đạt) và đối chiếu số trong bảng.
 - **Chạy bổ sung 15/11** (cùng STT 23, ai_service chạy bằng Ollama `qwen2.5:7b-instruct` trên máy): ND-05, ND-06 đạt; kết quả 40 câu hỏi kiểm thử ở `docs/eval-results.md`.
-- **Chưa chạy:** UI-05 trên Firefox (mới chạy Chrome và Edge).
+- **Firefox 15/11:** chạy lại toàn bộ 81 ca giao diện (trang chủ, chat, form, nội dung, hiển thị) trên Firefox 159 ở chế độ mock và backend thật: 81/81 đạt, nên UI-05 đạt.
 - **Đã sửa kỳ vọng cũ:** HOME-05, FORM-02, API-09 (3 → 8 ngân hàng sau PR #19); FORM-15 (3 → 4 dòng lưu ý sau STT 21).
 - **Chưa có test tự động:** API-07, API-10.
 
@@ -155,4 +155,4 @@ Chạy backend rồi thử ở Swagger `http://localhost:8000/docs`, hoặc ch�
 | UI-02 | Máy tính 1280px       | Thanh bên luôn hiện, nội dung rộng tối đa 740px                                                     | TB        | Đạt (14/11) |
 | UI-03 | Chỉ dùng bàn phím   | Tab qua hết các ô form và nút, thấy viền focus; chọn phương thức trả nợ bằng phím mũi tên | TB        | Đạt (14/11) |
 | UI-04 | Trình đọc màn hình | Lỗi ô nhập được đọc kèm ô (aria-describedby); kết quả tính được thông báo (aria-live)    | Thấp     | Đạt (14/11) |
-| UI-05 | Trình duyệt           | Chạy được trên Chrome, Edge, Firefox bản mới                                                        | TB        | Đạt (14/11, Chrome, Edge); Firefox chưa chạy |
+| UI-05 | Trình duyệt           | Chạy được trên Chrome, Edge, Firefox bản mới                                                        | TB        | Đạt (14/11 Chrome, Edge; 15/11 Firefox 159) |
