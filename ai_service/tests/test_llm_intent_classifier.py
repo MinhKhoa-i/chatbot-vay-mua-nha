@@ -26,7 +26,7 @@ def completion_response(content, *, finish_reason="stop"):
     }
 
 
-async def classify_with_response(body, *, status=200, history=()):
+async def classify_with_response(body, *, status=200, history=(), text="Còn gói đó?"):
     async def handler(request):
         return httpx.Response(status, json=body)
 
@@ -36,7 +36,7 @@ async def classify_with_response(body, *, status=200, history=()):
         )
         with patch("app.infrastructure.llm.openai_intent_classifier.AsyncOpenAI", side_effect=lambda **kwargs:
                    AsyncOpenAI(**kwargs, http_client=client)):
-            return await adapter.classify("Còn gói đó?", history=history)
+            return await adapter.classify(text, history=history)
 
 
 @pytest.mark.parametrize("intent", list(ChatIntent))
@@ -149,6 +149,19 @@ async def test_orchestration_classifies_once_with_committed_history():
     assert classifier.calls == [("Còn bên đó?", history)]
     assert repository.state_update.intent == ChatIntent.RETRIEVAL
     assert events[-1].event == "done"
+
+
+def test_prompts_distinguish_prepayment_knowledge_from_calculation_requests():
+    intent_prompt = get_prompt_catalog().get("intent_classification")
+    estimate_prompt = get_prompt_catalog().get("estimate_extraction")
+    assert "estimate: người dùng yêu cầu thực hiện phép tính/mô phỏng" in intent_prompt
+    assert "retrieval: người dùng muốn tìm hiểu kiến thức" in intent_prompt
+    assert "Không phân loại chỉ dựa vào từ khóa như phí, tất toán, trả trước" in intent_prompt
+    assert "Một khẳng định có số liệu cần được kiểm chứng không tự động khởi tạo mô phỏng" in intent_prompt
+    assert "unrelated: khách chỉ hỏi kiến thức" in estimate_prompt
+    assert "Có nhắc số tiền, phí hoặc trả trước không đồng nghĩa yêu cầu thực hiện phép tính" in estimate_prompt
+    assert "unsupported: khách thực sự yêu cầu thực hiện phép tính/mô phỏng ngoài phạm vi" in estimate_prompt
+    assert "Không dùng unsupported chỉ vì câu hỏi kiến thức có nhắc các chủ đề này" in estimate_prompt
 
 
 @pytest.mark.parametrize("error", [IntentClassificationError(), TimeoutError()])

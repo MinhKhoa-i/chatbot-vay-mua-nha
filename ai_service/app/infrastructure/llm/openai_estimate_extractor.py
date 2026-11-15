@@ -44,17 +44,36 @@ class OpenAIEstimateExtractor:
             raise EstimateExtractionError(error.code, retryable=error.retryable) from exc
         if not response.choices or response.choices[0].finish_reason != "stop":
             raise EstimateExtractionError("ESTIMATE_EXTRACTION_INVALID_RESPONSE")
-        return self._parse(response.choices[0].message.content)
+        return self._parse(response.choices[0].message.content, session=session)
 
     @staticmethod
-    def _parse(content: str | None) -> EstimateExtraction:
+    def _parse(
+        content: str | None, *, session: EstimateSession | None = None,
+    ) -> EstimateExtraction:
         try:
             payload = json.loads(content, parse_float=Decimal) if content else None
             if not isinstance(payload, dict) or set(payload) != {"action", "updates"}:
                 raise ValueError("Invalid extraction object")
             if not isinstance(payload["updates"], dict):
                 raise ValueError("Invalid updates")
-            updates = payload["updates"]
+            updates = dict(payload["updates"])
+            if session is not None and payload["action"] == "update":
+                current_values = {
+                    "amount": session.amount,
+                    "years": session.years,
+                    "rate": session.rate,
+                    "method": session.method,
+                    "promo_rate": session.promo_rate,
+                    "promo_duration_months": session.promo_duration_months,
+                }
+                for name, value in tuple(updates.items()):
+                    if value is None:
+                        if name not in current_values:
+                            raise ValueError(f"Unknown estimate field: {name}")
+                        if current_values[name] is None:
+                            del updates[name]
+                        else:
+                            return EstimateExtraction("unsupported", {})
             for name in ("rate", "promo_rate"):
                 if name in updates:
                     if isinstance(updates[name], (bool, str)) or updates[name] is None:

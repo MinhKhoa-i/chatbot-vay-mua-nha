@@ -152,18 +152,44 @@ async def test_side_question_keeps_pending_estimate_without_running_calculator()
     repository = EstimateRepository(state)
     calculator = Calculator()
     classifier = StubIntentClassifier(ChatIntent.RETRIEVAL)
+    retrieval = FakeRetrieval()
+    question = "Hồ sơ cần gì?"
     case = StreamChatUseCase(
         FakeCompletion(), repository, prompts=get_prompt_catalog(), classifier=classifier,
-        retrieval=FakeRetrieval(), estimate=EstimateLoanUseCase(
+        retrieval=retrieval, estimate=EstimateLoanUseCase(
             Extractor(EstimateExtraction("unrelated", {})), calculator, get_prompt_catalog(),
         ),
     )
-    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "Hồ sơ cần gì?", None))]
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), question, None))]
     assert events[-1].event == "done"
+    assert retrieval.queries == [question]
     assert repository.estimate_session == state and calculator.calls == []
     assert repository.state_update.estimate_session is None
     assert repository.committed_estimate is None
     assert events[-1].data["estimate"] is None
+
+
+async def test_prepayment_knowledge_question_does_not_reset_pending_estimate():
+    state = EstimateSession(
+        1_000_000_000, 20, Decimal("9"), "awaiting_confirmation", method="annuity", promo_duration_months=0,
+    )
+    repository = EstimateRepository(state)
+    calculator = Calculator()
+    retrieval = FakeRetrieval()
+    question = "Có được trả một phần hoặc toàn bộ khoản vay mua nhà sớm hơn lịch trả nợ không?"
+    case = StreamChatUseCase(
+        FakeCompletion(), repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.RETRIEVAL), retrieval=retrieval,
+        estimate=EstimateLoanUseCase(
+            Extractor(EstimateExtraction("unrelated", {})), calculator, get_prompt_catalog(),
+        ),
+    )
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), question, None))]
+    assert events[-1].event == "done"
+    assert retrieval.queries == [question]
+    assert repository.estimate_session == state and calculator.calls == []
+    assert repository.state_update.estimate_session is None
+    assert repository.committed_estimate is None
 
 
 @pytest.mark.parametrize("state", [
@@ -194,11 +220,84 @@ def test_corrupt_persisted_estimate_is_rejected(value):
     '{"action":"update","updates":{"amount":null}}',
     '{"action":"update","updates":{"years":null}}',
     '{"action":"update","updates":{"unknown":1}}',
+    '{"action":"update","updates":{"unknown":null}}',
     '{"action":"update","updates":[],"extra":true}',
 ])
 def test_extractor_rejects_invalid_structured_data(content):
     with pytest.raises(EstimateExtractionError):
         OpenAIEstimateExtractor._parse(content)
+
+
+def test_extractor_marks_null_that_would_hide_existing_value_unsupported():
+    session = EstimateSession(
+        1_500_000_000, 20, Decimal("9"), "collecting", method="annuity", promo_duration_months=0,
+    )
+    result = OpenAIEstimateExtractor._parse(
+        '{"action":"update","updates":{"rate":null}}', session=session,
+    )
+    assert result == EstimateExtraction("unsupported", {})
+
+
+async def test_existing_value_null_resets_estimate_without_calculating():
+    session = EstimateSession(
+        1_500_000_000, 20, Decimal("9"), "collecting", method="annuity", promo_duration_months=0,
+    )
+    calculator = Calculator()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(
+        200, json=completion_response('{"action":"update","updates":{"rate":null}}'),
+    ))) as client:
+        extractor = OpenAIEstimateExtractor(
+            base_url="http://provider.test/v1", api_key="test", model="test", prompts=get_prompt_catalog(),
+        )
+        case = EstimateLoanUseCase(extractor, calculator, get_prompt_catalog())
+        with patch("app.infrastructure.llm.openai_estimate_extractor.AsyncOpenAI", side_effect=lambda **kwargs:
+                   AsyncOpenAI(**kwargs, http_client=client)):
+            turn = await case.execute("Tôi chưa chốt lãi suất", session)
+    assert turn.session == EstimateSession()
+    assert calculator.calls == []
+
+
+async def test_extractor_drops_null_fields_not_yet_collected():
+    async def handler(request):
+        return httpx.Response(200, json=completion_response(
+            '{"action":"update","updates":{"amount":1500000000,"years":20,"rate":null,"method":null}}',
+        ))
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        adapter = OpenAIEstimateExtractor(
+            base_url="http://provider.test/v1", api_key="test", model="test", prompts=get_prompt_catalog(),
+        )
+        with patch("app.infrastructure.llm.openai_estimate_extractor.AsyncOpenAI", side_effect=lambda **kwargs:
+                   AsyncOpenAI(**kwargs, http_client=client)):
+            result = await adapter.extract("Vay 1,5 tỷ trong 20 năm", EstimateSession())
+
+    assert result == EstimateExtraction("update", {"amount": 1_500_000_000, "years": 20})
+
+
+async def test_eval18_null_fields_result_in_follow_up_not_calculation():
+    async def handler(request):
+        return httpx.Response(200, json=completion_response(
+            '{"action":"update","updates":{"amount":1500000000,"years":20,"rate":null,"method":null}}',
+        ))
+
+    calculator = Calculator()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        extractor = OpenAIEstimateExtractor(
+            base_url="http://provider.test/v1", api_key="test", model="test", prompts=get_prompt_catalog(),
+        )
+        case = EstimateLoanUseCase(extractor, calculator, get_prompt_catalog())
+        with patch("app.infrastructure.llm.openai_estimate_extractor.AsyncOpenAI", side_effect=lambda **kwargs:
+                   AsyncOpenAI(**kwargs, http_client=client)):
+            turn = await case.execute(
+                "Tôi định vay 1,5 tỷ trong 20 năm; hãy cho biết tiền trả mỗi tháng, "
+                "nhưng tôi chưa chọn lãi suất và cách trả nợ.",
+                EstimateSession(),
+            )
+
+    assert turn.session.amount == 1_500_000_000 and turn.session.years == 20
+    assert {"rate", "method", "promo"} <= set(turn.session.missing_fields)
+    assert "lãi suất" in turn.answer and "phương thức trả nợ" in turn.answer
+    assert calculator.calls == []
 
 
 async def test_extractor_calls_provider_with_separate_prompt_and_structured_session():
