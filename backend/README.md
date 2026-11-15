@@ -69,7 +69,7 @@ Gồm test hàm tính (`tests/test_calculator.py`) và test hợp đồng API (`
 - Chỉ gửi một trong hai thì trả 422 kèm câu tiếng Việt
 - Cập nhật docs/api.md mục 3.3 và tests/test_api.py
 
-## 6. /api/chat trả thẻ ước tính `estimate` (STT 18)
+## 6. /api/chat trả thẻ ước tính `estimate`
 
 Khi khách nhờ tính khoản vay trong khung chat, `ai_service` gửi kết quả trong trường `estimate` của event `done`. Backend chuyển tiếp trường này cho frontend để hiện thẻ ước tính.
 
@@ -77,20 +77,3 @@ Khi khách nhờ tính khoản vay trong khung chat, `ai_service` gửi kết qu
 - Câu hỏi không cần tính tiền (ví dụ hỏi hồ sơ vay) thì `estimate = null`.
 - Thiếu `monthly_payment` hoặc `total_interest` thì backend tự tính bằng `finance/calculator.py`.
 - Dữ liệu `estimate` sai (thiếu số tiền, số âm, sai kiểu...) thì trả `estimate = null` nhưng vẫn trả câu trả lời `reply`, khung chat không bị lỗi.
-- `updated_at` của response lấy theo `estimate.updated_at` nếu có.
-- Cập nhật docs/api.md mục 3.2, mục 5 và tests/test_api.py (6 ca test mới, tổng 91 passed).
-
-Ví dụ response:
-
-```json
-{
-  "reply": "Khoản vay 1 tỷ đồng trong 20 năm, lãi suất 9.5%/năm...",
-  "updated_at": "2026-11-11",
-  "estimate": {
-    "amount": 1000000000, "years": 20, "rate": 9.5, "method": "annuity",
-    "promo_rate": null, "promo_duration_months": 0,
-    "monthly_payment": 9321347, "total_interest": 1237123280,
-    "updated_at": "2026-11-11"
-  }
-}
-```
