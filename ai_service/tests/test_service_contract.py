@@ -59,10 +59,10 @@ def test_greeting_does_not_advertise_unimplemented_calculations():
     greeting = catalog.get(PromptName.GREETING)
     system = catalog.get(PromptName.CHAT_SYSTEM)
 
-    assert "gọi backend" in greeting
-    assert "phương thức trả nợ" in greeting and "lãi ưu đãi (nếu có)" in greeting
-    assert "cung cấp và xác nhận" in greeting
-    assert "không phải đánh giá khả năng vay theo thu nhập" in greeting
+    assert "backend" not in greeting
+    assert "số tiền vay" in greeting and "lãi suất (%/năm)" in greeting and "cách trả nợ" in greeting
+    assert "xác nhận lại với bạn rồi mới tính" in greeting
+    assert "không phải đánh giá khả năng vay" in greeting and "chưa gồm phí" in greeting
     assert "Không tự tính tiền trả nợ" in system
     assert "kết thúc bằng một câu disclaimer ngắn do bạn viết" in system
     assert "không cần disclaimer này" in system

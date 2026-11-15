@@ -17,6 +17,7 @@ from app.domain.entities.estimate_session import EstimateExtraction, EstimateSes
 from app.domain.entities.loan_estimate import LoanEstimateInput, LoanEstimateResult
 from app.domain.ports.estimate_extractor import EstimateExtractionError
 from app.domain.ports.loan_calculator import LoanCalculationError
+from app.domain.ports.prompt_catalog import PromptName
 from app.infrastructure.db.conversation_repository import PostgresConversationRepository
 from app.infrastructure.db.estimate_state_codec import decode_estimate_session, encode_estimate_session
 from app.infrastructure.llm.openai_estimate_extractor import OpenAIEstimateExtractor
@@ -87,7 +88,40 @@ async def test_non_ready_or_unrelated_actions_never_call_backend(action):
     case = EstimateLoanUseCase(Extractor(EstimateExtraction(action, {})), calculator, get_prompt_catalog())
     turn = await case.execute("message", EstimateSession())
     assert calculator.calls == []
-    assert turn.handled is (action != "unrelated")
+    # Phiên trống: "unsupported" cũng nhường cho luồng tra cứu như "unrelated" (issue #29).
+    assert turn.handled is (action not in {"unrelated", "unsupported"})
+
+
+async def test_unsupported_during_active_estimate_explains_limits_and_resets():
+    state = EstimateSession(1_000_000_000, None, Decimal("0"), "collecting")
+    case = EstimateLoanUseCase(
+        Extractor(EstimateExtraction("unsupported", {})), Calculator(), get_prompt_catalog(),
+    )
+    turn = await case.execute("Cho tôi ân hạn nợ gốc 12 tháng", state)
+    assert turn.handled is True
+    assert turn.answer == get_prompt_catalog().get(PromptName.ESTIMATE_UNSUPPORTED)
+    assert turn.session == EstimateSession()
+
+
+async def test_general_question_misclassified_as_estimate_falls_back_to_retrieval():
+    repository = EstimateRepository()
+    calculator = Calculator()
+    retrieval = FakeRetrieval()
+    question = "Tôi muốn tìm hiểu vay mua nhà"
+    case = StreamChatUseCase(
+        FakeCompletion(), repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.ESTIMATE), retrieval=retrieval,
+        estimate=EstimateLoanUseCase(
+            Extractor(EstimateExtraction("unsupported", {})), calculator, get_prompt_catalog(),
+        ),
+    )
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), question, None))]
+    assert events[-1].event == "done"
+    assert retrieval.queries == [question]
+    assert calculator.calls == []
+    assert events[-1].data["estimate"] is None
+    reply = "".join(e.data.get("text", "") for e in events if isinstance(e.data, dict))
+    assert "Công cụ hiện tại tính được" not in reply
 
 
 async def test_backend_error_is_not_rendered_as_success():

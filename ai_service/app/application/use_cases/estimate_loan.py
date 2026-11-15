@@ -57,6 +57,10 @@ class EstimateLoanUseCase:
         if extraction.action == "cancel":
             return EstimateTurn(self._prompts.get(PromptName.ESTIMATE_CANCELLED), EstimateSession())
         if extraction.action == "unsupported":
+            if not session.active:
+                # Chưa có thông tin khoản vay nào: coi là câu hỏi kiến thức, chuyển sang tra cứu tài liệu
+                # thay vì trả câu mẫu của luồng tính khoản vay (issue #29).
+                return EstimateTurn("", session, handled=False)
             return EstimateTurn(self._prompts.get(PromptName.ESTIMATE_UNSUPPORTED), EstimateSession())
         if extraction.action == "confirm" and session.status == "awaiting_confirmation":
             try:
