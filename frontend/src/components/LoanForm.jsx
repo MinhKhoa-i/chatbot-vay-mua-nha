@@ -98,10 +98,10 @@ function MoneyInput({ id, value, onChange, error, placeholder }) {
 
 function Section({ title, note, children }) {
   return (
-    <fieldset className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-5 sm:p-6">
+    <fieldset className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-4">
       <legend className="sr-only">{title}</legend>
       <div>
-        <h2 className="text-[15px] font-medium" aria-hidden="true">{title}</h2>
+        <h3 className="text-[15px] font-medium" aria-hidden="true">{title}</h3>
         {note && <p className="mt-0.5 text-xs text-muted">{note}</p>}
       </div>
       {children}
@@ -147,7 +147,7 @@ function MaxLoan({ est, bank, hasInputs }) {
   );
 }
 
-function Result({ result, onAsk }) {
+function Result({ result, onAsk, askLabel }) {
   const { est, bank } = result;
   const { ltv, dti, notes } = checkNotes(result);
   const promo = est.promo_rate != null && est.promo_duration_months > 0;
@@ -162,17 +162,17 @@ function Result({ result, onAsk }) {
   const rateText = (r) => String(r).replace(".", ",") + "%/năm";
 
   return (
-    <section aria-labelledby="loan-result" className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-5 sm:p-6">
-      <h2 id="loan-result" className="text-[13px] text-muted">
+    <section aria-labelledby="loan-result" className="flex flex-col gap-4 rounded-[18px] bg-mint p-5">
+      <h3 id="loan-result" className="text-[13px] text-muted">
         {est.method === "reducing_balance" ? "Ước tính trả tháng đầu (cao nhất)" : promo ? "Ước tính trả hàng tháng trong thời gian ưu đãi" : "Ước tính trả hàng tháng"}
-      </h2>
+      </h3>
       <p className="flex flex-wrap items-end gap-x-2.5">
-        <span className="text-[34px] font-light leading-none sm:text-[44px]">{vnd(est.monthly_payment)}</span>
+        <span className="text-[34px] font-light leading-none">{vnd(est.monthly_payment)}</span>
         <span className="text-base text-muted">/ tháng</span>
       </p>
-      <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-2.5">
         {stats.map(([k, v]) => (
-          <div key={k} className="rounded-xl bg-mint px-3.5 py-3">
+          <div key={k} className="rounded-xl bg-white px-3.5 py-3">
             <dt className="text-xs text-muted">{k}</dt>
             <dd className="mt-0.5 text-sm font-medium">{v}</dd>
           </div>
@@ -196,16 +196,16 @@ function Result({ result, onAsk }) {
           : "Đây là ví dụ minh họa, chưa phải lãi suất của một ngân hàng cụ thể."}
         {" "}Dữ liệu tính toán cập nhật {fmtDate(est.updated_at)}. Vui lòng xác nhận trực tiếp với ngân hàng.
       </p>
-      <div>
-        <button type="button" onClick={onAsk} className="rounded-xl bg-ink px-5 py-3 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-          Hỏi trợ lý về khoản vay này
-        </button>
-      </div>
+      <button type="button" onClick={onAsk} className="w-full rounded-xl bg-ink px-5 py-3.5 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+        {askLabel}
+      </button>
     </section>
   );
 }
 
-export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = EMPTY_LOAN_FORM }) {
+// Bảng "Công cụ tính khoản vay" trượt ra bên phải (thiết kế V3 - 8), mở từ trang chủ hoặc trong chat.
+// onAsk(text): App chuyển sang trò chuyện và gửi text; askLabel đổi theo nơi mở bảng.
+export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel, empty = EMPTY_LOAN_FORM }) {
   const [banks, setBanks] = useState(null);
   const [banksError, setBanksError] = useState(false);
   const [errors, setErrors] = useState({});
@@ -281,6 +281,11 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = E
       result.price && `giá khoảng ${shortVnd(result.price)}`].filter(Boolean).join(" ");
     parts.push(`để mua ${home}`);
     let text = parts.join(" ");
+    const r = (x) => String(x).replace(".", ",");
+    text += est.promo_rate != null && est.promo_duration_months > 0
+      ? `, lãi ưu đãi ${r(est.promo_rate)}%/năm trong ${est.promo_duration_months} tháng đầu rồi ${r(est.rate)}%/năm`
+      : `, lãi suất ${r(est.rate)}%/năm cố định`;
+    text += est.method === "reducing_balance" ? ", trả gốc đều và lãi giảm dần" : ", trả đều gốc + lãi hằng tháng";
     if (result.collateral) text += `. Tài sản bảo đảm: ${result.collateral.toLowerCase()}`;
     onAsk(text + ". Bạn tư vấn giúp mình nhé.");
   }
@@ -290,45 +295,25 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = E
   const ltvHint = priceN && amountN && amountN <= priceN ? `Bằng ${pct((amountN / priceN) * 100)} giá trị nhà.` : "";
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8">
-      <div className="mx-auto flex max-w-[740px] flex-col gap-5">
-        <div className="flex flex-col gap-2">
-          <button type="button" onClick={onBack} className="-ml-1 flex w-fit items-center gap-1.5 rounded-lg px-1 py-1 text-sm text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-brand">
-            <Icon name="arrow" size={16} className="rotate-180" /> Quay lại trò chuyện
-          </button>
-          <h1 className="text-[26px] font-medium leading-tight sm:text-[32px]">Thông tin khoản vay</h1>
-          <p className="text-sm leading-relaxed text-muted">
-            Nhập vài thông tin để ước tính số tiền trả hằng tháng. Chỉ cần số tiền vay và thời hạn, các mục khác có thể bỏ trống.
-            Thông tin chỉ dùng để tính trên trang này, không lưu lại. Không cần nhập họ tên, số CCCD hay số tài khoản.
-          </p>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+        <div>
+          <h2 id="loan-title" className="text-lg font-medium leading-tight">Công cụ tính khoản vay</h2>
+          <p className="mt-1 text-[13px] leading-snug text-muted">Kết quả tính bằng công thức, không do AI suy đoán.</p>
         </div>
+        <button type="button" onClick={onClose} aria-label="Đóng công cụ tính khoản vay" className="grid size-9 shrink-0 place-items-center rounded-full border border-line text-muted hover:bg-soft focus-visible:outline-2 focus-visible:outline-brand">
+          <Icon name="close" size={16} />
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+      <div className="flex flex-col gap-5">
+        <p className="text-[13px] leading-relaxed text-muted">
+          Chỉ cần số tiền vay và thời hạn, các mục khác có thể bỏ trống. Thông tin không được lưu lại; không cần nhập họ tên, số CCCD hay số tài khoản.
+        </p>
 
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
-          <Section title="Căn nhà dự định mua" note="Không bắt buộc. Giá trị nhà dùng để tính tỷ lệ cho vay và hạn mức vay tối đa.">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field id="f-propertyType" label="Loại nhà">
-                <select id="f-propertyType" value={v.propertyType} onChange={setFromEvent("propertyType")} className={inputCls()}>
-                  <option value="">Chọn loại nhà</option>
-                  {PROPERTY_TYPES.map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </Field>
-              <Field id="f-location" label="Khu vực" hint="Tỉnh/thành, không cần địa chỉ cụ thể.">
-                <input id="f-location" value={v.location} onChange={setFromEvent("location")} maxLength={60} placeholder="Ví dụ: TP. Hồ Chí Minh" aria-describedby="f-location-hint" className={inputCls()} />
-              </Field>
-              <Field id="f-price" label="Giá trị nhà" hint={priceN ? `Khoảng ${shortVnd(priceN)}.` : "Giá mua hoặc giá trị ước tính."} error={errors.price}>
-                <MoneyInput id="f-price" value={v.price} onChange={set("price")} error={errors.price} placeholder="Ví dụ: 2.500.000.000" />
-              </Field>
-              <Field id="f-collateral" label="Tài sản bảo đảm">
-                <select id="f-collateral" value={v.collateral} onChange={setFromEvent("collateral")} className={inputCls()}>
-                  <option value="">Chọn tài sản bảo đảm</option>
-                  {COLLATERALS.map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </Field>
-            </div>
-          </Section>
-
           <Section title="Khoản vay">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4">
               <Field id="f-amount" label="Số tiền muốn vay *" hint={[amountN ? `Khoảng ${shortVnd(amountN)}.` : "", ltvHint].join(" ").trim()} error={errors.amount}>
                 <MoneyInput id="f-amount" value={v.amount} onChange={set("amount")} error={errors.amount} placeholder="Ví dụ: 1.500.000.000" />
               </Field>
@@ -338,7 +323,7 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = E
               </Field>
             </div>
 
-            <div role="radiogroup" aria-label="Phương thức trả nợ" className="grid gap-2.5 sm:grid-cols-2">
+            <div role="radiogroup" aria-label="Phương thức trả nợ" className="grid grid-cols-2 gap-2.5">
               {METHODS.map(([val, title, desc]) => (
                 <label key={val} className={`flex cursor-pointer gap-3 rounded-xl border p-3.5 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand ${v.method === val ? "border-brand bg-mint" : "border-line"}`}>
                   <input type="radio" name="method" value={val} checked={v.method === val} onChange={() => set("method")(val)} className="mt-0.5 accent-[#1e6b58]" />
@@ -350,7 +335,7 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = E
               ))}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4">
               <Field id="f-bankId" label="Ngân hàng" hint={banksError ? "Không tải được danh sách ngân hàng, bạn có thể tự nhập lãi suất." : banks === null ? "Đang tải danh sách ngân hàng..." : "Lấy lãi suất từ dữ liệu mẫu, hoặc tự nhập."}>
                 <select id="f-bankId" value={v.bankId} onChange={setFromEvent("bankId")} disabled={!banks} aria-describedby="f-bankId-hint" className={`${inputCls()} disabled:bg-soft`}>
                   <option value="">Không chọn, tự nhập lãi suất</option>
@@ -379,8 +364,31 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = E
             )}
           </Section>
 
+          <Section title="Căn nhà dự định mua" note="Không bắt buộc. Giá trị nhà dùng để tính tỷ lệ cho vay và hạn mức vay tối đa.">
+            <div className="grid gap-4">
+              <Field id="f-propertyType" label="Loại nhà">
+                <select id="f-propertyType" value={v.propertyType} onChange={setFromEvent("propertyType")} className={inputCls()}>
+                  <option value="">Chọn loại nhà</option>
+                  {PROPERTY_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+              <Field id="f-location" label="Khu vực" hint="Tỉnh/thành, không cần địa chỉ cụ thể.">
+                <input id="f-location" value={v.location} onChange={setFromEvent("location")} maxLength={60} placeholder="Ví dụ: TP. Hồ Chí Minh" aria-describedby="f-location-hint" className={inputCls()} />
+              </Field>
+              <Field id="f-price" label="Giá trị nhà" hint={priceN ? `Khoảng ${shortVnd(priceN)}.` : "Giá mua hoặc giá trị ước tính."} error={errors.price}>
+                <MoneyInput id="f-price" value={v.price} onChange={set("price")} error={errors.price} placeholder="Ví dụ: 2.500.000.000" />
+              </Field>
+              <Field id="f-collateral" label="Tài sản bảo đảm">
+                <select id="f-collateral" value={v.collateral} onChange={setFromEvent("collateral")} className={inputCls()}>
+                  <option value="">Chọn tài sản bảo đảm</option>
+                  {COLLATERALS.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+            </div>
+          </Section>
+
           <Section title="Thu nhập và nghĩa vụ trả nợ" note="Không bắt buộc. Dùng để tính tỷ lệ trả nợ trên thu nhập và hạn mức vay tối đa.">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4">
               <Field id="f-income" label="Thu nhập ròng mỗi tháng" hint="Sau thuế, có thể gồm thu nhập người cùng trả nợ." error={errors.income}>
                 <MoneyInput id="f-income" value={v.income} onChange={set("income")} error={errors.income} placeholder="Ví dụ: 40.000.000" />
               </Field>
@@ -402,7 +410,8 @@ export default function LoanForm({ values: v, onChange, onBack, onAsk, empty = E
           </div>
         </form>
 
-        <div aria-live="polite">{result && <Result result={result} onAsk={ask} />}</div>
+        <div aria-live="polite">{result && <Result result={result} onAsk={ask} askLabel={askLabel} />}</div>
+      </div>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { validRate } from "../lib/settings.js";
 import { Icon } from "./icons.jsx";
 
 // Hộp thoại dùng thẻ <dialog> của trình duyệt: tự giữ focus bên trong, Esc để đóng, có lớp phủ.
-function Dialog({ open, onClose, labelledBy, width, children }) {
+function useModal(open, onClose) {
   const ref = useRef(null);
   useEffect(() => {
     const d = ref.current;
@@ -11,14 +11,30 @@ function Dialog({ open, onClose, labelledBy, width, children }) {
     if (open && !d.open) d.showModal();
     if (!open && d.open) d.close();
   }, [open]);
+  return {
+    ref,
+    onCancel: (e) => { e.preventDefault(); onClose(); },
+    onClick: (e) => { if (e.target === e.currentTarget) onClose(); }, // bấm ra lớp phủ thì đóng
+  };
+}
+
+function Dialog({ open, onClose, labelledBy, width, children }) {
+  const modal = useModal(open, onClose);
   return (
-    <dialog
-      ref={ref} aria-labelledby={labelledBy}
-      onCancel={(e) => { e.preventDefault(); onClose(); }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      className={`m-auto max-h-[calc(100dvh-32px)] w-[calc(100vw-32px)] overflow-y-auto rounded-[24px] bg-white p-0 text-ink shadow-2xl backdrop:bg-[#161816]/35 ${width}`}
-    >
+    <dialog {...modal} aria-labelledby={labelledBy}
+      className={`m-auto max-h-[calc(100dvh-32px)] w-[calc(100vw-32px)] overflow-y-auto rounded-[24px] bg-white p-0 text-ink shadow-2xl backdrop:bg-[#161816]/35 ${width}`}>
       {open && <div className="p-6 sm:p-7">{children}</div>}
+    </dialog>
+  );
+}
+
+// Bảng trượt ra từ cạnh phải (Công cụ tính khoản vay, V3 - 8); điện thoại thì chiếm cả màn hình
+export function Drawer({ open, onClose, labelledBy, children }) {
+  const modal = useModal(open, onClose);
+  return (
+    <dialog {...modal} aria-labelledby={labelledBy}
+      className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-full overflow-hidden bg-white p-0 text-ink shadow-2xl backdrop:bg-[#161816]/25 sm:inset-y-3 sm:right-3 sm:h-[calc(100dvh-24px)] sm:max-h-[calc(100dvh-24px)] sm:w-[480px] sm:rounded-[22px]">
+      {open && children}
     </dialog>
   );
 }

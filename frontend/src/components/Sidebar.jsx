@@ -17,7 +17,7 @@ function RailButton({ icon, label, onClick, danger, active }) {
 }
 
 export default function Sidebar({
-  convos, activeId, open, onClose, onNew, onSelect, onClear, formActive, onForm, onHome,
+  convos, activeId, open, onClose, onNew, onSelect, onClear, onHome,
   collapsed, onToggleCollapse, onHistory, onSettings,
 }) {
   return (
@@ -33,7 +33,6 @@ export default function Sidebar({
             <RailButton icon="edit" label="Cuộc trò chuyện mới" onClick={onNew} />
             <span className="my-1 grid size-11 place-items-center rounded-xl bg-soft" title="Trợ lý vay mua nhà"><Orb size={24} /></span>
             <RailButton icon="home" label="Trang chủ" onClick={onHome} />
-            <RailButton icon="calc" label="Nhập thông tin khoản vay" onClick={onForm} active={formActive} />
             <div className="flex-1" />
             <RailButton icon="clock" label="Lịch sử trò chuyện" onClick={onHistory} />
             <RailButton icon="settings" label="Cài đặt" onClick={onSettings} />
@@ -60,15 +59,10 @@ export default function Sidebar({
             <span className="text-sm font-medium">Trợ lý vay mua nhà</span>
           </div>
 
-          <div className="-mt-2 flex flex-col gap-0.5">
+          <div className="-mt-2 flex flex-col">
             <button onClick={onHome} className={`${itemCls} text-muted hover:bg-soft hover:text-ink`}>
               <Icon name="home" size={16} strokeWidth={1.5} />
               Trang chủ
-            </button>
-            <button onClick={onForm} aria-current={formActive ? "page" : undefined}
-              className={`${itemCls} ${formActive ? "bg-soft font-medium text-ink" : "text-muted hover:bg-soft hover:text-ink"}`}>
-              <Icon name="calc" size={16} strokeWidth={1.5} />
-              Nhập thông tin khoản vay
             </button>
           </div>
 
