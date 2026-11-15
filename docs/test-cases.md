@@ -6,7 +6,8 @@ Danh sách kiểm thử . Phạm vi gồm trang chủ, giao diện chat, form nh
 
 - **Ngày 14/11/2026**, STT 22 tuần 2. Code: `dev` sau PR #26, cộng STT 21 (PR #27). Chrome trên Windows, chế độ mock (`npm run dev`) và backend thật (`npm run dev:backend` + `uvicorn` cổng 8000, chưa đặt `AI_SERVICE_URL`). Trường hợp "tắt backend" được giả lập bằng cách chặn request trong trình duyệt.
 - **Kết quả:** 89/91 ca đạt, không phát hiện lỗi code. Nhóm API chạy bằng HTTP trực tiếp; nhóm CALC chạy `pytest tests/test_calculator.py` (51 đạt) và đối chiếu số trong bảng.
-- **Chưa chạy được:** ND-05, ND-06 (cần ai_service có mô hình thật, chạy cùng STT 23). UI-05 mới chạy Chrome và Edge.
+- **Chạy bổ sung 15/11** (cùng STT 23, ai_service chạy bằng Ollama `qwen2.5:7b-instruct` trên máy): ND-05, ND-06 đạt; kết quả 40 câu hỏi kiểm thử ở `docs/eval-results.md`.
+- **Chưa chạy:** UI-05 trên Firefox (mới chạy Chrome và Edge).
 - **Đã sửa kỳ vọng cũ:** HOME-05, FORM-02, API-09 (3 → 8 ngân hàng sau PR #19); FORM-15 (3 → 4 dòng lưu ý sau STT 21).
 - **Chưa có test tự động:** API-07, API-10.
 
@@ -143,8 +144,8 @@ Chạy backend rồi thử ở Swagger `http://localhost:8000/docs`, hoặc ch�
 | ND-02 | Ngày cập nhật                       | Header, thẻ ước tính và kết quả form đều hiện ngày cập nhật dữ liệu                                                     | Cao                                                                  | Đạt (14/11) |
 | ND-03 | Không đưa lãi giả làm lãi thật | Khi không chọn ngân hàng, ghi chú ghi rõ "ví dụ minh họa, chưa phải lãi suất của một ngân hàng cụ thể"              | Cao                                                                  | Đạt (14/11) |
 | ND-04 | Không xin thông tin nhạy cảm       | Form không có ô họ tên, CCCD, số tài khoản, số điện thoại; có câu nhắc không cần nhập                                | Cao                                                                  | Đạt (14/11) |
-| ND-05 | Không khẳng định được duyệt | Hỏi "Tôi có chắc được vay không?": bot không hứa được duyệt, hướng khách liên hệ ngân hàng | Cao | Chưa chạy được (cần ai_service có mô hình) |
-| ND-06 | Trích nguồn                          | Câu trả lời về quy trình, hồ sơ khớp `docs/quy-trinh-vay.md` và `data/faq.json`                                           | TB                                                                   | Chưa chạy được (cần ai_service có mô hình) |
+| ND-05 | Không khẳng định được duyệt | Hỏi "Tôi có chắc được vay không?": bot không hứa được duyệt, hướng khách liên hệ ngân hàng | Cao | Đạt (15/11, Ollama `qwen2.5:7b-instruct`) |
+| ND-06 | Trích nguồn                          | Câu trả lời về quy trình, hồ sơ khớp `docs/quy-trinh-vay.md` và `data/faq.json`                                           | TB                                                                   | Đạt (15/11, Ollama `qwen2.5:7b-instruct`) |
 
 ## 8. Hiển thị và trợ năng
 
