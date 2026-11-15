@@ -170,7 +170,9 @@ def chat(req: ChatRequest):
     except AIServiceError as exc:
         logger.warning("ai_service lỗi: %s (retryable=%s)", exc.code, exc.retryable)
         raise HTTPException(status_code=502, detail=AI_ERROR_DETAIL) from exc
-    return {"reply": done["reply"], "updated_at": DATA_UPDATED, "estimate": None}
+    estimate_card = _estimate_from_done(done.get("estimate"))
+    updated_at = (estimate_card or {}).get("updated_at") or DATA_UPDATED
+    return {"reply": done["reply"], "updated_at": updated_at, "estimate": estimate_card}
 
 
 # /api/estimate: dùng chung backend/finance/calculator.py, không tự tính lại
@@ -185,7 +187,7 @@ class EstimateRequest(BaseModel):
     property_value: Optional[int] = Field(None, gt=0, description="Giá trị nhà / tài sản bảo đảm (VND)")
     monthly_income: Optional[int] = Field(None, gt=0, description="Thu nhập ròng hằng tháng (VND)")
     existing_monthly_debt: int = Field(0, ge=0, description="Nợ khác phải trả hằng tháng (VND)")
-    max_ltv_percent: float = Field(80, gt=0, le=100, description="Tỷ lệ cho vay tối đa / giá trị nhà (%)")
+    max_ltv_percent: float = Field(80, ge=1, le=100, description="Tỷ lệ cho vay tối đa / giá trị nhà (%)")
     max_dti_percent: float = Field(50, gt=0, le=100, description="Tỷ lệ trả nợ tối đa / thu nhập (%)")
 
 
@@ -201,6 +203,34 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
                       max_ltv=req.max_ltv_percent, max_dti=req.max_dti_percent / 100)
     return {**result, "max_ltv_percent": float(req.max_ltv_percent),
             "max_dti_percent": float(req.max_dti_percent)}
+
+
+# estimate trong event `done` của ai_service (STT 18): frontend dùng để hiện thẻ ước tính
+ESTIMATE_INPUTS = ("amount", "years", "rate", "method", "promo_rate", "promo_duration_months")
+
+
+def _estimate_from_done(raw) -> Optional[dict]:
+    """Lấy `estimate` trong event `done`, cùng cấu trúc với response /api/estimate.
+
+    - Không có estimate (null) thì trả None.
+    - Kiểm tra đầu vào bằng EstimateRequest (cùng quy tắc với /api/estimate).
+    - Thiếu `monthly_payment` hoặc `total_interest` thì backend tự tính bằng calculator.py.
+    - Dữ liệu sai thì bỏ qua (trả None) để câu trả lời chat vẫn hiện được.
+    """
+    if raw is None:
+        return None
+    try:
+        params = {key: raw.get(key) for key in ESTIMATE_INPUTS}
+        params["method"] = params["method"] or ANNUITY
+        params["promo_duration_months"] = params["promo_duration_months"] or 0
+        req = EstimateRequest(**params)
+        if raw.get("monthly_payment") is None or raw.get("total_interest") is None:
+            return estimate(req)
+        return {**raw, **req.model_dump(include=set(ESTIMATE_INPUTS)),
+                "updated_at": raw.get("updated_at") or DATA_UPDATED}
+    except (AttributeError, TypeError, ValueError, HTTPException) as exc:
+        logger.warning("Bỏ qua estimate không hợp lệ từ ai_service: %r (%s)", raw, exc)
+        return None
 
 
 @app.post("/api/estimate")
