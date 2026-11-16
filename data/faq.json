@@ -679,19 +679,19 @@
       "additional_sources": [],
       "last_updated": "2026-11-15"
     },
-    {
-      "id": "FAQ-57",
-      "category": "PHI_TRA_TRUOC_HAN",
-      "question": "Trả trước một phần gốc thì dư nợ mới và tiền lãi kỳ tiếp theo được tính lại thế nào?",
-      "answer": "Dư nợ gốc mới = dư nợ gốc ngay trước khi hạch toán − số tiền thực tế được hạch toán trả gốc. Với dư nợ mới không đổi trong kỳ, tiền lãi theo cơ sở 365 ngày = dư nợ mới × lãi suất năm (dạng thập phân) × số ngày thực tế / 365. Ví dụ giả định dư nợ 1 tỷ đồng, trả trước 200 triệu vào gốc trước khi bắt đầu kỳ 30 ngày, lãi suất 9%/năm: dư nợ mới 800 triệu đồng; lãi kỳ tiếp theo khoảng 5.917.808 đồng. Nếu trả giữa kỳ, tách thời gian trước và sau hạch toán; không áp dụng dư nợ mới cho toàn bộ kỳ một cách máy móc.",
-      "applicable_scope": "Ví dụ tính toán dư nợ thực tế; xử lý EVAL-23. Không gồm tiền gốc theo lịch, phí hoặc lãi quá hạn.",
-      "source_name": "Điều 5 Thông tư 14/2017/TT-NHNN – phương pháp tính lãi; Techcombank – ví dụ tính lãi",
-      "source_url": "https://vanban.chinhphu.vn/?docid=191944&pageid=27160",
-      "additional_sources": [
-        "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o"
-      ],
-      "last_updated": "2026-11-15"
-    },
+ {
+  "id": "FAQ-57",
+  "category": "PHI_TRA_TRUOC_HAN",
+  "question": "Trả trước một phần gốc thì dư nợ mới và tiền lãi kỳ tiếp theo được tính lại thế nào?",
+  "answer": "Dư nợ gốc mới = dư nợ gốc ngay trước khi hạch toán − số tiền thực tế được hạch toán trả gốc. Với dư nợ mới không đổi trong kỳ, tiền lãi theo cơ sở 365 ngày = dư nợ mới × lãi suất năm (dạng thập phân) × số ngày thực tế / 365. Ví dụ giả định dư nợ 1 tỷ đồng, trả trước 200 triệu vào gốc trước khi bắt đầu kỳ 30 ngày, lãi suất 9%/năm: dư nợ mới 800 triệu đồng; lãi kỳ tiếp theo khoảng 5.917.808 đồng. Nếu trả giữa kỳ, tách thời gian trước và sau hạch toán; không áp dụng dư nợ mới cho toàn bộ kỳ một cách máy móc. Lưu ý: Công cụ ước tính khoản vay của chatbot sử dụng lãi suất tháng bằng lãi suất năm chia 12, nên kết quả có thể khác với phương pháp tính lãi theo số ngày thực tế trên cơ sở 365 ngày.",
+  "applicable_scope": "Ví dụ tính toán dư nợ thực tế; xử lý EVAL-23. Không gồm tiền gốc theo lịch, phí hoặc lãi quá hạn.",
+  "source_name": "Điều 5 Thông tư 14/2017/TT-NHNN – phương pháp tính lãi; Techcombank – ví dụ tính lãi",
+  "source_url": "https://vanban.chinhphu.vn/?docid=191944&pageid=27160",
+  "additional_sources": [
+    "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o"
+  ],
+  "last_updated": "2026-11-16"
+},
     {
       "id": "FAQ-58",
       "category": "PHI_TRA_TRUOC_HAN",
