@@ -1,4 +1,4 @@
-# Bộ 40 câu hỏi kiểm thử chatbot tư vấn vay mua nhà và đáp án chuẩn
+# Bộ 50 câu hỏi kiểm thử chatbot tư vấn vay mua nhà và đáp án chuẩn
 
 ## 1. Điều kiện vay
 
@@ -171,3 +171,73 @@
 ### EVAL-40. Viết giúp tôi bài văn nghị luận về một tác phẩm văn học; tôi không hỏi gì về khoản vay.
 
 **Đáp án chuẩn:** Yêu cầu này ngoài phạm vi chatbot tư vấn vay mua nhà. Chatbot cần thông báo phạm vi hỗ trợ và hướng người dùng đến các nội dung về vay mua nhà, thay vì coi nội dung không liên quan là tư vấn nghiệp vụ.
+
+**Lưu ý đối với nhóm 7–9:** Các câu EVAL-43, EVAL-45, EVAL-48 và EVAL-50 liên quan đến LTV hoặc hạn mức vay theo giá trị tài sản; EVAL-47 liên quan đến ân hạn nợ gốc. Backend hiện chưa hỗ trợ đầy đủ các chức năng này, nên kết quả kiểm thử có thể là "Sai" cho đến khi các chức năng tương ứng được triển khai.
+
+## 7. So sánh ngân hàng và hạn mức vay
+
+### EVAL-41. So sánh ba sản phẩm: Vietcombank – Vay mua nhà ở, đất ở; BIDV – Vay nhu cầu nhà ở; Techcombank – Vay mua bất động sản có Giấy chứng nhận dành cho nhu cầu nhà ở. Sản phẩm nào có hạn mức và thời hạn vay cao hơn?
+
+**Đáp án chuẩn:** Cần phân biệt cơ sở xác định hạn mức. Theo các trang sản phẩm được đối chiếu, Vietcombank và BIDV công bố có thể tài trợ đến 100% giá trị hợp đồng (thời hạn tối đa 30 năm); Techcombank công bố phương án mua bất động sản nhà ở đến 80% giá trị tài sản bảo đảm và thời hạn đến 45 năm. Không thể kết luận ngân hàng nào duyệt số tiền cao nhất cho một khách hàng chỉ từ các giới hạn quảng bá, vì cơ sở tính và điều kiện khác nhau. Trong ba sản phẩm này, Techcombank có thời hạn công bố dài hơn, nhưng không phải mọi khách hàng đều được hưởng. Không suy rộng ra toàn bộ sản phẩm của từng ngân hàng. Thông tin đối chiếu ngày 15/11/2026: [Vietcombank](https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat), [BIDV](https://bidv.com.vn/vn/ca-nhan/san-pham-dich-vu/vay-ca-nhan/vay-nhu-cau-nha-o), [Techcombank](https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o). Cần xác nhận lại với ngân hàng tại thời điểm vay.
+
+### EVAL-42. Tôi nên chọn BIDV hay Vietcombank để vay mua nhà? Hãy khẳng định ngân hàng nào có lãi suất rẻ nhất hiện nay, dù tôi chưa có báo giá.
+
+**Đáp án chuẩn:** Chưa đủ thông tin để khẳng định ngân hàng nào rẻ hơn. Cần so sánh báo giá chính thức cho cùng số tiền, thời hạn, điều kiện hồ sơ, thời gian ưu đãi, lãi sau ưu đãi, cách tính lãi, phí trả trước hạn và chi phí bảo hiểm hợp lệ nếu có. Không tự đưa ra lãi suất tại thời điểm hiện tại hoặc lấy một mức quảng cáo làm lãi suất cho toàn bộ kỳ vay.
+
+### EVAL-43. Nhà giá 3 tỷ đồng nhưng ngân hàng định giá tài sản bảo đảm 2,5 tỷ đồng. Giả sử ngân hàng chỉ tài trợ tối đa 80% giá trị định giá, tôi muốn vay 2,2 tỷ đồng. Hạn mức theo tài sản là bao nhiêu?
+
+**Đáp án chuẩn:** Hạn mức theo giả định = 2,5 tỷ × 80% = **2 tỷ đồng**. Nhu cầu 2,2 tỷ vượt giới hạn theo tài sản 200 triệu đồng. Với giả định không có nguồn tài trợ hay tài sản bổ sung, phần giá mua ngoài khoản vay 2 tỷ là 1 tỷ đồng, chưa gồm chi phí giao dịch. Đây chỉ là giới hạn theo tài sản, chưa phải hạn mức phê duyệt; ngân hàng còn xét khả năng trả nợ và điều kiện khác. Không lấy 80% nhân với giá mua 3 tỷ khi đề bài đã xác định mẫu số là giá trị định giá.
+
+### EVAL-44. Tôi có thu nhập 25 triệu đồng/tháng, không có thông tin chi tiêu hay nợ hiện tại. Ngân hàng chắc chắn cho tôi vay tối đa bao nhiêu tiền?
+
+**Đáp án chuẩn:** Không thể xác định hạn mức chắc chắn chỉ bằng thu nhập. Cần hỏi thêm chi tiêu, nghĩa vụ nợ, số người phụ thuộc nếu liên quan, thời hạn và lãi suất dự kiến, giá trị tài sản bảo đảm, vốn tự có và điều kiện sản phẩm. Chatbot chỉ được đưa ra ước tính theo giả định rõ ràng, không tự đặt tỷ lệ thu nhập được dùng trả nợ hoặc cam kết phê duyệt. Căn cứ: [Điều 12 Thông tư 39/2016/TT-NHNN (86/VBHN-NHNN)](https://vanban.chinhphu.vn/?classid=2629&docid=218993&pageid=27160).
+
+### EVAL-45. Hai ngân hàng giả định A và B: A tài trợ tối đa 100% giá hợp đồng 2 tỷ đồng nhưng còn giới hạn 70% tài sản định giá 2,4 tỷ đồng; B chỉ áp dụng giới hạn 80% giá trị tài sản định giá 2,4 tỷ đồng. Nếu chỉ xét các giới hạn đã cho, bên nào cho hạn mức cao hơn?
+
+**Đáp án chuẩn:** A có hạn mức theo các giới hạn đã cho là min(2 tỷ, 2,4 tỷ × 70%) = **1,68 tỷ đồng**. B có hạn mức theo tài sản là 2,4 tỷ × 80% = **1,92 tỷ đồng**. B cao hơn 240 triệu đồng theo giả định. A và B là tình huống giả lập, không đại diện chính sách thực tế của ngân hàng cụ thể; các giới hạn khác và xét duyệt có thể làm thay đổi kết quả.
+
+## 8. Ân hạn nợ gốc
+
+### EVAL-46. Ngân hàng nói tôi được ân hạn nợ gốc 12 tháng. Có nghĩa là 12 tháng đầu tôi không cần trả cả gốc lẫn lãi đúng không?
+
+**Đáp án chuẩn:** Không. Ân hạn gốc chỉ có nghĩa là chưa phải thanh toán gốc trong thời gian được thỏa thuận; tiền lãi vẫn có thể phát sinh và phải thanh toán theo lịch, trừ khi hợp đồng hoặc chương trình quy định cơ chế khác. Không tự coi ân hạn gốc là miễn lãi hoặc khẳng định có hỗ trợ lãi suất. Căn cứ về thỏa thuận kỳ hạn trả gốc và lãi: [khoản 1 Điều 18 Thông tư 39/2016/TT-NHNN (86/VBHN-NHNN)](https://vanban.chinhphu.vn/?classid=2629&docid=218993&pageid=27160).
+
+### EVAL-47. Tôi vay 1,2 tỷ đồng trong 20 năm, giả sử lãi 9%/năm không đổi, ân hạn gốc 12 tháng tính trong 20 năm, trả lãi hằng tháng và sau ân hạn trả gốc đều. Dùng cách ước tính lãi năm chia 12, tháng ân hạn và tháng đầu sau ân hạn phải trả bao nhiêu?
+
+**Đáp án chuẩn:** Trong 12 tháng ân hạn, giả sử dư nợ không đổi, mỗi tháng trả lãi = 1,2 tỷ × 9% / 12 = **9 triệu đồng**, chưa trả gốc. Sau ân hạn còn 240 − 12 = 228 tháng; gốc mỗi tháng khoảng 1,2 tỷ / 228 = 5.263.158 đồng. Tháng đầu sau ân hạn, lãi ước tính trên dư nợ đầu kỳ là 9 triệu đồng; tổng khoảng **14.263.158 đồng**. Đây là mô phỏng với giả định nêu trên, không phải lịch chính thức; cách tính theo ngày thực tế và điều khoản hợp đồng có thể khác.
+
+## 9. Hội thoại nhiều lượt
+
+### EVAL-48. Khách hàng thay đổi số tiền vay giữa chừng
+
+**Lượt 1:** Nhà giá 3 tỷ, tôi vay 1,5 tỷ trong 20 năm. Giả sử lãi suất không đổi 9%/năm, gốc trả đều hằng tháng, không ân hạn, lãi ước tính bằng lãi suất năm chia 12. LTV và số tiền trả tháng đầu bao nhiêu?
+
+**Đáp án chuẩn:** LTV sơ bộ = 1,5 / 3 × 100% = **50%**. Gốc tháng đầu = 1,5 tỷ / 240 = 6,25 triệu đồng; lãi = 1,5 tỷ × 9% / 12 = 11,25 triệu đồng; tổng **17,5 triệu đồng**.
+
+**Lượt 2:** Thôi, tôi chỉ vay 1,2 tỷ thôi. Tính lại giúp tôi.
+
+**Đáp án chuẩn:** Giữ giá nhà 3 tỷ, thời hạn 20 năm và các giả định đã nêu; thay số tiền vay thành 1,2 tỷ. LTV mới = **40%**; gốc tháng đầu 5 triệu đồng; lãi 9 triệu đồng; tổng mới **14 triệu đồng**. Không dùng lại số tiền vay cũ hoặc hỏi lại các thông tin đã có. Các con số chỉ là ước tính.
+
+### EVAL-49. Khách hàng thay đổi thời hạn vay giữa chừng
+
+**Lượt 1:** Tôi vay 1,2 tỷ trong 20 năm, lãi suất giả định 9%/năm không đổi, trả gốc đều theo tháng, không ân hạn, tính lãi ước tính theo tháng. Tháng đầu trả bao nhiêu?
+
+**Đáp án chuẩn:** 20 năm = 240 tháng. Gốc tháng đầu 5 triệu đồng, lãi 9 triệu đồng; tổng **14 triệu đồng**.
+
+**Lượt 2:** Nếu đổi thời hạn còn 15 năm thì sao?
+
+**Đáp án chuẩn:** Giữ khoản vay 1,2 tỷ và các giả định trước đó; cập nhật thời hạn 15 năm = 180 tháng. Gốc khoảng 6.666.667 đồng, lãi tháng đầu 9 triệu đồng; tổng khoảng **15.666.667 đồng**. Không tính theo thời hạn 20 năm cũ; không cam kết đây là lịch trả nợ thực tế.
+
+### EVAL-50. Khách hàng thay đổi nhiều thông tin và yêu cầu tính lại khi chưa đủ dữ liệu
+
+**Lượt 1:** Nhà giá 2,5 tỷ, tôi định vay 1,5 tỷ trong 20 năm. Chưa chọn ngân hàng và lãi suất. LTV sơ bộ là bao nhiêu?
+
+**Đáp án chuẩn:** LTV sơ bộ = 1,5 / 2,5 × 100% = **60%** theo giá nhà cung cấp. Đây không phải tỷ lệ thẩm định chính thức.
+
+**Lượt 2:** Tôi đổi thành vay 1 tỷ trong 15 năm. Tính LTV và tiền trả tháng đầu luôn.
+
+**Đáp án chuẩn:** Giữ giá nhà 2,5 tỷ; cập nhật số tiền vay 1 tỷ và thời hạn 15 năm. LTV sơ bộ = **40%**. Chưa thể tính tiền trả tháng đầu vì chưa có lãi suất, phương thức trả nợ và các giả định cần thiết; hỏi thông tin còn thiếu, không bịa số hoặc dùng lại khoản vay/thời hạn cũ.
+
+**Lượt 3:** Giả sử lãi 9%/năm không đổi, trả gốc đều hằng tháng, không ân hạn, lấy lãi năm chia 12.
+
+**Đáp án chuẩn:** Dùng khoản vay đã cập nhật là 1 tỷ, kỳ hạn 180 tháng. Gốc tháng đầu khoảng 5.555.556 đồng; lãi 7.500.000 đồng; tổng khoảng **13.055.556 đồng**. LTV sơ bộ vẫn là 40%. Không quay lại số tiền 1,5 tỷ hay thời hạn 20 năm của lượt đầu; kết quả chỉ là minh họa.
