@@ -172,6 +172,8 @@
 
 **Đáp án chuẩn:** Yêu cầu này ngoài phạm vi chatbot tư vấn vay mua nhà. Chatbot cần thông báo phạm vi hỗ trợ và hướng người dùng đến các nội dung về vay mua nhà, thay vì coi nội dung không liên quan là tư vấn nghiệp vụ.
 
+**Lưu ý đối với nhóm 7–9:** Các câu EVAL-43, EVAL-45, EVAL-48 và EVAL-50 liên quan đến LTV hoặc hạn mức vay theo giá trị tài sản; EVAL-47 liên quan đến ân hạn nợ gốc. Backend hiện chưa hỗ trợ đầy đủ các chức năng này, nên kết quả kiểm thử có thể là "Sai" cho đến khi các chức năng tương ứng được triển khai.
+
 ## 7. So sánh ngân hàng và hạn mức vay
 
 ### EVAL-41. So sánh ba sản phẩm: Vietcombank – Vay mua nhà ở, đất ở; BIDV – Vay nhu cầu nhà ở; Techcombank – Vay mua bất động sản có Giấy chứng nhận dành cho nhu cầu nhà ở. Sản phẩm nào có hạn mức và thời hạn vay cao hơn?
