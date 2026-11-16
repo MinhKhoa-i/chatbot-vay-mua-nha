@@ -209,12 +209,18 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
 ESTIMATE_INPUTS = ("amount", "years", "rate", "method", "promo_rate", "promo_duration_months")
 ESTIMATE_OUTPUTS = ("monthly_payment", "total_interest")
 
+def _is_money(value) -> bool:
+    """Số tiền VND hợp lệ: số nguyên, không âm (bool không tính là số)."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
 def _estimate_from_done(raw) -> Optional[dict]:
     """Lấy `estimate` trong event `done`, cùng cấu trúc với response /api/estimate.
 
     - Không có estimate (null) thì trả None.
     - Kiểm tra đầu vào bằng EstimateRequest (cùng quy tắc với /api/estimate).
-    - Thiếu `monthly_payment` hoặc `total_interest` thì backend tự tính bằng calculator.py.
+    - `monthly_payment`, `total_interest` phải là số nguyên ≥ 0 (VND); thiếu hoặc sai
+      thì backend tự tính bằng calculator.py.
     - Dữ liệu sai thì bỏ qua (trả None) để câu trả lời chat vẫn hiện được.
     """
     if raw is None:
@@ -224,11 +230,16 @@ def _estimate_from_done(raw) -> Optional[dict]:
         params["method"] = params["method"] or ANNUITY
         params["promo_duration_months"] = params["promo_duration_months"] or 0
         req = EstimateRequest(**params)
-        if raw.get("monthly_payment") is None or raw.get("total_interest") is None:
-            return estimate(req)
+        source = raw
+        if not all(_is_money(raw.get(key)) for key in ESTIMATE_OUTPUTS):
+            # Thiếu số, hoặc số sai (âm, số lẻ, chuỗi...): backend tự tính bằng calculator.py
+            if any(raw.get(key) is not None for key in ESTIMATE_OUTPUTS):
+                logger.warning("Số tiền trong estimate của ai_service không hợp lệ, tính lại: %r", raw)
+            source = estimate(req)
+        # Chỉ trả các trường có trong hợp đồng (docs/api.md), bỏ trường lạ
         return {**req.model_dump(include=set(ESTIMATE_INPUTS)),
-                **{key: raw[key] for key in ESTIMATE_OUTPUTS},
-                "updated_at": raw.get("updated_at") or DATA_UPDATED}
+                **{key: source[key] for key in ESTIMATE_OUTPUTS},
+                "updated_at": source.get("updated_at") or DATA_UPDATED}
     except (AttributeError, TypeError, ValueError, HTTPException) as exc:
         logger.warning("Bỏ qua estimate không hợp lệ từ ai_service: %r (%s)", raw, exc)
         return None
