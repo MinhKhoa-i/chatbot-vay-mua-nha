@@ -1,7 +1,7 @@
 {
   "version": "1.1.0",
-  "updated_at": "2026-11-11",
-  "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB)",
+  "updated_at": "2026-11-16",
+  "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB) Rà soát nguồn chính thức ngày 2026-11-16; source_url và last_updated ở cấp ngân hàng áp dụng cho các thông tin trong bản ghi. Lãi suất hoặc phí không công bố đủ điều kiện/kỳ hạn được để null hoặc danh sách rỗng, không ước lượng.",
   "banks": [
     {
       "id": "vietcombank",
@@ -10,44 +10,23 @@
       "short_name": "Vietcombank",
       "logo_url": null,
       "website": "https://www.vietcombank.com.vn",
-      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/SPDV/Vay/Vay-mua-nha-dat",
-      "package_name": "Vay mua nhà ở, đất ở (Gói Nhà Mới Thành Đạt)",
+      "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/Truy-cap-nhanh/Tin-noi-bat/Articles/2026/10/15/Nha-moi-an-cu",
+      "package_name": "Nhà Mới An Cư (nhà tại dự án đã có Giấy chứng nhận)",
       "interest_rate": {
-        "promo_rate": 5.2,
+        "promo_rate": 9.0,
         "promo_duration_months": 12,
-        "floating_margin": 3.5,
-        "floating_rate_estimated": 9.2,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất tiền gửi tiết kiệm 12 tháng trả sau của Vietcombank",
         "adjustment_frequency_months": 3,
-        "rate_options": [
-          {
-            "duration_months": 12,
-            "rate": 5.2,
-            "conditions": "Áp dụng cố định 12 tháng đầu, thời hạn vay tối thiểu 36 tháng"
-          },
-          {
-            "duration_months": 24,
-            "rate": 6.5,
-            "conditions": "Áp dụng cố định 24 tháng đầu, thời hạn vay tối thiểu 48 tháng"
-          },
-          {
-            "duration_months": 36,
-            "rate": 7.5,
-            "conditions": "Áp dụng cố định 36 tháng đầu, thời hạn vay tối thiểu 60 tháng"
-          }
-        ]
+        "rate_options": []
       },
       "promotions": {
-        "summary": "Lãi suất ưu đãi chỉ từ 5.2%/năm, thời hạn vay tối đa 30 năm, hạn mức đến 50 tỷ đồng, ân hạn nợ gốc đến 12 tháng",
+        "summary": "Lãi suất cố định từ 9,0%/năm trong 12 tháng đầu; áp dụng hợp đồng ký mới từ 14/10/2026, dự án đủ điều kiện và còn quy mô chương trình. Tối đa 100% giá trị căn nhà, kỳ hạn tối đa 35 năm.",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn theo biểu phí Vietcombank: Năm 1: 1.5%, Năm 2-3: 1.0%, Năm 4-5: 0.5%, Từ năm thứ 6: 0% (miễn phí)",
-          "tiers": [
-            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
-            { "from_year": 2, "to_year": 3, "rate_percent": 1.0 },
-            { "from_year": 4, "to_year": 5, "rate_percent": 0.5 },
-            { "from_year": 6, "to_year": 30, "rate_percent": 0.0 }
-          ]
+          "description": "Nguồn sản phẩm được rà soát không công bố biểu phí chi tiết theo từng năm; tiers để rỗng, không đồng nghĩa với miễn phí.",
+          "tiers": []
         },
         "special_offers": [
           "Miễn phí duy trì dịch vụ VCB Digibank",
@@ -56,9 +35,9 @@
         ]
       },
       "loan_limit": {
-        "max_ltv_percent": 70.0,
+        "max_ltv_percent": 100,
         "max_ltv_note": "Tối đa 70% giá trị tài sản bảo đảm là chính ngôi nhà mua; lên tới 100% giá trị HĐMB nếu bổ sung thêm tài sản bảo đảm độc lập khác",
-        "max_loan_term_years": 30,
+        "max_loan_term_years": 35,
         "min_loan_term_years": 3,
         "max_loan_amount": 50000000000,
         "min_loan_amount": 100000000
@@ -80,9 +59,12 @@
           "Vốn tự có tham gia tối thiểu 30% giá trị phương án mua nhà"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Lãi suất, hạn mức và điều kiện phê duyệt chính thức căn cứ theo thông báo phê duyệt tín dụng của Vietcombank tại thời điểm giải ngân."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Lãi suất 9,0%/năm trong 12 tháng đầu, kỳ hạn tối đa 35 năm và hạn mức đến 100% được công bố cho chương trình Nhà Mới An Cư áp dụng với nhà đã có Giấy chứng nhận tại dự án Vietcombank lựa chọn. Nguồn không công bố lãi suất sau ưu đãi hoặc biểu phí trả nợ trước hạn; các trường đó để null/rỗng. Xác nhận điều kiện với Vietcombank."
     },
     {
       "id": "bidv",
@@ -91,44 +73,39 @@
       "short_name": "BIDV",
       "logo_url": null,
       "website": "https://bidv.com.vn",
-      "source_url": "https://bidv.com.vn/bidv/privatecustomer/dichvunganhang/tindung/vaynhucaunhao",
+      "source_url": "https://bidv.com.vn/bidv/ca-nhan/khuyen-mai/san-pham-vay/bidv-trien-khai-goi-vay-uu-dai-ngoi-nha-dau-tien-danh-cho-khach-hang-ca-nhan",
       "package_name": "Vay nhu cầu nhà ở (Gói Ngôi nhà đầu tiên)",
       "interest_rate": {
-        "promo_rate": 5.5,
-        "promo_duration_months": 6,
-        "floating_margin": 3.8,
-        "floating_rate_estimated": 9.5,
+        "promo_rate": 9.0,
+        "promo_duration_months": 12,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất tiền gửi tiết kiệm cá nhân 24 tháng trả sau của BIDV",
         "adjustment_frequency_months": 6,
         "rate_options": [
           {
-            "duration_months": 6,
-            "rate": 5.5,
-            "conditions": "Áp dụng cho khoản vay có thời hạn tối thiểu 36 tháng"
+            "duration_months": 12,
+            "rate": 9.0,
+            "conditions": "Thời hạn vay tối thiểu 36 tháng; thông tin lãi suất cập nhật 17/09/2026"
           },
           {
-            "duration_months": 12,
-            "rate": 6.2,
-            "conditions": "Áp dụng cho khoản vay có thời hạn tối thiểu 48 tháng"
+            "duration_months": 18,
+            "rate": 9.5,
+            "conditions": "Thời hạn vay tối thiểu 60 tháng; thông tin lãi suất cập nhật 17/09/2026"
           },
           {
             "duration_months": 24,
-            "rate": 7.0,
-            "conditions": "Áp dụng cho khoản vay có thời hạn tối thiểu 60 tháng"
+            "rate": 10.0,
+            "conditions": "Thời hạn vay tối thiểu 60 tháng; thông tin lãi suất cập nhật 17/09/2026"
           }
         ]
       },
       "promotions": {
-        "summary": "Gói vay ưu đãi Ngôi nhà đầu tiên cho khách hàng cá nhân, lãi suất từ 5.5%/năm, cam kết mốc thời gian xử lý hồ sơ tối đa 05 ngày làm việc",
+        "summary": "Gói Ngôi nhà đầu tiên: từ 9,0%/năm trong 12 tháng (kỳ hạn vay tối thiểu 36 tháng), 9,5% trong 18 tháng hoặc 10,0% trong 24 tháng (hai lựa chọn sau yêu cầu kỳ hạn tối thiểu 60 tháng). Mức lãi suất được BIDV cập nhật 17/09/2026.",
         "grace_period_months": 6,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn theo biểu phí BIDV: Năm 1: 1.5%, Năm 2: 1.0%, Năm 3: 0.5%, Từ năm thứ 4 trở đi: 0% (miễn phí)",
-          "tiers": [
-            { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },
-            { "from_year": 2, "to_year": 2, "rate_percent": 1.0 },
-            { "from_year": 3, "to_year": 3, "rate_percent": 0.5 },
-            { "from_year": 4, "to_year": 30, "rate_percent": 0.0 }
-          ]
+          "description": "Nguồn sản phẩm được rà soát không công bố biểu phí chi tiết theo từng năm; tiers để rỗng, không đồng nghĩa với miễn phí.",
+          "tiers": []
         },
         "special_offers": [
           "Áp dụng cho khách hàng cá nhân chưa có dư nợ vay mua nhà tại BIDV",
@@ -161,9 +138,12 @@
           "Lịch sử tín dụng CIC không có nợ xấu"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Điều kiện phê duyệt, lãi suất và hạn mức thực tế căn cứ theo quyết định cấp tín dụng của BIDV."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Các lựa chọn lãi suất và điều kiện thời hạn được trích từ chương trình BIDV Ngôi nhà đầu tiên, cập nhật 17/09/2026. Trang không cung cấp lãi suất sau ưu đãi và biểu phí trả nợ trước hạn trong thông tin được đối chiếu; các trường đó để null/rỗng. Chương trình có điều kiện áp dụng; cần xác nhận với chi nhánh BIDV."
     },
     {
       "id": "techcombank",
@@ -175,44 +155,20 @@
       "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
       "package_name": "Vay mua bất động sản có Giấy chứng nhận",
       "interest_rate": {
-        "promo_rate": 6.8,
-        "promo_duration_months": 12,
-        "floating_margin": 3.5,
-        "floating_rate_estimated": 10.3,
+        "promo_rate": null,
+        "promo_duration_months": null,
+        "floating_margin": null,
+        "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất cơ sở Techcombank áp dụng cho khách hàng cá nhân",
         "adjustment_frequency_months": 3,
-        "rate_options": [
-          {
-            "duration_months": 3,
-            "rate": 3.99,
-            "conditions": "Gói ưu đãi đặc biệt kỳ hạn ngắn (3 tháng) với lãi suất khởi điểm từ 3.99%/năm chỉ áp dụng cho nhóm khách hàng ưu tiên (Techcombank Priority/Private) hoặc dự án liên kết chỉ định, không áp dụng phổ thông. Lãi suất ưu đãi tiêu chuẩn thông thường là 6.8%/năm (12 tháng)."
-          },
-          {
-            "duration_months": 6,
-            "rate": 5.99,
-            "conditions": "Áp dụng cố định 6 tháng đầu"
-          },
-          {
-            "duration_months": 12,
-            "rate": 6.8,
-            "conditions": "Áp dụng cố định 12 tháng đầu cho khách hàng mua nhà có Giấy chứng nhận"
-          },
-          {
-            "duration_months": 24,
-            "rate": 7.99,
-            "conditions": "Áp dụng cố định 24 tháng đầu cho khách hàng chọn kỳ ưu đãi dài"
-          }
-        ]
+        "rate_options": []
       },
       "promotions": {
         "summary": "Thời hạn vay lên tới 35 năm (thổ cư đủ điều kiện đến 45 năm), ân hạn nợ gốc lên đến 24 tháng, phí trả trước hạn chỉ từ 1% và miễn phí từ năm thứ 6",
         "grace_period_months": 24,
         "early_repayment_penalty": {
-          "description": "Phí trả nợ trước hạn chỉ từ 1.0% trên số dư trả trước trong 5 năm đầu, miễn phí (0%) từ năm thứ 6 trở đi",
-          "tiers": [
-            { "from_year": 1, "to_year": 5, "rate_percent": 1.0 },
-            { "from_year": 6, "to_year": 45, "rate_percent": 0.0 }
-          ]
+          "description": "Nguồn nêu phí trả nợ trước hạn từ 1% và miễn phí từ năm thứ 6; biểu chi tiết theo từng năm không được công bố trên trang sản phẩm.",
+          "tiers": []
         },
         "special_offers": [
           "Phê duyệt sơ bộ trực tuyến nhanh chóng",
@@ -245,9 +201,12 @@
           "Độ tuổi của người vay tại thời điểm đáo hạn không vượt quá 70 tuổi"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin chỉ mang tính tham khảo. Mức lãi suất khởi điểm 'chỉ từ 3.99%' và tỷ lệ cho vay phụ thuộc vào kết quả phê duyệt tín dụng của Techcombank cho từng khách hàng."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Trang sản phẩm nêu lãi suất cố định từ 3,99%/năm, kỳ cố định lên đến 24 tháng và mức ưu đãi dành cho hội viên Techcombank, nhưng không ghép mức 3,99% với thời hạn cố định cụ thể; không đưa vào trường lãi suất dùng để xếp hạng. Phí trả nợ trước hạn từ 1%, miễn phí từ năm thứ 6; không đủ biểu chi tiết để khai báo tiers. Lãi suất sau ưu đãi chưa công bố."
     },
     {
       "id": "vietinbank",
@@ -271,7 +230,7 @@
         "summary": "Hỗ trợ vay vốn lên đến 100% nhu cầu vốn, thời hạn cho vay linh hoạt đối với từng mục đích lên tới 35 năm, ân hạn nợ gốc đến 12 tháng",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Áp dụng theo biểu phí hiện hành của VietinBank tại từng thời kỳ (chi tiết liên hệ chi nhánh giải ngân)",
+          "description": "Nguồn sản phẩm được rà soát không công bố biểu phí chi tiết theo từng năm; tiers để rỗng, không đồng nghĩa với miễn phí.",
           "tiers": []
         },
         "special_offers": [
@@ -306,9 +265,12 @@
           "Có vốn tự có tham gia thực hiện phương án theo quy định"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin về hạn mức (tối đa 100% nhu cầu vốn) và thời hạn vay (tối đa 35 năm) trích dẫn từ trang sản phẩm chính thức của VietinBank. Trang không công bố lãi suất ưu đãi, biên độ thả nổi và biểu bậc phạt trước hạn nên các trường này để null/rỗng; thông tin cụ thể áp dụng theo phê duyệt tín dụng của VietinBank."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Trang sản phẩm được rà soát không công bố lãi suất ưu đãi cụ thể hoặc biểu phí trả nợ trước hạn áp dụng chung; các trường tương ứng để null/rỗng. Lãi suất và phí áp dụng theo chương trình, thời kỳ và phê duyệt của VietinBank."
     },
     {
       "id": "agribank",
@@ -329,11 +291,27 @@
         "rate_options": []
       },
       "promotions": {
-        "summary": "Đáp ứng nhu cầu vay vốn mua nhà ở thương mại, số tiền cho vay tối đa 100% giá trị hợp đồng/phương án, thời hạn vay lên đến 35 năm, trả nợ linh hoạt",
+        "summary": "Đáp ứng nhu cầu vay vốn mua nhà ở thương mại, số tiền cho vay tối đa 100% giá trị hợp đồng/phương án, thời hạn vay lên đến 35 năm, trả nợ linh hoạt Bảng lãi suất chung kỳ tháng 7/2026 công bố lãi suất cho vay thông thường trung/dài hạn tối thiểu 7,8%/năm; đây không phải lãi suất ưu đãi riêng của gói mua nhà nên không nhập vào promo_rate.",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Áp dụng theo biểu phí hiện hành của Agribank tại từng thời kỳ",
-          "tiers": []
+          "description": "Biểu phí cho vay Agribank áp dụng với tất toán vay trung/dài hạn công bố các khoảng 2–4% năm đầu, 1,5–3% năm thứ hai và 1–2% từ năm thứ ba. rate_percent lưu mức trần của từng khoảng; chi nhánh quyết định mức thu cụ thể và phí tối thiểu 1.000.000 VND. Nguồn: https://www.agribank.com.vn/wcm/connect/05371a26-a0b1-4670-a5db-15046d1517f4/Bieu%2Bphi%2Blien%2Bquan%2Bhoat%2Bdong%2Bcho%2Bvay%2BQD%2B1356%2Bthay%2Bthe%2BQD%2B09%2Bngay%2B090123.pdf",
+          "tiers": [
+            {
+              "from_year": 1,
+              "to_year": 1,
+              "rate_percent": 4.0
+            },
+            {
+              "from_year": 2,
+              "to_year": 2,
+              "rate_percent": 3.0
+            },
+            {
+              "from_year": 3,
+              "to_year": 35,
+              "rate_percent": 2.0
+            }
+          ]
         },
         "special_offers": [
           "Hỗ trợ mở tài khoản thanh toán và dịch vụ Agribank E-Mobile Banking miễn phí",
@@ -364,9 +342,12 @@
           "Không có nợ xấu tại Agribank và các tổ chức tín dụng khác"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin về thời hạn vay (tối đa 35 năm) trích dẫn từ trang sản phẩm Vay mua nhà ở thương mại của Agribank. Trang không niêm yết mức lãi suất ưu đãi cụ thể, biên độ và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng; lãi suất áp dụng theo gói tín dụng từng thời kỳ tại chi nhánh Agribank."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Trang sản phẩm không công bố lãi suất ưu đãi cụ thể cho gói vay mua nhà; lãi suất thông thường trung/dài hạn tối thiểu công bố 7,8%/năm trong bảng lãi suất bình quân kỳ tháng 7/2026, không đồng nghĩa mức dành riêng cho khoản vay này, nên các trường lãi suất có cấu trúc để null. Phí tất toán trung/dài hạn lấy từ biểu phí Agribank ban hành 05/06/2023; các mức rate_percent trong tiers là mức trần của khoảng công bố, phí cụ thể do chi nhánh quyết định và chỉ áp dụng với tất toán khoản vay. Xác nhận mức thực thu theo hợp đồng. Nguồn lãi suất chung: https://www.agribank.com.vn/vn/lai-suat-cho-vay-agribank/."
     },
     {
       "id": "mbbank",
@@ -390,7 +371,7 @@
         "summary": "Gói MB Dream Home cho vay đến 80% giá trị TSBĐ, thời hạn lên đến 35 năm, hỗ trợ chính sách miễn trả nợ gốc giai đoạn đầu",
         "grace_period_months": 24,
         "early_repayment_penalty": {
-          "description": "Áp dụng theo biểu phí tín dụng hiện hành của MB tại từng thời kỳ",
+          "description": "Nguồn sản phẩm được rà soát không công bố biểu phí chi tiết theo từng năm; tiers để rỗng, không đồng nghĩa với miễn phí.",
           "tiers": []
         },
         "special_offers": [
@@ -424,9 +405,12 @@
           "Vốn tự có tham gia tối thiểu 20% giá trị bất động sản mua"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Trang danh mục sản phẩm cho vay của MB Bank không niêm yết cụ thể lãi suất ưu đãi, biên độ thả nổi và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng. Lãi suất, hạn mức và thời hạn vay thực tế căn cứ theo thông báo phê duyệt tín dụng của MB."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Trang sản phẩm được rà soát không công bố lãi suất ưu đãi, lãi suất sau ưu đãi hoặc biểu phí trả nợ trước hạn cụ thể; các trường tương ứng để null/rỗng. Lãi suất, hạn mức và phí áp dụng theo phê duyệt từng khoản vay."
     },
     {
       "id": "vpbank",
@@ -435,23 +419,34 @@
       "short_name": "VPBank",
       "logo_url": null,
       "website": "https://www.vpbank.com.vn",
-      "source_url": "https://www.vpbank.com.vn/ca-nhan/vay/vay-mua-nha",
-      "package_name": "Vay mua nhà đất, căn hộ",
+      "source_url": "https://www.vpbank.com.vn/uu-dai/retail/loans-promotion-category/vay-uu-dai-mua-nha-cho-nguoi-tre-duoi-35-tuoi",
+      "package_name": "Ưu đãi vay mua nhà VPBank (chương trình khách hàng trẻ)",
       "interest_rate": {
         "promo_rate": null,
         "promo_duration_months": null,
         "floating_margin": null,
         "floating_rate_estimated": null,
-        "reference_rate_type": "Lãi suất cơ sở VPBank áp dụng cho khoản vay thế chấp bất động sản",
+        "reference_rate_type": "Lãi suất sau ưu đãi chưa được công bố cho chương trình này",
         "adjustment_frequency_months": 3,
         "rate_options": []
       },
       "promotions": {
-        "summary": "Trang sản phẩm công bố lãi suất ưu đãi chỉ từ 4.6%, duyệt vay cấp tốc 5 phút, vay lên đến 80% giá trị căn nhà, thời gian vay linh hoạt từ 25 đến 35 năm",
+        "summary": "Ưu đãi áp dụng đến 31/12/2030: lãi suất từ 5,2%/năm, thời gian cố định linh hoạt đến 24 tháng; phí trả trước tối đa 2,5%, miễn phí từ năm thứ 5; thời hạn vay tối đa 25 năm.",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Áp dụng theo biểu phí hiện hành của VPBank tại từng thời kỳ",
-          "tiers": []
+          "description": "Chương trình công bố phí trả nợ trước hạn không quá 2,5% trong 4 năm đầu và miễn phí từ năm thứ 5. rate_percent 2,5 là mức trần, không phải mức thực thu cố định.",
+          "tiers": [
+            {
+              "from_year": 1,
+              "to_year": 4,
+              "rate_percent": 2.5
+            },
+            {
+              "from_year": 5,
+              "to_year": 25,
+              "rate_percent": 0.0
+            }
+          ]
         },
         "special_offers": [
           "Duyệt vay cấp tốc chỉ trong 5 phút",
@@ -462,8 +457,7 @@
       "loan_limit": {
         "max_ltv_percent": 80.0,
         "max_ltv_note": "Vay số tiền lên đến 80% giá trị căn nhà theo công bố trên trang sản phẩm VPBank",
-        "max_loan_term_years": 35,
-        "min_loan_term_years": 25,
+        "max_loan_term_years": 25,
         "max_loan_amount": null,
         "min_loan_amount": 100000000
       },
@@ -484,9 +478,12 @@
           "Không có nợ xấu tại CIC tại thời điểm nộp hồ sơ"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin về tỷ lệ cho vay (lên đến 80% giá trị căn nhà) và thời hạn vay (từ 25 đến 35 năm) trích dẫn trực tiếp từ trang sản phẩm của VPBank. Trang có nêu 'Lãi suất ưu đãi chỉ từ 4.6%' nhưng không công bố số tháng ưu đãi cụ thể và biên độ thả nổi nên các trường lãi suất được để null để đảm bảo tính chính xác và nhất quán với bộ tính toán; thông tin chi tiết phụ thuộc phê duyệt tín dụng của VPBank."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Trang ưu đãi công bố lãi suất từ 5,2%/năm và thời gian cố định linh hoạt đến 24 tháng nhưng không ghép mức 5,2% với kỳ cố định cụ thể hoặc công bố lãi suất sau ưu đãi; các trường lãi suất có cấu trúc để null. Chương trình tối đa 25 năm và không nêu thời hạn tối thiểu. Phí trả trước không quá 2,5% trong 4 năm đầu, miễn phí từ năm thứ 5; rate_percent 2,5 trong tiers là mức trần. Xác nhận điều kiện và mức thực thu theo hợp đồng."
     },
     {
       "id": "acb",
@@ -510,7 +507,7 @@
         "summary": "Hỗ trợ nguồn vốn cho các nhu cầu mua hoặc nhận chuyển nhượng nhà ở, đất ở, ân hạn trả vốn vay lên đến 01 năm, lãi trả hàng tháng, vốn trả định kỳ linh hoạt theo dòng tiền",
         "grace_period_months": 12,
         "early_repayment_penalty": {
-          "description": "Chính sách trả nợ trước hạn linh hoạt theo quy định biểu phí của ACB, ưu đãi phí khi trả định kỳ hàng tháng",
+          "description": "Nguồn sản phẩm được rà soát không công bố biểu phí chi tiết theo từng năm; tiers để rỗng, không đồng nghĩa với miễn phí.",
           "tiers": []
         },
         "special_offers": [
@@ -543,9 +540,12 @@
           "Lịch sử tín dụng tốt, không có nợ xấu tại các tổ chức tín dụng"
         ]
       },
-      "repayment_methods": ["reducing_balance", "annuity"],
-      "last_updated": "2026-11-11",
-      "disclaimer": "Thông tin về mục đích vay, chính sách trả gốc định kỳ linh hoạt và ân hạn gốc lên đến 01 năm trích dẫn trực tiếp từ trang sản phẩm Vay Mua Nhà Đất của ACB. Trang không công bố mức lãi suất ưu đãi cụ thể, biên độ và biểu bậc phạt trả trước hạn nên các trường này để null/rỗng; lãi suất chính thức căn cứ phê duyệt của ACB."
+      "repayment_methods": [
+        "reducing_balance",
+        "annuity"
+      ],
+      "last_updated": "2026-11-16",
+      "disclaimer": "Trang sản phẩm được rà soát nêu lãi suất cạnh tranh tính trên dư nợ thực tế và chính sách trả nợ trước hạn linh hoạt, nhưng không công bố mức lãi suất, kỳ ưu đãi, biên độ thả nổi hoặc biểu phí cụ thể; các trường tương ứng để null/rỗng."
     }
   ]
 }
