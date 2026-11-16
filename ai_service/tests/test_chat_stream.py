@@ -160,7 +160,7 @@ def test_retrieval_endpoint_streams_model_fragments_and_commits(monkeypatch):
     asyncio.run(run())
 
 
-def test_openai_adapter_calls_compatible_endpoint_and_yields_real_http_sse_chunks():
+def test_openai_adapter_calls_compatible_endpoint_and_yields_real_http_sse_chunks(caplog):
     requests: list[httpx.Request] = []
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -168,19 +168,24 @@ def test_openai_adapter_calls_compatible_endpoint_and_yields_real_http_sse_chunk
         assert request.url.path == "/v1/chat/completions"
         body = json.loads(request.content)
         assert body["model"] == "cx/gpt-5.6-sol"
+        assert body["max_tokens"] == 2_000
         assert body["stream"] is True
+        assert body["stream_options"] == {"include_usage": True}
         assert body["messages"][0]["role"] == "system"
         assert body["messages"][1:] == [{"role": "user", "content": "Xin chào"}]
         return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=(
             b'data: {"choices":[{"delta":{"content":"Xin"}}]}\n\n'
             + 'data: {"choices":[{"delta":{"content":" chào"}}]}\n\n'.encode("utf-8")
+            + b'data: {"choices":[],"usage":{"prompt_tokens":120,"completion_tokens":30,"total_tokens":150,"cost":0.0012}}\n\n'
             + b'data: [DONE]\n\n'
         ))
+
+    caplog.set_level("INFO")
 
     async def run():
         client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
         adapter = OpenAIChatAdapter(base_url="http://provider.test/v1", api_key="test-key",
-                                    model="cx/gpt-5.6-sol")
+                                    model="cx/gpt-5.6-sol", max_tokens=2_000)
         # Injecting the transport exercises SDK URL construction, JSON serialization and SSE parsing.
         from unittest.mock import patch
         with patch("app.infrastructure.llm.openai_chat_adapter.AsyncOpenAI", side_effect=lambda **kwargs: __import__(
@@ -191,5 +196,10 @@ def test_openai_adapter_calls_compatible_endpoint_and_yields_real_http_sse_chunk
         assert fragments == ["Xin", " chào"]
         assert len(requests) == 1
         assert requests[0].headers["authorization"] == "Bearer test-key"
+        log = caplog.text
+        assert "task=chat" in log and "model=cx/gpt-5.6-sol" in log
+        assert "prompt_tokens=120" in log and "completion_tokens=30" in log
+        assert "total_tokens=150" in log and "cost=0.0012" in log
+        assert "duration_ms=" in log and "status=success" in log
 
     asyncio.run(run())

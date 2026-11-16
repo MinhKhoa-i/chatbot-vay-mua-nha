@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
     llm_model: str = ""
     llm_timeout_seconds: float = 45.0
     loan_backend_base_url: str = "http://127.0.0.1:8000"
+    chat_max_tokens: int = Field(default=2000, ge=1, le=8192)
 
     @property
     def embedding_api_key(self) -> str:

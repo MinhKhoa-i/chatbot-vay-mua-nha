@@ -1,4 +1,5 @@
 import json
+from time import perf_counter
 
 from openai import APIError, AsyncOpenAI
 
@@ -6,6 +7,9 @@ from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.ports.chat_intent_classifier import IntentClassificationError
 from app.domain.ports.prompt_catalog import PromptCatalog, PromptName
 from app.infrastructure.llm.provider_errors import translate_provider_error
+from app.infrastructure.llm.usage_logging import log_usage
+
+INTENT_MAX_TOKENS = 256
 
 
 class OpenAIIntentClassifier:
@@ -27,6 +31,8 @@ class OpenAIIntentClassifier:
         if not self._base_url or not self._api_key or not self._model:
             raise IntentClassificationError("CLASSIFICATION_NOT_CONFIGURED", retryable=False)
         instruction = self._prompts.get(PromptName.INTENT_CLASSIFICATION)
+        started_at = perf_counter()
+        response = None
         try:
             async with AsyncOpenAI(
                 base_url=self._base_url, api_key=self._api_key,
@@ -45,12 +51,20 @@ class OpenAIIntentClassifier:
                     ],
                     stream=False,
                     response_format={"type": "json_object"},
+                    max_tokens=INTENT_MAX_TOKENS,
                 )
         except APIError as exc:
             provider_error = translate_provider_error(exc)
             raise IntentClassificationError(
                 provider_error.code, retryable=provider_error.retryable,
             ) from exc
+        finally:
+            usage = response.usage if response is not None else None
+            log_usage(
+                task="intent_classification", model=self._model, started_at=started_at,
+                usage=usage,
+                status="success" if usage is not None else "error_or_unknown_usage",
+            )
         if not response.choices or response.choices[0].finish_reason != "stop":
             raise IntentClassificationError("CLASSIFICATION_INVALID_RESPONSE")
         return self._parse_intent(response.choices[0].message.content)

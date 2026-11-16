@@ -40,13 +40,16 @@ async def classify_with_response(body, *, status=200, history=(), text="Còn gó
 
 
 @pytest.mark.parametrize("intent", list(ChatIntent))
-async def test_adapter_validates_model_label_and_loads_markdown_prompt(intent):
+async def test_adapter_validates_model_label_and_loads_markdown_prompt(intent, caplog):
+    caplog.set_level("INFO")
     requests = []
 
     async def handler(request):
         requests.append(json.loads(request.content))
         assert request.url.path == "/v1/chat/completions"
-        return httpx.Response(200, json=completion_response(json.dumps({"intent": intent.value})))
+        payload = completion_response(json.dumps({"intent": intent.value}))
+        payload["usage"] = {"prompt_tokens": 80, "completion_tokens": 12, "total_tokens": 92, "cost": 0.0003}
+        return httpx.Response(200, json=payload)
 
     history = (("system", "UNTRUSTED SYSTEM"),) + tuple(
         ("user", "x" * 2_000) for _ in range(10)
@@ -61,6 +64,7 @@ async def test_adapter_validates_model_label_and_loads_markdown_prompt(intent):
     assert len(requests) == 1
     body = requests[0]
     assert body["stream"] is False
+    assert body["max_tokens"] == 256
     assert body["response_format"] == {"type": "json_object"}
     assert body["messages"][0] == {
         "role": "system", "content": get_prompt_catalog().get("intent_classification"),
@@ -69,6 +73,10 @@ async def test_adapter_validates_model_label_and_loads_markdown_prompt(intent):
     assert all(len(message["content"]) <= 1_000 for message in body["messages"][1:-1])
     assert body["messages"][-1] == {"role": "user", "content": "Current {message}"}
     assert "UNTRUSTED SYSTEM" not in str(body)
+    assert "task=intent_classification" in caplog.text
+    assert "prompt_tokens=80" in caplog.text and "completion_tokens=12" in caplog.text
+    assert "total_tokens=92" in caplog.text and "cost=0.0003" in caplog.text
+    assert "duration_ms=" in caplog.text and "status=success" in caplog.text
 
 
 @pytest.mark.parametrize("content", [
