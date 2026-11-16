@@ -81,9 +81,9 @@ Trả về:
 | `updated_at` | string | Ngày cập nhật dữ liệu dùng để trả lời |
 | `estimate` | object hoặc `null` | Có khi câu trả lời kèm ước tính khoản vay; frontend hiển thị thẻ ước tính |
 
-`estimate` có cùng các trường với response của `/api/estimate` (mục 3.3). Bắt buộc có `amount`, `years`, `rate`; nên có thêm `method`, `monthly_payment`, `total_interest`. Nếu thiếu `monthly_payment` hoặc `total_interest`, thẻ ước tính của frontend gọi `POST /api/estimate` với `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` để lấy số; frontend không tự tính khi chạy với backend thật.
+`estimate` gồm đúng các trường `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`, `monthly_payment`, `total_interest`, `updated_at` (cùng ý nghĩa với response của `/api/estimate`, mục 3.3). Backend lấy từ event `done` của `ai_service` và kiểm tra trước khi trả (mục 5), nên khi `estimate` khác `null` thì luôn có đủ `monthly_payment` và `total_interest` là số nguyên ≥ 0. Frontend không tự tính khi chạy với backend thật.
 
-**Hiện trạng:** đã đặt biến môi trường `AI_SERVICE_URL` thì backend hỏi `ai_service` theo mục 5; chưa đặt thì trả một câu cố định (dữ liệu mẫu).
+**Hiện trạng:** đã đặt biến môi trường `AI_SERVICE_URL` thì backend hỏi `ai_service` theo mục 5 và trả `estimate` lấy từ event `done`; chưa đặt thì trả một câu cố định (dữ liệu mẫu), `estimate: null`.
 
 Lỗi riêng của endpoint này: `ai_service` lỗi, không kết nối được hoặc thử lại hết số lần thì trả **`502`** với `detail` là một câu tiếng Việt. Frontend hiện câu báo lỗi chung.
 
@@ -238,7 +238,9 @@ Mục tiêu: frontend **không đổi** gì, vẫn gọi `POST /api/chat`. Code 
 1. Backend nhận `{ message, session_id }`.
 2. Backend gọi `POST {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}/messages` với `{ "client_request_id": <uuid v4 mới>, "text": message }`.
    - `conversation_id` = `session_id` nếu đó là UUID (frontend dùng `crypto.randomUUID()`). Nếu `session_id` là chuỗi khác thì backend đổi thành một UUID cố định theo chuỗi đó (uuid5), nên cùng `session_id` vẫn cùng cuộc trò chuyện. Không gửi `session_id` thì mỗi tin nhắn là một cuộc trò chuyện mới.
-3. Backend đọc SSE đến event `done`, lấy `reply`, rồi trả `{ reply, updated_at, estimate }` cho frontend. Event `delta` bị bỏ qua.
+3. Backend đọc SSE đến event `done`, lấy `reply` và `estimate`, rồi trả `{ reply, updated_at, estimate }` cho frontend. Event `delta` bị bỏ qua.
+   - `estimate`: backend kiểm tra các trường đầu vào (`amount`, `years`, `rate`, ...) bằng cùng quy tắc của `/api/estimate`. `monthly_payment`, `total_interest` phải là số nguyên ≥ 0; thiếu hoặc sai (số âm, số lẻ, chuỗi) thì backend tự tính lại bằng `calculator.py`. Đầu vào sai thì trả `estimate: null` nhưng vẫn trả `reply`. Trường lạ không có trong hợp đồng bị bỏ.
+   - `updated_at` của response lấy theo `estimate.updated_at` nếu có, không thì là ngày dữ liệu của backend.
 4. Thử lại tối đa **3 lần** (tính cả lần đầu) với **cùng** `client_request_id` khi: event `error` có `retryable: true` (chờ `retry_after` giây nếu có), lỗi mạng, hết giờ, HTTP 5xx, hoặc luồng kết thúc mà không có `done`. Lỗi `retryable: false` hoặc HTTP 4xx thì dừng ngay. Hết số lần thì backend trả `502`.
 5. Chưa đặt `AI_SERVICE_URL` thì backend giữ câu trả lời mẫu.
 
@@ -249,7 +251,7 @@ Biến môi trường của backend:
 | `AI_SERVICE_URL` | (trống) | Ví dụ `http://127.0.0.1:8001`. Để trống thì dùng câu trả lời mẫu |
 | `AI_SERVICE_TIMEOUT` | `60` | Số giây chờ `ai_service` trả lời mỗi lần gửi |
 
-Cần chốt khi làm: có cho frontend nhận chữ chạy dần (stream) không. Nếu có thì thêm endpoint `POST /api/chat/stream` riêng, giữ `POST /api/chat` như cũ. Event `done` đã trả `estimate` có cấu trúc như mô tả ở trên; backend có thể dùng trường này để cung cấp thẻ ước tính cho frontend khi nối hai service.
+Còn mở: có cho frontend nhận chữ chạy dần (stream) không. Nếu có thì thêm endpoint `POST /api/chat/stream` riêng, giữ `POST /api/chat` như cũ.
 
 ## 6. Bảng tên trường dùng chung
 

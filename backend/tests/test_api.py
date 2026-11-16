@@ -277,6 +277,7 @@ def test_chat_estimate_thieu_so_tien_tra_thi_backend_tu_tinh(ai):
     assert est["monthly_payment"] == monthly_payment(1_000_000_000, 240, 9.5)
     assert est["total_interest"] == total_interest(1_000_000_000, 240, 9.5)
     assert est["method"] == "annuity"
+    assert "max_loan" not in est  # chỉ trả trường có trong hợp đồng
 
 
 @pytest.mark.parametrize("bad", ["chuoi", {"years": 20}, {"amount": -5, "years": 20, "rate": 9}])
@@ -285,8 +286,33 @@ def test_chat_estimate_sai_thi_bo_qua_van_tra_loi(ai, bad):
     body = ask_chat().json()
     assert body["reply"] == "Vẫn trả lời" and body["estimate"] is None
 
+
 def test_chat_estimate_bo_truong_la_khong_co_trong_hop_dong(ai):
     ai.responses = [sse(done("Khoản vay 1 tỷ...", {**ESTIMATE, "cccd": "0123"}))]
     est = ask_chat().json()["estimate"]
     assert "cccd" not in est
     assert est == ESTIMATE
+
+
+@pytest.mark.parametrize("bad_numbers", [
+    {"monthly_payment": -1},                                   # số âm
+    {"total_interest": -1_000},
+    {"monthly_payment": 9_321_347.5},                          # không phải số nguyên
+    {"monthly_payment": "9321347"},                            # chuỗi
+    {"total_interest": True},                                  # bool
+])
+def test_chat_estimate_so_tien_sai_thi_backend_tinh_lai(ai, bad_numbers):
+    """Việc 14: monthly_payment, total_interest phải là số nguyên ≥ 0."""
+    ai.responses = [sse(done("Khoản vay 1 tỷ...", {**ESTIMATE, **bad_numbers}))]
+    body = ask_chat().json()
+    est = body["estimate"]
+    assert body["reply"] == "Khoản vay 1 tỷ..."
+    assert est["monthly_payment"] == monthly_payment(1_000_000_000, 240, 9.5)
+    assert est["total_interest"] == total_interest(1_000_000_000, 240, 9.5)
+
+
+def test_chat_estimate_so_tien_bang_0_van_hop_le(ai):
+    """Lãi suất 0% thì tổng lãi bằng 0, vẫn là số hợp lệ."""
+    zero = {**ESTIMATE, "rate": 0, "monthly_payment": 4_166_667, "total_interest": 0}
+    ai.responses = [sse(done("Lãi 0%", zero))]
+    assert ask_chat().json()["estimate"] == zero
