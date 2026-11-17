@@ -207,7 +207,7 @@ Các lời gọi LLM đặt giới hạn đầu ra riêng theo tác vụ để t
 
 | Tác vụ | Giới hạn đầu ra | Timeout tối đa |
 |---|---:|---:|
-| Chat trả lời (streaming) | 2.000 token | 45 giây |
+| Chat trả lời (streaming) | `CHAT_MAX_TOKENS` (mặc định 2.000) | 45 giây |
 | Phân loại ý định | 256 token | 10 giây |
 | Trích xuất dữ liệu khoản vay | 512 token | 10 giây |
 

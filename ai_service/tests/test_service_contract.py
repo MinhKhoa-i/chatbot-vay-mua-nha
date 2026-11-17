@@ -54,6 +54,26 @@ def test_app_lifespan_and_public_routes_without_external_services(monkeypatch):
     dispose_database.assert_awaited_once_with()
 
 
+def test_app_logger_does_not_duplicate_records_with_root_handler():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import logging; logging.basicConfig(level=logging.INFO); "
+            "from app import main; "
+            "logging.getLogger('app.infrastructure.llm.usage_logging').info('usage probe')",
+        ],
+        cwd=SERVICE_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stderr.count("usage probe") == 1
+
+
 def test_greeting_does_not_advertise_unimplemented_calculations():
     catalog = MarkdownPromptCatalog()
     greeting = catalog.get(PromptName.GREETING)
