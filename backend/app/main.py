@@ -209,6 +209,7 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
 ESTIMATE_INPUTS = ("amount", "years", "rate", "method", "promo_rate", "promo_duration_months")
 ESTIMATE_OUTPUTS = ("monthly_payment", "total_interest")
 
+
 def _is_money(value) -> bool:
     """Số tiền VND hợp lệ: số nguyên, không âm (bool không tính là số)."""
     return isinstance(value, int) and not isinstance(value, bool) and value >= 0
@@ -236,10 +237,11 @@ def _estimate_from_done(raw) -> Optional[dict]:
             if any(raw.get(key) is not None for key in ESTIMATE_OUTPUTS):
                 logger.warning("Số tiền trong estimate của ai_service không hợp lệ, tính lại: %r", raw)
             source = estimate(req)
+        updated = source.get("updated_at")
         # Chỉ trả các trường có trong hợp đồng (docs/api.md), bỏ trường lạ
         return {**req.model_dump(include=set(ESTIMATE_INPUTS)),
                 **{key: source[key] for key in ESTIMATE_OUTPUTS},
-                "updated_at": source.get("updated_at") or DATA_UPDATED}
+                "updated_at": updated if isinstance(updated, str) and updated else DATA_UPDATED}
     except (AttributeError, TypeError, ValueError, HTTPException) as exc:
         logger.warning("Bỏ qua estimate không hợp lệ từ ai_service: %r (%s)", raw, exc)
         return None

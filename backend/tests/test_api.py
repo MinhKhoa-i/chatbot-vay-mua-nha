@@ -316,3 +316,11 @@ def test_chat_estimate_so_tien_bang_0_van_hop_le(ai):
     zero = {**ESTIMATE, "rate": 0, "monthly_payment": 4_166_667, "total_interest": 0}
     ai.responses = [sse(done("Lãi 0%", zero))]
     assert ask_chat().json()["estimate"] == zero
+
+
+@pytest.mark.parametrize("bad_date", [123, "", None])
+def test_chat_estimate_updated_at_khong_phai_chuoi_thi_dung_ngay_backend(ai, bad_date):
+    ai.responses = [sse(done("Khoản vay 1 tỷ...", {**ESTIMATE, "updated_at": bad_date}))]
+    body = ask_chat().json()
+    assert body["estimate"]["updated_at"] == main_module.DATA_UPDATED
+    assert body["updated_at"] == main_module.DATA_UPDATED
