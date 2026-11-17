@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "updated_at": "2026-11-16",
   "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB) Rà soát nguồn chính thức ngày 2026-11-16; source_url và last_updated ở cấp ngân hàng áp dụng cho các thông tin trong bản ghi. Lãi suất hoặc phí không công bố đủ điều kiện/kỳ hạn được để null hoặc danh sách rỗng, không ước lượng.",
   "banks": [
