@@ -334,14 +334,15 @@ async def test_eval18_null_fields_result_in_follow_up_not_calculation():
     assert calculator.calls == []
 
 
-async def test_extractor_calls_provider_with_separate_prompt_and_structured_session():
+async def test_extractor_calls_provider_with_separate_prompt_and_structured_session(caplog):
+    caplog.set_level("INFO")
     bodies = []
 
     async def handler(request):
         bodies.append(json.loads(request.content))
-        return httpx.Response(200, json=completion_response(
-            '{"action":"update","updates":{"rate":9.5}}',
-        ))
+        payload = completion_response('{"action":"update","updates":{"rate":9.5}}')
+        payload["usage"] = {"prompt_tokens": 100, "completion_tokens": 18, "total_tokens": 118, "cost": 0.0004}
+        return httpx.Response(200, json=payload)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         adapter = OpenAIEstimateExtractor(
@@ -355,6 +356,11 @@ async def test_extractor_calls_provider_with_separate_prompt_and_structured_sess
     payload = json.loads(bodies[0]["messages"][1]["content"])
     assert payload["message"] == "9,5%" and payload["session"]["years"] == 20
     assert bodies[0]["response_format"] == {"type": "json_object"}
+    assert bodies[0]["max_tokens"] == 512
+    assert "task=estimate_extraction" in caplog.text
+    assert "prompt_tokens=100" in caplog.text and "completion_tokens=18" in caplog.text
+    assert "total_tokens=118" in caplog.text and "cost=0.0004" in caplog.text
+    assert "duration_ms=" in caplog.text and "status=success" in caplog.text
 
 
 async def test_asks_method_and_promo_then_sends_them_to_backend():

@@ -1,6 +1,7 @@
 import json
 from dataclasses import asdict
 from decimal import Decimal
+from time import perf_counter
 
 from openai import APIError, AsyncOpenAI
 
@@ -8,6 +9,9 @@ from app.domain.entities.estimate_session import EstimateExtraction, EstimateSes
 from app.domain.ports.estimate_extractor import EstimateExtractionError
 from app.domain.ports.prompt_catalog import PromptCatalog, PromptName
 from app.infrastructure.llm.provider_errors import translate_provider_error
+from app.infrastructure.llm.usage_logging import log_usage
+
+ESTIMATE_MAX_TOKENS = 512
 
 
 class OpenAIEstimateExtractor:
@@ -25,6 +29,8 @@ class OpenAIEstimateExtractor:
         if not self._base_url or not self._api_key or not self._model:
             raise EstimateExtractionError("ESTIMATE_EXTRACTION_NOT_CONFIGURED", retryable=False)
         instruction = self._prompts.get(PromptName.ESTIMATE_EXTRACTION)
+        started_at = perf_counter()
+        response = None
         try:
             async with AsyncOpenAI(
                 base_url=self._base_url, api_key=self._api_key,
@@ -38,10 +44,18 @@ class OpenAIEstimateExtractor:
                             "session": asdict(session), "message": text,
                         }, default=str, ensure_ascii=False)},
                     ],
+                    max_tokens=ESTIMATE_MAX_TOKENS,
                 )
         except APIError as exc:
             error = translate_provider_error(exc)
             raise EstimateExtractionError(error.code, retryable=error.retryable) from exc
+        finally:
+            usage = response.usage if response is not None else None
+            log_usage(
+                task="estimate_extraction", model=self._model, started_at=started_at,
+                usage=usage,
+                status="success" if usage is not None else "error_or_unknown_usage",
+            )
         if not response.choices or response.choices[0].finish_reason != "stop":
             raise EstimateExtractionError("ESTIMATE_EXTRACTION_INVALID_RESPONSE")
         return self._parse(response.choices[0].message.content, session=session)

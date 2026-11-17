@@ -60,7 +60,7 @@ def _build_stream_chat_use_case() -> StreamChatUseCase:
         OpenAIChatAdapter(
             base_url=settings.llm_base_url, api_key=settings.llm_api_key,
             model=settings.llm_model, timeout_seconds=min(settings.llm_timeout_seconds, 45.0),
-            prompts=prompts,
+            max_tokens=settings.chat_max_tokens, prompts=prompts,
         ),
         PostgresConversationRepository(sessions, cipher), prompts=prompts,
         classifier=OpenAIIntentClassifier(

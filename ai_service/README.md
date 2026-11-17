@@ -201,6 +201,30 @@ curl -sS "http://127.0.0.1:8001/api/v1/knowledge/documents/${document_id}"
 
 Nếu trạng thái `failed` hoặc `queued` kéo dài, xem log worker/provider bằng `docker compose logs --tail 100 worker`. Khi đã `published`, thử câu hỏi tương ứng với FAQ và từng bước trong quy trình vay; kiểm tra câu trả lời bám bằng chứng, trích đúng nguồn và không gộp điều kiện giữa các ngân hàng. Disclaimer được giữ trong nội dung FAQ; với câu trả lời retrieval có gọi model, prompt yêu cầu model tự viết một câu disclaimer ngắn trước footer nguồn. Đây là hướng dẫn prompt, không phải bảo đảm được kiểm tra ở runtime; greeting, câu trả lời xác định và phản hồi khi thiếu bằng chứng không có disclaimer model. `published` xác nhận ingestion hoàn tất, không tự chứng minh chất lượng retrieval.
 
+## Giới hạn model, timeout và theo dõi usage
+
+Các lời gọi LLM đặt giới hạn đầu ra riêng theo tác vụ để tránh provider phải dự trù mặc định lớn khi không truyền `max_tokens`:
+
+| Tác vụ | Giới hạn đầu ra | Timeout tối đa |
+|---|---:|---:|
+| Chat trả lời (streaming) | `CHAT_MAX_TOKENS` (mặc định 2.000) | 45 giây |
+| Phân loại ý định | 256 token | 10 giây |
+| Trích xuất dữ liệu khoản vay | 512 token | 10 giây |
+
+Timeout lấy từ biến môi trường `LLM_TIMEOUT_SECONDS` (mặc định trong code là 45 giây; có thể đặt trong `.env`) nhưng bị chặn theo bảng trên để tác vụ ngắn không chờ quá lâu. `max_tokens` là mức tối đa cho đầu ra, không phải số token luôn được dùng. Nếu response chạm giới hạn và bị cắt, hãy xem lại log/finish reason trước khi tăng mức; mức cao hơn có thể làm tăng chi phí.
+
+Mỗi lần gọi ghi một log `LLM request usage` với tên tác vụ/model, `duration_ms`, `prompt_tokens`, `completion_tokens`, `total_tokens`, `cost` và trạng thái. Chat là streaming nên usage chỉ có khi nhận được chunk cuối từ provider; nếu stream bị ngắt hoặc provider không trả usage, log ghi `unknown`/`incomplete_or_error`, không giả định là 0. Các phản hồi không streaming cũng ghi usage nếu provider cung cấp.
+
+`cost` là chi phí provider báo trong trường usage (nếu có). Nếu trường này vắng mặt, token count vẫn dùng được để đối chiếu dashboard/bảng giá của provider, nhưng log không tự tính số tiền vì giá và cách tính có thể khác theo model/provider. Thời lượng là thời gian của lời gọi provider, không gồm retrieval, xử lý nghiệp vụ hoặc thời gian người dùng nhận hết SSE.
+
+Ví dụ xem log khi chạy API:
+
+```bash
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8001
+```
+
+Worker/Docker có thể xem log bằng `docker compose logs -f worker`; các lời gọi chat chạy trong API nên xem log ở terminal/container của API.
+
 ## 6. Thử chat streaming bằng curl
 
 Tạo conversation trước bằng endpoint riêng:

@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
@@ -6,6 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.infrastructure.db.session import dispose_database, get_async_session_factory
 from app.presentation.api.v1.endpoints.routes import router as api_router
+
+
+_app_logger = logging.getLogger("app")
+_app_logger.setLevel(logging.INFO)
+if not _app_logger.handlers and not logging.getLogger().handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    _app_logger.addHandler(_handler)
+_app_logger.propagate = not _app_logger.handlers
 
 
 @asynccontextmanager
