@@ -74,6 +74,7 @@ skills-lock.json
 # ===== File tài liệu nội bộ =====
 *.xlsx
 *.pdf
+*.pptx
 
 # ===== AI service =====
 ai_service/.agents/
