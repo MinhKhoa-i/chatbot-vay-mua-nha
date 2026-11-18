@@ -80,3 +80,6 @@ skills-lock.json
 ai_service/.agents/
 ai_service/data/snapshots/
 *.ipynb
+
+# ===== Log của scripts/chay-demo.sh =====
+.demo-logs/
