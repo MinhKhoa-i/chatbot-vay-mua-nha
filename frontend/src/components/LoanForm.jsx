@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError, estimateLoan, getBanks } from "../lib/api.js";
 import { DEFAULT_RATE, fmtDate, shortVnd, vnd } from "../lib/loan.js";
 import { Icon } from "./icons.jsx";
@@ -113,7 +113,12 @@ function MaxLoan({ est, bank, hasInputs }) {
   const limit = est.max_loan;
   if (!limit) {
     if (hasInputs || est.max_loan === undefined) return null;
-    return <p className="text-[13px] text-muted">Nhập cả giá trị nhà và thu nhập để xem hạn mức vay tối đa.</p>;
+    return (
+      <p className="flex items-center gap-2 text-[13px] text-muted">
+        <Icon name="info" size={16} className="shrink-0" />
+        Nhập cả giá trị nhà và thu nhập để xem hạn mức vay tối đa.
+      </p>
+    );
   }
   const ltvSource = bank?.loan_limit?.max_ltv_percent != null ? `theo ${bank.short_name}` : "mức tham khảo";
   const rows = [
@@ -122,10 +127,10 @@ function MaxLoan({ est, bank, hasInputs }) {
   ];
   const within = est.amount <= limit.max_loan;
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line px-4 py-3.5">
-      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
-        <p className="text-sm font-medium">Hạn mức vay tối đa ước tính</p>
-        <p className="whitespace-nowrap text-xl font-medium">{vnd(limit.max_loan)}</p>
+    <div className="flex flex-col gap-3 rounded-xl border border-line bg-white px-4 py-3.5">
+      <div>
+        <p className="text-[13px] text-muted">Hạn mức vay tối đa ước tính</p>
+        <p className="mt-0.5 whitespace-nowrap text-[22px] font-medium">{vnd(limit.max_loan)}</p>
       </div>
       <dl className="flex flex-col gap-1.5 text-[13px]">
         {rows.map(([label, value, key]) => (
@@ -203,8 +208,21 @@ function Result({ result, onAsk, askLabel }) {
   );
 }
 
-// Bảng "Công cụ tính khoản vay" trượt ra bên phải (thiết kế V3 - 8), mở từ trang chủ hoặc trong chat.
-// onAsk(text): App chuyển sang trò chuyện và gửi text; askLabel đổi theo nơi mở bảng.
+function EmptyResult() {
+  return (
+    <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 rounded-[18px] border border-dashed border-line px-6 py-10 text-center">
+      <span className="grid size-11 place-items-center rounded-xl bg-mint text-brand"><Icon name="calc" size={20} strokeWidth={1.6} /></span>
+      <p className="text-sm font-medium">Kết quả sẽ hiện ở đây</p>
+      <p className="max-w-[280px] text-[13px] leading-relaxed text-muted">
+        Nhập số tiền vay và thời hạn rồi bấm "Tính khoản vay". Số liệu do máy chủ tính theo công thức, không do AI suy đoán.
+      </p>
+    </div>
+  );
+}
+
+// Hộp thoại "Công cụ tính khoản vay" giữa màn hình (thiết kế V3 - 8, V3 - 15), mở từ trang chủ hoặc trong chat.
+// Màn hình rộng: form bên trái (cuộn riêng, thanh nút ghim ở đáy), kết quả bên phải. Điện thoại: một cột.
+// onAsk(text): App chuyển sang trò chuyện và gửi text; askLabel đổi theo nơi mở hộp thoại.
 export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel, empty = EMPTY_LOAN_FORM }) {
   const [banks, setBanks] = useState(null);
   const [banksError, setBanksError] = useState(false);
@@ -212,6 +230,16 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
   const [submitError, setSubmitError] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const bodyRef = useRef(null);
+  const resultRef = useRef(null);
+
+  // Điện thoại (một cột): có kết quả thì cuộn vùng nội dung xuống kết quả.
+  // Không dùng scrollIntoView vì nó cuộn cả <dialog> (kể cả phần tử overflow-hidden), làm mất phần đầu hộp thoại.
+  useEffect(() => {
+    if (result && window.matchMedia("(max-width: 1023px)").matches && bodyRef.current && resultRef.current) {
+      bodyRef.current.scrollTo({ top: resultRef.current.offsetTop, behavior: "smooth" });
+    }
+  }, [result]);
 
   useEffect(() => {
     let alive = true;
@@ -296,24 +324,24 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+      <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-7 sm:py-5">
         <div>
-          <h2 id="loan-title" className="text-lg font-medium leading-tight">Công cụ tính khoản vay</h2>
-          <p className="mt-1 text-[13px] leading-snug text-muted">Kết quả tính bằng công thức, không do AI suy đoán.</p>
+          <h2 id="loan-title" className="text-lg font-medium leading-tight sm:text-xl">Công cụ tính khoản vay</h2>
+          <p className="mt-1 text-[13px] leading-snug text-muted">
+            Kết quả tính bằng công thức, không do AI suy đoán. Chỉ cần số tiền vay và thời hạn, các mục khác có thể bỏ trống.
+          </p>
         </div>
         <button type="button" onClick={onClose} aria-label="Đóng công cụ tính khoản vay" className="grid size-9 shrink-0 place-items-center rounded-full border border-line text-muted hover:bg-soft focus-visible:outline-2 focus-visible:outline-brand">
           <Icon name="close" size={16} />
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-      <div className="flex flex-col gap-5">
-        <p className="text-[13px] leading-relaxed text-muted">
-          Chỉ cần số tiền vay và thời hạn, các mục khác có thể bỏ trống. Thông tin không được lưu lại; không cần nhập họ tên, số CCCD hay số tài khoản.
-        </p>
 
-        <form onSubmit={submit} noValidate className="flex flex-col gap-5">
+      <div ref={bodyRef} className="relative flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+      <div className="flex flex-col lg:min-h-0 lg:flex-1 lg:border-r lg:border-line">
+      <div className="px-5 py-5 sm:px-7 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <form id="loan-form" onSubmit={submit} noValidate className="flex flex-col gap-4">
           <Section title="Khoản vay">
-            <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
               <Field id="f-amount" label="Số tiền muốn vay *" hint={[amountN ? `Khoảng ${shortVnd(amountN)}.` : "", ltvHint].join(" ").trim()} error={errors.amount}>
                 <MoneyInput id="f-amount" value={v.amount} onChange={set("amount")} error={errors.amount} placeholder="Ví dụ: 1.500.000.000" />
               </Field>
@@ -335,7 +363,7 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
               ))}
             </div>
 
-            <div className="grid gap-4">
+            <div className={`grid gap-4 ${needRate ? "sm:grid-cols-[1fr_220px]" : ""}`}>
               <Field id="f-bankId" label="Ngân hàng" hint={banksError ? "Không tải được danh sách ngân hàng, bạn có thể tự nhập lãi suất." : banks === null ? "Đang tải danh sách ngân hàng..." : "Lấy lãi suất từ dữ liệu mẫu, hoặc tự nhập."}>
                 <select id="f-bankId" value={v.bankId} onChange={setFromEvent("bankId")} disabled={!banks} aria-describedby="f-bankId-hint" className={`${inputCls()} disabled:bg-soft`}>
                   <option value="">Không chọn, tự nhập lãi suất</option>
@@ -365,7 +393,7 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
           </Section>
 
           <Section title="Căn nhà dự định mua" note="Không bắt buộc. Giá trị nhà dùng để tính tỷ lệ cho vay và hạn mức vay tối đa.">
-            <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field id="f-propertyType" label="Loại nhà">
                 <select id="f-propertyType" value={v.propertyType} onChange={setFromEvent("propertyType")} className={inputCls()}>
                   <option value="">Chọn loại nhà</option>
@@ -388,7 +416,7 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
           </Section>
 
           <Section title="Thu nhập và nghĩa vụ trả nợ" note="Không bắt buộc. Dùng để tính tỷ lệ trả nợ trên thu nhập và hạn mức vay tối đa.">
-            <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field id="f-income" label="Thu nhập ròng mỗi tháng" hint="Sau thuế, có thể gồm thu nhập người cùng trả nợ." error={errors.income}>
                 <MoneyInput id="f-income" value={v.income} onChange={set("income")} error={errors.income} placeholder="Ví dụ: 40.000.000" />
               </Field>
@@ -399,18 +427,24 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
           </Section>
 
           {submitError && <p role="alert" className="rounded-xl border border-[#f1c7c4] bg-[#fdf1f0] px-4 py-3 text-sm text-[#c0443f]">{submitError}</p>}
-
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <button type="submit" disabled={busy} className="rounded-xl bg-ink px-6 py-3 text-sm font-medium text-white hover:bg-brand disabled:bg-[#9a9c98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-              {busy ? "Đang tính..." : "Tính khoản vay"}
-            </button>
-            <button type="button" onClick={reset} className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
-              Nhập lại
-            </button>
-          </div>
         </form>
+      </div>
 
-        <div aria-live="polite">{result && <Result result={result} onAsk={ask} askLabel={askLabel} />}</div>
+      {/* Thanh nút ghim ở đáy cột form (nút submit nằm ngoài <form> nên dùng thuộc tính form="loan-form") */}
+      <div className="sticky bottom-0 z-[1] flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line bg-white px-5 py-4 sm:px-7">
+        <button type="submit" form="loan-form" disabled={busy} className="rounded-xl bg-ink px-6 py-3 text-sm font-medium text-white hover:bg-brand disabled:bg-[#9a9c98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          {busy ? "Đang tính..." : "Tính khoản vay"}
+        </button>
+        <button type="button" onClick={reset} className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
+          Nhập lại
+        </button>
+        <p className="text-xs text-muted sm:ml-auto">Thông tin không được lưu lại.</p>
+      </div>
+      </div>
+
+      <div ref={resultRef} aria-live="polite"
+        className={`bg-[#fbfdf8] p-5 sm:p-6 lg:w-[440px] lg:shrink-0 lg:overflow-y-auto ${result ? "" : "hidden lg:block"}`}>
+        {result ? <Result result={result} onAsk={ask} askLabel={askLabel} /> : <EmptyResult />}
       </div>
       </div>
     </div>

@@ -9,12 +9,12 @@ import Messages, { errorInfo } from "./components/Messages.jsx";
 import Composer from "./components/Composer.jsx";
 import LoanForm, { EMPTY_LOAN_FORM } from "./components/LoanForm.jsx";
 import Home from "./components/Home.jsx";
-import { ConfirmClearDialog, Drawer, HistoryDialog, SettingsDialog } from "./components/Dialogs.jsx";
+import { ConfirmClearDialog, HistoryDialog, SettingsDialog, WideDialog } from "./components/Dialogs.jsx";
 import { DEFAULT_SETTINGS, FONT_SIZES, clearSettings, loadSettings, saveSettings } from "./lib/settings.js";
 
 const uid = () => crypto.randomUUID();
 // Màn hiện tại nằm trên địa chỉ (#/, #/tro-chuyen) để nút Back của trình duyệt dùng được.
-// Công cụ tính khoản vay là bảng trượt bên phải, mở chồng lên trang chủ hoặc màn chat.
+// Công cụ tính khoản vay là hộp thoại giữa màn hình, mở chồng lên trang chủ hoặc màn chat.
 const ROUTES = { home: "#/", chat: "#/tro-chuyen" };
 const viewFromHash = () => Object.keys(ROUTES).find((k) => ROUTES[k] === window.location.hash) ?? "home";
 // Form mới (hoặc sau khi xóa dữ liệu) lấy phương thức và lãi suất mặc định từ Cài đặt
@@ -119,10 +119,10 @@ export default function App() {
 
   const dialogs = (
     <>
-      <Drawer open={formOpen} onClose={() => setFormOpen(false)} labelledBy="loan-title">
+      <WideDialog open={formOpen} onClose={() => setFormOpen(false)} labelledBy="loan-title">
         <LoanForm values={loanForm} onChange={setLoanForm} empty={emptyForm(settings)} onClose={() => setFormOpen(false)}
           onAsk={askFromForm} askLabel={inChat ? "Gửi kết quả vào cuộc trò chuyện" : "Hỏi trợ lý AI về khoản vay này"} />
-      </Drawer>
+      </WideDialog>
       <HistoryDialog open={dialog === "history"} onClose={() => setDialog(null)} convos={convos} activeId={activeId}
         onSelect={(id) => { setActiveId(id); setDialog(null); setView("chat"); }} />
       <SettingsDialog open={dialog === "settings"} onClose={() => setDialog(null)} value={settings} onSave={applySettings} />
