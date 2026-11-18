@@ -1,0 +1,2 @@
+# Script bash phải dùng xuống dòng LF, kể cả khi checkout trên Windows (CRLF làm bash báo lỗi "\r: command not found")
+*.sh text eol=lf
