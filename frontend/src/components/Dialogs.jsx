@@ -28,12 +28,12 @@ function Dialog({ open, onClose, labelledBy, width, children }) {
   );
 }
 
-// Bảng trượt ra từ cạnh phải (Công cụ tính khoản vay, V3 - 8); điện thoại thì chiếm cả màn hình
-export function Drawer({ open, onClose, labelledBy, children }) {
+// Hộp thoại lớn giữa màn hình (Công cụ tính khoản vay, V3 - 8 và V3 - 15); điện thoại thì chiếm cả màn hình
+export function WideDialog({ open, onClose, labelledBy, children }) {
   const modal = useModal(open, onClose);
   return (
     <dialog {...modal} aria-labelledby={labelledBy}
-      className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-full overflow-hidden bg-white p-0 text-ink shadow-2xl backdrop:bg-[#161816]/25 sm:inset-y-3 sm:right-3 sm:h-[calc(100dvh-24px)] sm:max-h-[calc(100dvh-24px)] sm:w-[480px] sm:rounded-[22px]">
+      className="m-0 h-dvh max-h-dvh w-full max-w-full overflow-hidden bg-white p-0 text-ink shadow-2xl backdrop:bg-[#161816]/35 sm:m-auto sm:h-[min(880px,calc(100dvh-48px))] sm:max-h-[calc(100dvh-48px)] sm:w-[min(1040px,calc(100vw-48px))] sm:rounded-[24px]">
       {open && children}
     </dialog>
   );
