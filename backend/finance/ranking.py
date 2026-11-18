@@ -52,17 +52,10 @@ def _exclusion_reason(bank, principal, months, method, grace_period_months, prop
 
 
 def _fee_percent(bank, month):
-    """Phí trả nợ trước hạn (%), hoặc None nếu nguồn đánh dấu mức phí chưa rõ."""
+    """Phí trả nợ trước hạn (%) tại thời điểm sau `month` tháng."""
     year = (month - 1) // 12 + 1
-    penalty = bank.get("promotions", {}).get("early_repayment_penalty", {})
-    tiers = penalty.get("tiers", [])
-    rate = next((t["rate_percent"] for t in tiers if t["from_year"] <= year <= t["to_year"]), None)
-    if rate is not None:
-        return rate
-    description = penalty.get("description", "").casefold()
-    if "không công bố" in description or "chưa công bố" in description or "chưa rõ phí" in description:
-        return None
-    return 0.0
+    tiers = bank.get("promotions", {}).get("early_repayment_penalty", {}).get("tiers", [])
+    return next((t["rate_percent"] for t in tiers if t["from_year"] <= year <= t["to_year"]), 0.0)
 
 
 def rank_banks(banks, principal, months, method=ANNUITY, grace_period_months=0,
@@ -93,24 +86,14 @@ def rank_banks(banks, principal, months, method=ANNUITY, grace_period_months=0,
             excluded.append({"id": bank["id"], "short_name": bank["short_name"], "reason": reason})
             continue
 
-        fee_percent = _fee_percent(bank, prepay_month) if prepay_month else 0.0
-        if prepay_month and fee_percent is None:
-            year = (prepay_month - 1) // 12 + 1
-            excluded.append({"id": bank["id"], "short_name": bank["short_name"],
-                             "reason": f"Chưa công bố phí trả nợ trước hạn cho năm thứ {year}"})
-            continue
-
         rows = schedule(principal, months, promo_rate if floating is None else floating, method,
                         promo_rate, promo_months, grace_period_months)
         k = prepay_month or months
         interest = sum(r["interest"] for r in rows[:k])
-        fee = round(rows[k - 1]["balance"] * fee_percent / 100) if prepay_month else 0
-        fee_description = bank.get("promotions", {}).get("early_repayment_penalty", {}).get("description", "").casefold()
-        fee_is_upper_bound = bool(prepay_month and ("mức trần" in fee_description or "rate_percent lưu mức trần" in fee_description))
+        fee = round(rows[k - 1]["balance"] * _fee_percent(bank, k) / 100) if prepay_month else 0
         ranked.append({"id": bank["id"], "short_name": bank["short_name"],
                        "package_name": bank["package_name"], "total_cost": interest + fee,
                        "total_interest": interest, "prepay_fee": fee,
-                       "prepay_fee_is_upper_bound": fee_is_upper_bound,
                        "first_payment": rows[0]["payment"], "floating_rate": floating})
     ranked.sort(key=lambda b: (b["total_cost"], b["id"]))
     return {"ranked": ranked, "excluded": excluded}

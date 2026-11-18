@@ -3,7 +3,7 @@
 > **Tài liệu phục vụ Dự án:** Chatbot Tư vấn Vay Mua Nhà  
 > **Người thực hiện:** Vương (Nhóm Dữ liệu)  
 > **Ngày rà soát & cập nhật:** 16/11/2026  
-> **Trạng thái:** Đang thực hiện (chờ duyệt PR #39 và thống nhất phương án xử lý lãi thả nổi)
+> **Trạng thái:** Đang thực hiện (chờ duyệt PR #44 cho issue #39 và thống nhất phương án xử lý lãi thả nổi)
 
 ---
 
@@ -57,7 +57,7 @@ Tất cả thông số đã được đối chiếu trực tiếp từ website c
 ## 4. Chi tiết từng ngân hàng và phương thức khai thác dữ liệu
 
 ### 4.1. Vietcombank (VCB)
-* **Đặc điểm chính:** Ngân hàng thương mại hàng đầu, mạng lưới rộng, quy trình thẩm định chặt chẽ, hỗ trợ thời hạn vay tối đa lên đến 35 năm (chương trình Nhà Mới An Cư), hạn mức vay tối đa 50 tỷ đồng. Hỗ trợ cho vay mua nhà cho bản thân hoặc người thân (bố, mẹ, vợ, chồng, con).
+* **Đặc điểm chính:** Ngân hàng thương mại hàng đầu, mạng lưới rộng, quy trình thẩm định chặt chẽ, hỗ trợ thời hạn vay tối đa lên đến 35 năm đối với chương trình Nhà Mới An Cư (sản phẩm vay mua nhà thông thường trên trang sản phẩm chung áp dụng thời hạn tối đa 30 năm), hạn mức vay tối đa 50 tỷ đồng. Hỗ trợ cho vay mua nhà cho bản thân hoặc người thân (bố, mẹ, vợ, chồng, con).
 * **Nguồn dữ liệu trực tiếp:**
   * Trang chương trình: [Vietcombank Nhà Mới An Cư](https://www.vietcombank.com.vn/vi-VN/KHCN/Truy-cap-nhanh/Tin-noi-bat/Articles/2026/10/15/Nha-moi-an-cu) (kiểm tra ngày 16/11/2026)
 * **Các trường dữ liệu trích xuất:**
