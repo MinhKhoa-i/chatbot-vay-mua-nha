@@ -68,7 +68,7 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
 * `tiers` (`array[object]`): Chi tiết mức phí theo từng năm vay:
   * `from_year` (`integer`): Từ năm thứ.
   * `to_year` (`integer`): Đến năm thứ.
-  * `rate_percent` (`number`): Tỷ lệ phí tính trên số tiền nợ gốc trả trước (%): `1.5`, `1.0`, `0.5`, hoặc `0.0` (miễn phí).
+  * `rate_percent` (`number`): Tỷ lệ phí tính trên số tiền nợ gốc trả trước (%): `1.5`, `1.0`, `0.5`, hoặc `0.0` (miễn phí). Nếu nguồn chỉ công bố khoảng phí, lưu mức trần trong trường này và ghi rõ mức đó là trần trong `description`; kết quả ranking phải đánh dấu phí là mức trần.
 
 ---
 

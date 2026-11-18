@@ -274,6 +274,14 @@ def validate_business_rules(data: Dict[str, Any]) -> Tuple[List[str], List[str]]
             errors.append(f"{prefix} Thiếu trường bắt buộc 'last_updated'")
         elif not is_valid_date(last_updated):
             errors.append(f"{prefix} Trường 'last_updated' ('{last_updated}') không đúng định dạng YYYY-MM-DD")
+        else:
+            # Kiểm tra bản ghi cũ hơn 30 ngày
+            days_old = (datetime.now().date() - datetime.strptime(last_updated, "%Y-%m-%d").date()).days
+            if days_old > 30:
+                warnings.append(
+                    f"{prefix} Bản ghi chưa được rà soát hơn 30 ngày (last_updated: {last_updated}, cách nay {days_old} ngày). "
+                    f"Nên cập nhật lãi suất từ {bank.get('source_url', 'nguồn chính thức')}."
+                )
 
         # Lãi suất
         ir = bank.get("interest_rate", {})
