@@ -9,7 +9,7 @@ Hợp đồng chung giữa Frontend, Backend, AI service, Tài chính và Dữ l
 
 ```
 Trình duyệt ──► frontend (Vite, :5173)
-                  │  POST /api/chat, GET /api/banks
+                  │  POST /api/chat, GET /api/banks, POST /api/banks/rank
                   ▼
               backend (FastAPI, :8000)  ◄──── POST /api/estimate ──── ai_service (FastAPI, :8001)
                   │                                                     │
@@ -186,6 +186,66 @@ Trả về dữ liệu mẫu đọc từ `data/banks_sample.json`. Mỗi phần 
 ```
 
 `is_sample: true` nghĩa là dữ liệu nhập tay, chưa phải dữ liệu crawl. Giao diện phải hiện `last_updated` của từng ngân hàng và câu `disclaimer`.
+
+### 3.5. `POST /api/banks/rank`
+
+Xếp hạng các gói vay trong `data/banks_sample.json` từ rẻ đến đắt theo **tổng chi phí = tiền lãi + phí trả nợ trước hạn**, bằng `rank_banks()` của `backend/finance/ranking.py`. Thứ tự chỉ để so sánh, không phải khuyến nghị.
+
+Gửi lên:
+
+| Trường | Kiểu | Bắt buộc | Mặc định | Ràng buộc |
+|---|---|---|---|---|
+| `amount` | integer | Có | | > 0, VND |
+| `years` | integer | Có | | 1–35 |
+| `method` | string | Không | `"annuity"` | `"annuity"` hoặc `"reducing_balance"` |
+| `grace_period_months` | integer | Không | `0` | ≥ 0 và nhỏ hơn `years * 12`. Số tháng đầu chỉ trả lãi |
+| `prepay_month` | integer | Không | `null` | 1 đến `years * 12 - 1`. Trả hết nợ sau bấy nhiêu tháng; `null` = giữ đến hết kỳ hạn |
+| `property_value` | integer | Không | `null` | > 0. Có thì loại ngân hàng có LTV tối đa thấp hơn mức cần vay |
+| `base_rate` | number | Không | `null` | ≥ 0, lãi cơ sở %/năm, cộng với `floating_margin` của ngân hàng |
+| `assumed_floating_rate` | number | Không | `null` | ≥ 0, lãi thả nổi **giả định** %/năm cho ngân hàng không công bố lãi thả nổi |
+
+Dữ liệu mẫu hiện chưa có lãi thả nổi (`floating_rate_estimated`, `floating_margin` đều `null`). Không gửi `base_rate` hoặc `assumed_floating_rate` thì các ngân hàng cần lãi thả nổi bị đưa vào `excluded`. Frontend nên gửi `assumed_floating_rate` và hiện rõ đó là giả định.
+
+Ví dụ: `{ "amount": 1500000000, "years": 20, "prepay_month": 36, "assumed_floating_rate": 10 }`
+
+Trả về:
+
+```json
+{
+  "ranked": [
+    {
+      "id": "agribank",
+      "short_name": "Agribank",
+      "package_name": "Vay mua nhà ở thương mại",
+      "total_cost": 466928374,
+      "total_interest": 438579027,
+      "prepay_fee": 28349347,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 14475325,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    }
+  ],
+  "excluded": [],
+  "assumptions": { "floating_rate": 10.0 },
+  "updated_at": "2026-11-16",
+  "is_sample": true
+}
+```
+
+| Trường | Ghi chú |
+|---|---|
+| `ranked` | Ngân hàng phù hợp, từ rẻ đến đắt. Ngân hàng chưa rõ phí trả trước (`total_cost: null`) xếp sau, theo `total_interest` |
+| `total_cost` | Tiền lãi + phí trả trước (VND). `null` nếu phí trả trước chưa rõ |
+| `total_interest` | Tiền lãi đến tháng trả hết nợ (hoặc cả kỳ hạn) |
+| `prepay_fee` | Phí trả trước (VND); `0` khi không trả trước; `null` nếu chưa rõ. `prepay_fee_is_upper_bound: true` = đây là mức tối đa |
+| `first_payment` | Tiền trả tháng đầu (VND) |
+| `floating_rate`, `floating_rate_assumed` | Lãi thả nổi đã dùng; `true` = lấy từ `assumed_floating_rate`, giao diện phải ghi là giả định |
+| `excluded` | Ngân hàng không phù hợp (thời hạn, số tiền, phương thức, ân hạn, LTV, thiếu lãi thả nổi) kèm `reason` tiếng Việt |
+| `assumptions` | `{"floating_rate": ...}` nếu có ngân hàng dùng lãi giả định, ngược lại `{}` |
+
+Lỗi: sai kiểu hoặc ngoài khoảng → `422` danh sách lỗi; `ranking.py` từ chối (ví dụ `prepay_month` ≥ số tháng vay, ân hạn ≥ số tháng vay) → `422` với `detail` là một câu tiếng Việt.
 
 ## 4. AI service (`http://localhost:8001`)
 
