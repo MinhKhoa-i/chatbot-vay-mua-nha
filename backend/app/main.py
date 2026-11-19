@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from finance.calculator import ANNUITY, max_loan, schedule
+from finance.ranking import rank_banks
 
 logger = logging.getLogger(__name__)
 
@@ -281,6 +282,37 @@ def banks():
     data = _load_banks()
     return {
         "banks": data["banks"],
+        "updated_at": data.get("updated_at", DATA_UPDATED),
+        "is_sample": True,
+    }
+
+
+# /api/banks/rank: xếp hạng ngân hàng theo tổng chi phí vay, dùng rank_banks() của finance/ranking.py
+class RankRequest(BaseModel):
+    amount: int = Field(gt=0, description="Số tiền vay (VND, số nguyên)")
+    years: int = Field(gt=0, le=35)
+    method: Literal["annuity", "reducing_balance"] = ANNUITY
+    grace_period_months: int = Field(0, ge=0, description="Số tháng ân hạn nợ gốc (chỉ trả lãi)")
+    prepay_month: Optional[int] = Field(None, ge=1, description="Trả hết nợ sau bấy nhiêu tháng; null = giữ đến hết kỳ hạn")
+    property_value: Optional[int] = Field(None, gt=0, description="Giá trị nhà, có thì loại ngân hàng có LTV tối đa thấp hơn mức cần vay")
+    base_rate: Optional[float] = Field(None, ge=0, description="Lãi cơ sở %/năm, cộng floating_margin của ngân hàng")
+    assumed_floating_rate: Optional[float] = Field(None, ge=0, description="Lãi thả nổi GIẢ ĐỊNH %/năm cho ngân hàng không công bố")
+
+
+@app.post("/api/banks/rank")
+def rank(req: RankRequest):
+    data = _load_banks()
+    try:
+        result = rank_banks(data["banks"], req.amount, req.years * 12, req.method,
+                            grace_period_months=req.grace_period_months,
+                            prepay_month=req.prepay_month, property_value=req.property_value,
+                            base_rate=req.base_rate, assumed_floating_rate=req.assumed_floating_rate)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {
+        "ranked": result["ranked"],
+        "excluded": result["excluded"],
+        "assumptions": result["assumptions"],
         "updated_at": data.get("updated_at", DATA_UPDATED),
         "is_sample": True,
     }

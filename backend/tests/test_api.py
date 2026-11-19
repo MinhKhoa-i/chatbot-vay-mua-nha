@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 import app.main as main_module
 from app.main import SAMPLE_REPLY, app
 from finance.calculator import max_loan, monthly_payment, total_interest
+from finance.ranking import rank_banks
 
 client = TestClient(app)
 
@@ -324,3 +325,66 @@ def test_chat_estimate_updated_at_khong_phai_chuoi_thi_dung_ngay_backend(ai, bad
     body = ask_chat().json()
     assert body["estimate"]["updated_at"] == main_module.DATA_UPDATED
     assert body["updated_at"] == main_module.DATA_UPDATED
+
+
+# ---------------------------------------------------------------------------
+# /api/banks/rank: xếp hạng ngân hàng (việc 15)
+# ---------------------------------------------------------------------------
+BANKS = main_module._load_banks()["banks"]
+
+
+def rank(**payload):
+    return client.post("/api/banks/rank", json={"amount": 1_500_000_000, "years": 20, **payload})
+
+
+def test_rank_dung_rank_banks():
+    body = rank(assumed_floating_rate=10).json()
+    assert set(body) == {"ranked", "excluded", "assumptions", "updated_at", "is_sample"}
+    expected = rank_banks(BANKS, 1_500_000_000, 240, assumed_floating_rate=10)
+    assert body["ranked"] == expected["ranked"] and body["excluded"] == expected["excluded"]
+    assert body["assumptions"] == {"floating_rate": 10}
+    assert body["is_sample"] is True and body["updated_at"]
+
+
+def test_rank_xep_tu_re_den_dat():
+    costs = [b["total_cost"] for b in rank(assumed_floating_rate=10).json()["ranked"]
+             if b["total_cost"] is not None]
+    assert costs and costs == sorted(costs)
+
+
+def test_rank_thieu_lai_tha_noi_thi_bi_loai_kem_ly_do():
+    body = rank().json()
+    for bank in body["excluded"]:
+        assert {"id", "short_name", "reason"} <= set(bank) and bank["reason"]
+    assert len(body["ranked"]) + len(body["excluded"]) == len(BANKS)
+
+
+def test_rank_du_tham_so_giong_goi_truc_tiep():
+    params = {"method": "reducing_balance", "grace_period_months": 6, "prepay_month": 36,
+              "property_value": 2_000_000_000, "assumed_floating_rate": 10.5}
+    body = rank(**params).json()
+    expected = rank_banks(BANKS, 1_500_000_000, 240, "reducing_balance", grace_period_months=6,
+                          prepay_month=36, property_value=2_000_000_000, assumed_floating_rate=10.5)
+    assert body["ranked"] == expected["ranked"] and body["excluded"] == expected["excluded"]
+
+
+@pytest.mark.parametrize("payload", [
+    {"amount": 0},
+    {"years": 36},
+    {"method": "equal_principal"},
+    {"grace_period_months": -1},
+    {"prepay_month": 0},
+    {"property_value": 0},
+    {"assumed_floating_rate": -1},
+])
+def test_rank_dau_vao_sai(payload):
+    assert rank(**payload).status_code == 422
+
+
+@pytest.mark.parametrize("payload", [
+    {"prepay_month": 240},            # phải nhỏ hơn số tháng vay
+    {"grace_period_months": 240},     # ân hạn phải nhỏ hơn số tháng vay
+])
+def test_rank_ranking_tu_choi_thi_bao_cau_tieng_viet(payload):
+    res = rank(**payload)
+    assert res.status_code == 422 and isinstance(res.json()["detail"], str)
