@@ -1,7 +1,7 @@
 import pytest
 
 from finance.calculator import (ANNUITY, REDUCING_BALANCE, dti, ltv,
-                                max_loan, monthly_payment, schedule, total_interest)
+                                max_loan, monthly_payment, prepay_fee, schedule, total_interest)
 
 P, N = 1_000_000_000, 240
 
@@ -196,3 +196,49 @@ def test_max_loan_grace_period():
     r = max_loan(5_000_000_000, 20_000_000, N, 10, grace_period_months=G)["max_loan"]
     assert r < base  # tiền trả sau ân hạn cao hơn nên vay được ít hơn
     assert _peak(r, annual_rate=10, grace_period_months=G) <= 10_000_000
+
+
+NAN, INF = float("nan"), float("inf")
+
+
+def test_eval_06_ltv():
+    # nhà 3 tỷ, vay 1,5 tỷ -> LTV sơ bộ 50%
+    assert ltv(1_500_000_000, 3_000_000_000) * 100 == 50
+
+
+def test_eval_22_prepay_fee():
+    # phí 1%, trả trước 200 triệu -> 2 triệu
+    assert prepay_fee(200_000_000, 1) == 2_000_000
+
+
+def test_prepay_fee_zero_percent_or_amount():
+    assert prepay_fee(200_000_000, 0) == 0
+    assert prepay_fee(0, 1) == 0
+    assert prepay_fee(200_000_000, 100) == 200_000_000  # biên trên
+
+
+def test_prepay_fee_rounds_half_even():
+    assert prepay_fee(50, 1) == 0    # 0,5 -> 0
+    assert prepay_fee(150, 1) == 2   # 1,5 -> 2
+    assert prepay_fee(250, 1) == 2   # 2,5 -> 2
+    assert prepay_fee(350, 1) == 4   # 3,5 -> 4
+    assert isinstance(prepay_fee(250, 1), int)
+
+
+@pytest.mark.parametrize("args, msg", [
+    ((-1, 1), "Số gốc trả trước phải là số không âm"),
+    ((NAN, 1), "Số gốc trả trước phải là số không âm"),
+    ((INF, 1), "Số gốc trả trước phải là số không âm"),
+    (("200000000", 1), "Số gốc trả trước phải là số không âm"),
+    ((True, 1), "Số gốc trả trước phải là số không âm"),
+    ((None, 1), "Số gốc trả trước phải là số không âm"),
+    ((200_000_000, -1), "Tỷ lệ phí trả trước hạn"),
+    ((200_000_000, 100.5), "Tỷ lệ phí trả trước hạn"),
+    ((200_000_000, NAN), "Tỷ lệ phí trả trước hạn"),
+    ((200_000_000, INF), "Tỷ lệ phí trả trước hạn"),
+    ((200_000_000, "1"), "Tỷ lệ phí trả trước hạn"),
+    ((200_000_000, True), "Tỷ lệ phí trả trước hạn"),
+])
+def test_prepay_fee_invalid_input(args, msg):
+    with pytest.raises(ValueError, match=msg):
+        prepay_fee(*args)

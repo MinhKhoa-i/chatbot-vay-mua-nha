@@ -21,14 +21,7 @@ Ngân hàng không phù hợp thông số vay (thời hạn, số tiền, phươ
 xếp hạng mà nằm trong `excluded` kèm lý do.
 """
 
-import math
-
-from finance.calculator import ANNUITY, _is_int, _validate, schedule
-
-
-def _is_number(x):
-    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
-
+from finance.calculator import ANNUITY, _is_int, _is_number, _validate, prepay_fee, schedule
 
 def _rates(bank, months, base_rate):
     """(lãi ưu đãi, số tháng ưu đãi, lãi thả nổi công bố/suy ra được hoặc None)."""
@@ -141,7 +134,7 @@ def rank_banks(banks, principal, months, method=ANNUITY, grace_period_months=0,
         k = prepay_month or months
         interest = sum(r["interest"] for r in rows[:k])
         percent, is_cap = _fee_percent(bank, k) if prepay_month else (0.0, False)
-        fee = None if percent is None else round(rows[k - 1]["balance"] * percent / 100)
+        fee = None if percent is None else prepay_fee(rows[k - 1]["balance"], percent)
         ranked.append({"id": bank["id"], "short_name": bank["short_name"],
                        "package_name": bank["package_name"],
                        "total_cost": None if fee is None else interest + fee,
