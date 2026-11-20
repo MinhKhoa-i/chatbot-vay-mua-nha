@@ -41,6 +41,13 @@ class MarkdownPromptCatalog:
                     "monthly_payment": "", "total_interest": "", "payment_note": "",
                 },
                 PromptName.ESTIMATE_PROMO_TOO_LONG: {"promo_duration_months": "", "years": ""},
+                PromptName.BANK_COMPARE_QUESTIONS: {"fields": ""},
+                PromptName.BANK_COMPARE_RESULT: {
+                    "amount": "", "years": "", "method_text": "", "prepay_text": "", "grace_text": "",
+                    "property_text": "",
+                    "ranked_text": "", "excluded_text": "", "assumptions_text": "", "updated_at": "",
+                    "sample_note": "",
+                },
             }
             if name in template_values:
                 try:

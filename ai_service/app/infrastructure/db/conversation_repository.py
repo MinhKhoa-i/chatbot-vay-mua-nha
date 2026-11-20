@@ -17,6 +17,10 @@ from app.domain.entities.conversation import Conversation, ConversationMessage
 from app.domain.entities.loan_estimate import LoanEstimateResult
 from app.domain.ports.chat_turn_repository import ChatTurnRepository
 from app.infrastructure.db.chat_error_boundary import chat_repository_errors
+from app.infrastructure.db.bank_compare_state_codec import (
+    decode_bank_compare_session,
+    encode_bank_compare_session,
+)
 from app.infrastructure.db.estimate_state_codec import decode_estimate_session, encode_estimate_session
 from app.infrastructure.db.models import (
     ConversationMessageModel,
@@ -367,6 +371,7 @@ class PostgresConversationRepository(ChatTurnRepository):
                         token,
                         ledger.id,
                         estimate_session=decode_estimate_session(profile),
+                        bank_compare_session=decode_bank_compare_session(profile),
                     ),
                 )
 
@@ -486,13 +491,18 @@ class PostgresConversationRepository(ChatTurnRepository):
                 if state_update is not None:
                     if state_update.estimate_session is not None:
                         profile_payload["estimate_session"] = encode_estimate_session(state_update.estimate_session)
+                    if state_update.bank_compare_session is not None:
+                        profile_payload["bank_compare_session"] = encode_bank_compare_session(
+                            state_update.bank_compare_session,
+                        )
+                    if state_update.estimate_session is not None or state_update.bank_compare_session is not None:
                         profile_row.revision += 1
                         profile_payload["profile_revision"] = profile_row.revision
                         profile_row.slots_ciphertext = self._cipher.encrypt_json(
                             profile_payload, table="conversation_profiles", column="slots_ciphertext",
                             resource_id=request.conversation_id,
                         )
-                    # New estimate state is stored only in the encrypted profile.
+                    # Workflow state is stored only in the encrypted profile.
                     checkpoint.update(
                         current_stage="ANSWERING",
                         active_intents=[state_update.intent.value],

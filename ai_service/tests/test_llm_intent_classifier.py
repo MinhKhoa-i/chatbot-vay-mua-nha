@@ -159,6 +159,15 @@ async def test_orchestration_classifies_once_with_committed_history():
     assert events[-1].event == "done"
 
 
+def test_prompts_distinguish_bank_comparison_from_bank_knowledge_requests():
+    intent_prompt = get_prompt_catalog().get("intent_classification")
+
+    assert "bank_compare: người dùng muốn xếp hạng hoặc so sánh chi phí vay" in intent_prompt
+    assert "“BIDV cần hồ sơ gì?” → retrieval." in intent_prompt
+    assert "Không tự chọn hoặc suy diễn lãi suất giả định cho khách." in intent_prompt
+    assert "giá trị general, retrieval, estimate hoặc bank_compare" in intent_prompt
+
+
 def test_prompts_distinguish_prepayment_knowledge_from_calculation_requests():
     intent_prompt = get_prompt_catalog().get("intent_classification")
     estimate_prompt = get_prompt_catalog().get("estimate_extraction")

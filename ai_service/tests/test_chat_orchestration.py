@@ -4,7 +4,9 @@ from app.infrastructure.prompts.loader import get_prompt_catalog
 
 
 def test_chat_supports_social_knowledge_and_estimate_routing():
-    assert set(ChatIntent) == {ChatIntent.GENERAL, ChatIntent.RETRIEVAL, ChatIntent.ESTIMATE}
+    assert set(ChatIntent) == {
+        ChatIntent.GENERAL, ChatIntent.RETRIEVAL, ChatIntent.ESTIMATE, ChatIntent.BANK_COMPARE,
+    }
 
 
 def test_follow_up_search_uses_user_questions_not_unverified_assistant_answers():

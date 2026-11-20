@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     }
 
     app_name: str = "Home Loan Assistant"
+    admin_api_key: str = ""
     database_url: str = ""
     knowledge_snapshot_dir: str = "./data/snapshots"
     embedding_base_url: str = ""

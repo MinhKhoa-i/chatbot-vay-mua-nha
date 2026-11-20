@@ -23,7 +23,7 @@ uv sync --locked --python 3.12
 uv run python --version
 ```
 
-Mở `.env` vừa tạo trong `ai_service/`, điền mật khẩu PostgreSQL riêng và cập nhật cả `DATABASE_URL` tương ứng, cùng các trường `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `EMBEDDING_BASE_URL` và `EMBEDDING_MODEL` theo nhà cung cấp đang dùng. Nếu mật khẩu chứa ký tự đặc biệt, URL-encode phần mật khẩu trong connection URL; đặt thêm `WORKER_DATABASE_URL` với host `db:5432` để worker không dùng URL tự ghép sai. Không thay `.env.example` bằng secret thật.
+Mở `.env` vừa tạo trong `ai_service/`, điền mật khẩu PostgreSQL riêng và cập nhật cả `DATABASE_URL` tương ứng, cùng các trường `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `EMBEDDING_BASE_URL` và `EMBEDDING_MODEL` theo nhà cung cấp đang dùng. Tạo `ADMIN_API_KEY` bằng lệnh `python -c "import secrets; print(secrets.token_urlsafe(32))"` rồi ghi khóa vào `.env`; khóa này bắt buộc khi gọi các API quản trị kho tri thức. Nếu mật khẩu chứa ký tự đặc biệt, URL-encode phần mật khẩu trong connection URL; đặt thêm `WORKER_DATABASE_URL` với host `db:5432` để worker không dùng URL tự ghép sai. Không thay `.env.example` bằng secret thật.
 
 Các URL cần là base URL tương thích OpenAI. Adapter embedding hiện dùng chung `LLM_API_KEY` với chat (chưa hỗ trợ khóa riêng); cần gateway/provider chấp nhận cùng credential. Giữ model Qwen tương thích với adapter hiện tại: vector nguồn 4096 chiều được rút gọn/chuẩn hóa về 1536, bảng pgvector dùng 1536 chiều. Không đổi sang một embedding model bất kỳ chỉ vì cùng giao thức. Biến cấu hình chiều đúng là `EMBEDDING_DIMENSIONS=1536`.
 
@@ -83,7 +83,7 @@ docker compose up -d --build worker
 docker compose logs -f worker
 ```
 
-`worker` là service đã được khai báo trong Compose và chạy `python -m app.infrastructure.jobs.worker`; không chạy thêm worker bằng `uv run python -m ...` hoặc tiến trình worker thứ hai. Worker dùng URL nội bộ `db:5432`, trong khi API/migration chạy từ host dùng `localhost`. Theo cấu hình mặc định worker gọi embedding qua `http://host.docker.internal:20128/v1`; nếu embedding gateway ở địa chỉ khác, đặt `WORKER_EMBEDDING_BASE_URL` phù hợp trong `.env` trước khi tạo/recreate worker. API đọc `EMBEDDING_BASE_URL` trực tiếp từ `.env`.
+`worker` là service đã được khai báo trong Compose và chạy `python -m app.infrastructure.jobs.worker`; không chạy thêm worker bằng `uv run python -m ...` hoặc tiến trình worker thứ hai. Worker dùng URL nội bộ `db:5432`, trong khi API/migration chạy từ host dùng `localhost`. Theo cấu hình mặc định worker gọi embedding qua `http://host.docker.internal:20128/v1`; nếu embedding gateway ở địa chỉ khác, đặt `EMBEDDING_BASE_URL` phù hợp trong `.env` trước khi tạo/recreate worker. API đọc `EMBEDDING_BASE_URL` trực tiếp từ `.env`.
 
 ## 5. Nạp tài liệu vào kho tri thức
 
@@ -104,6 +104,8 @@ uv run python scripts/ingest_faq.py --dry-run
 # Nạp thật và đợi worker xử lý xong
 uv run python scripts/ingest_faq.py --reviewed-by "<tên người review>" --wait
 ```
+
+`ingest_faq.py` đọc `ADMIN_API_KEY` từ biến môi trường và tự gửi header `X-Admin-Key` cho cả upload và polling. Nếu chưa đặt khóa, script dừng bằng thông báo tiếng Việt trước khi gọi API. Khi FAQ thay đổi, đặt lại cùng khóa rồi chạy lại lệnh trên; `--dry-run` vẫn không cần khóa vì không gọi API.
 
 - `--reviewed-by` là người đã đối chiếu nội dung FAQ với nguồn. `--reviewed-at` mặc định là thời điểm chạy; chạy lại cho **cùng lần review** thì truyền lại đúng giá trị cũ (in trong file danh sách) để tránh `DOCUMENT_METADATA_CONFLICT`.
 - `--wait` đợi tới khi mọi tài liệu `published` hoặc `failed` (tối đa `--wait-timeout` giây, mặc định 600) và trả mã lỗi 1 nếu có tài liệu `failed`.
@@ -134,6 +136,7 @@ Tạo file `scripts/ingest_loan_process.py` với nội dung sau. Sau khi lưu f
 
 ```python
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
@@ -141,6 +144,7 @@ from uuid import NAMESPACE_URL, uuid5
 import httpx
 
 BASE_URL = "http://127.0.0.1:8001"
+ADMIN_API_KEY = os.environ["ADMIN_API_KEY"]
 SOURCE = Path("../docs/quy-trinh-vay.md")
 REVIEWED_AT = datetime.now().astimezone().isoformat()
 
@@ -173,7 +177,7 @@ metadata = {
     "logical_document_id": str(logical_id),
 }
 
-with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
+with httpx.Client(base_url=BASE_URL, timeout=60.0, headers={"X-Admin-Key": ADMIN_API_KEY}) as client:
     response = client.post(
         "/api/v1/knowledge/documents",
         data={"metadata": json.dumps(metadata, ensure_ascii=False)},
@@ -196,7 +200,8 @@ Upload thường trả `ingestion_status: queued` cùng `document_id`. Kiểm tr
 
 ```bash
 document_id="UUID_NHAN_DUOC_TU_RESPONSE"
-curl -sS "http://127.0.0.1:8001/api/v1/knowledge/documents/${document_id}"
+curl -sS "http://127.0.0.1:8001/api/v1/knowledge/documents/${document_id}" \
+  -H "X-Admin-Key: ${ADMIN_API_KEY}"
 ```
 
 Nếu trạng thái `failed` hoặc `queued` kéo dài, xem log worker/provider bằng `docker compose logs --tail 100 worker`. Khi đã `published`, thử câu hỏi tương ứng với FAQ và từng bước trong quy trình vay; kiểm tra câu trả lời bám bằng chứng, trích đúng nguồn và không gộp điều kiện giữa các ngân hàng. Disclaimer được giữ trong nội dung FAQ; với câu trả lời retrieval có gọi model, prompt yêu cầu model tự viết một câu disclaimer ngắn trước footer nguồn. Đây là hướng dẫn prompt, không phải bảo đảm được kiểm tra ở runtime; greeting, câu trả lời xác định và phản hồi khi thiếu bằng chứng không có disclaimer model. `published` xác nhận ingestion hoàn tất, không tự chứng minh chất lượng retrieval.
@@ -262,16 +267,16 @@ Nội dung thực tế và mã trích dẫn phụ thuộc các chunks được t
 - `GET /api/v1/conversations/{conversation_id}/messages` — xem lịch sử hội thoại.
 - `DELETE /api/v1/conversations/{conversation_id}` — xóa conversation.
 - `POST /api/v1/conversations/{conversation_id}/messages` — gửi lượt chat SSE.
-- `POST /api/v1/knowledge/documents` — tải tài liệu multipart; metadata form field là JSON string.
-- `GET /api/v1/knowledge/documents/{document_id}` — kiểm tra trạng thái ingestion và cờ `is_active`.
-- `PATCH /api/v1/knowledge/documents/{document_id}/activation` — bật/tắt tài liệu khỏi retrieval, body ví dụ `{"is_active": false}`. Chỉ tài liệu được `approved`, `published`, đang active và còn hiệu lực mới được truy xuất. Muốn ẩn hẳn một tài liệu khỏi retrieval, cần tắt tất cả phiên bản có cùng `logical_document_id`; chỉ tắt phiên bản mới nhất thì phiên bản cũ hơn còn bật và đủ điều kiện có thể được dùng lại.
+- `POST /api/v1/knowledge/documents` — tải tài liệu multipart; metadata form field là JSON string; bắt buộc header `X-Admin-Key`.
+- `GET /api/v1/knowledge/documents/{document_id}` — kiểm tra trạng thái ingestion và cờ `is_active`; bắt buộc header `X-Admin-Key`.
+- `PATCH /api/v1/knowledge/documents/{document_id}/activation` — bật/tắt tài liệu khỏi retrieval, body ví dụ `{"is_active": false}`; bắt buộc header `X-Admin-Key`. Chỉ tài liệu được `approved`, `published`, đang active và còn hiệu lực mới được truy xuất. Muốn ẩn hẳn một tài liệu khỏi retrieval, cần tắt tất cả phiên bản có cùng `logical_document_id`; chỉ tắt phiên bản mới nhất thì phiên bản cũ hơn còn bật và đủ điều kiện có thể được dùng lại.
 
 Chat request yêu cầu `client_request_id` UUID và `text` từ 1–4000 ký tự; không cho phép field lạ. Thân request tối đa 20 KiB. Lỗi validate thường trả HTTP 422; ID/version cũ có thể tạo event `error` như `CONVERSATION_NOT_FOUND` hoặc `VERSION_CONFLICT`. Provider/migration/config chưa sẵn sàng có thể dẫn đến HTTP 503 hoặc event SSE `error`; các mã thường gặp gồm `MODEL_NOT_CONFIGURED`, `MODEL_UNAVAILABLE`, `MODEL_RATE_LIMITED`, `RETRIEVAL_NOT_CONFIGURED`, `EMBEDDING_UNAVAILABLE`, `KNOWLEDGE_SEARCH_UNAVAILABLE`, `STATE_UNAVAILABLE` và `INTERNAL_ERROR`. Event lỗi bên trong stream có thể vẫn đi cùng HTTP 200 vì response SSE đã bắt đầu; đọc event `error`, không chỉ dựa vào status HTTP. Không gửi lại cùng request ID với nội dung khác.
 
 ## Giới hạn và lưu ý bảo mật
 
 - Đây là demo, chưa phải hệ thống tư vấn tín dụng/duyệt vay. Có mô phỏng trả góp qua backend (niên kim hoặc gốc đều, lãi cố định hoặc một giai đoạn ưu đãi rồi một mức lãi); không có đánh giá khả năng chi trả hoặc endpoint phê duyệt vay trong AI service. Không coi nội dung chatbot là báo giá, lãi suất hiện hành hoặc cam kết duyệt vay.
-- Demo không có xác thực/ủy quyền cho API hội thoại, upload hoặc endpoint `PATCH /api/v1/knowledge/documents/{document_id}/activation` để bật/tắt tài liệu tri thức. Không mở cổng ra Internet, không đưa dữ liệu khách hàng thật lên môi trường chia sẻ và chỉ cho người vận hành đáng tin dùng endpoint upload hoặc bật/tắt tài liệu. CORS cho phép origin frontend local, nhưng CORS không phải cơ chế xác thực.
+- API hội thoại hiện không yêu cầu xác thực; ba API quản trị kho tri thức (upload, xem trạng thái và bật/tắt tài liệu) yêu cầu `X-Admin-Key` khớp với `ADMIN_API_KEY`. Nếu `ADMIN_API_KEY` để trống, các API quản trị bị từ chối với lỗi cấu hình. Không mở cổng ra Internet, không đưa dữ liệu khách hàng thật lên môi trường chia sẻ và chỉ chia sẻ khóa cho người vận hành được phép quản trị kho tri thức. CORS cho phép origin frontend local, nhưng CORS không phải cơ chế xác thực.
 - Nội dung hội thoại được mã hóa AES-256-GCM bằng `DATA_ENCRYPTION_KEY_BASE64`; hãy bảo vệ và sao lưu khóa an toàn. Mất khóa đồng nghĩa không đọc được payload đã mã hóa. Không đặt khóa thật trong git, log, issue hoặc lệnh shell được chia sẻ.
 - FAQ demo phải được đối chiếu với nguồn gốc và tình trạng hiệu lực trước khi đánh dấu verified. Tài liệu không được review không nên upload dưới dạng tài liệu đã duyệt; câu trả lời retrieval chỉ nên căn cứ vào nguồn đã được nạp/duyệt. API/provider vẫn có thể lỗi hoặc dữ liệu có thể cũ.
 - Snapshot lưu trong `ai_service/data/snapshots/`; PostgreSQL lưu metadata, chunks/vector và trạng thái. Docker volume database giữ dữ liệu qua lần dừng container. Demo không cấu hình backup, quản lý secret, xoay khóa hay quy trình xóa an toàn cho production.
