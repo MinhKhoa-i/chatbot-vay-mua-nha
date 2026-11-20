@@ -68,6 +68,21 @@ export function maxLoan(propertyValue, monthlyIncome, months, annualRate, method
   return { max_loan: Math.min(byLtv, byDti), by_ltv: byLtv, by_dti: byDti, limited_by: byLtv <= byDti ? "ltv" : "dti" };
 }
 
+const isNumber = (x) => typeof x === "number" && Number.isFinite(x);
+
+// prepay_fee(): phí trả nợ trước hạn = số gốc trả trước × tỷ lệ phí (%), làm tròn half-even
+export function prepayFee(amountPrepaid, feePercent) {
+  if (!isNumber(amountPrepaid) || amountPrepaid < 0) throw new RangeError("Số gốc trả trước phải là số không âm");
+  if (!isNumber(feePercent) || feePercent < 0 || feePercent > 100) throw new RangeError("Tỷ lệ phí trả trước hạn phải là số trong khoảng [0, 100]");
+  return roundHalfEven(amountPrepaid * feePercent / 100);
+}
+
+// ltv(): khoản vay / giá trị tài sản (0.7 = 70%)
+export function ltv(loan, propertyValue) {
+  if (!(propertyValue > 0)) throw new RangeError("Giá trị tài sản phải lớn hơn 0");
+  return loan / propertyValue;
+}
+
 // round() của Python làm tròn .5 về số chẵn; dùng cùng cách để số mock khớp backend
 function roundHalfEven(x) {
   const f = Math.floor(x);

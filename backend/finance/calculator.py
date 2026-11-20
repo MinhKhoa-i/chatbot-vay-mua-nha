@@ -41,7 +41,13 @@ số dư đầu tháng k là B_k (B_1 = P). Đơn vị tiền: VND, lãi suất 
    Tiền trả hàng tháng tỷ lệ thuận với số tiền vay, nên u = tiền trả tháng CAO NHẤT
    trong kỳ hạn khi vay 1 đồng (thận trọng: gốc đều lấy tháng đầu, ưu đãi rồi thả nổi
    hoặc ân hạn lấy mức sau khi thả nổi / hết ân hạn nếu cao hơn).
+
+8. Phí trả nợ trước hạn (minh họa):
+       phí = số gốc trả trước × tỷ lệ phí (%) / 100, làm tròn đồng (round half-even)
+   Tỷ lệ phí là điều khoản của từng hợp đồng/ngân hàng; hàm này chỉ làm phép nhân.
 """
+
+import math
 
 ANNUITY, REDUCING_BALANCE = "annuity", "reducing_balance"  # khớp schema dữ liệu
 DEFAULT_MAX_LTV, DEFAULT_MAX_DTI = 80, 0.5  # LTV tính theo %, DTI theo tỷ lệ; tham khảo
@@ -54,6 +60,19 @@ def _pmt(balance, r, months):
 
 def _is_int(x):
     return isinstance(x, int) and not isinstance(x, bool)
+
+
+def _is_number(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def prepay_fee(amount_prepaid, fee_percent):
+    """Phí trả nợ trước hạn = số gốc trả trước × tỷ lệ phí (%). Làm tròn đồng như schedule()."""
+    if not _is_number(amount_prepaid) or amount_prepaid < 0:
+        raise ValueError("Số gốc trả trước phải là số không âm")
+    if not _is_number(fee_percent) or not 0 <= fee_percent <= 100:
+        raise ValueError("Tỷ lệ phí trả trước hạn phải là số trong khoảng [0, 100]")
+    return round(amount_prepaid * fee_percent / 100)
 
 
 def _validate(principal, months, annual_rate, method, promo_rate,
