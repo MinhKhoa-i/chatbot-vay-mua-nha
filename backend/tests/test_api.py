@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 import app.main as main_module
 from app.main import SAMPLE_REPLY, app
-from finance.calculator import max_loan, monthly_payment, total_interest
+from finance.calculator import ltv, max_loan, monthly_payment, prepay_fee, total_interest
 from finance.ranking import rank_banks
 
 client = TestClient(app)
@@ -123,7 +123,6 @@ def test_estimate_han_muc_bi_gioi_han_boi_thu_nhap():
 
 
 @pytest.mark.parametrize("payload", [
-    {"property_value": 3_000_000_000},                       # thiếu thu nhập
     {"monthly_income": 40_000_000},                          # thiếu giá trị nhà
     {"property_value": 3e9, "monthly_income": 4e7, "max_ltv_percent": 0},
     {"property_value": 3e9, "monthly_income": 4e7, "max_ltv_percent": 0.5},   # LTV theo %, tối thiểu 1
@@ -138,6 +137,80 @@ def test_estimate_han_muc_dau_vao_sai(payload):
 def test_estimate_thieu_mot_trong_hai_thi_bao_cau_tieng_viet():
     res = client.post("/api/estimate", json={"amount": 1e9, "years": 20, "monthly_income": 40_000_000})
     assert isinstance(res.json()["detail"], str)
+
+
+# ---------------------------------------------------------------------------
+# /api/estimate trả thêm LTV và phí trả trước hạn (việc 16 tuần 3)
+# ---------------------------------------------------------------------------
+def post_estimate(**extra):
+    return client.post("/api/estimate", json={"amount": 1_500_000_000, "years": 20, **extra})
+
+
+def test_estimate_co_gia_tri_nha_thi_tra_ltv():
+    body = post_estimate(property_value=3_000_000_000).json()
+    assert body["ltv_percent"] == 50
+    assert body["max_loan"] is None  # không gửi thu nhập thì chưa tính hạn mức
+
+
+def test_estimate_ltv_dung_ham_cua_calculator():
+    body = post_estimate(property_value=2_000_000_000, monthly_income=40_000_000).json()
+    assert body["ltv_percent"] == round(ltv(1_500_000_000, 2_000_000_000) * 100, 2) == 75
+    assert body["max_loan"] is not None
+
+
+def test_estimate_tra_phi_tra_truoc():
+    body = post_estimate(prepay_amount=200_000_000, prepay_fee_percent=1).json()
+    assert body["prepay"] == {"amount": 200_000_000, "fee_percent": 1, "fee": 2_000_000}
+    assert body["prepay"]["fee"] == prepay_fee(200_000_000, 1)
+
+
+@pytest.mark.parametrize("extra", [{"prepay_amount": 200_000_000}, {"prepay_fee_percent": 1}])
+def test_estimate_thieu_mot_truong_phi_thi_422_tieng_viet(extra):
+    res = post_estimate(**extra)
+    assert res.status_code == 422
+    assert res.json()["detail"] == "Cần nhập cả số tiền trả trước và tỷ lệ phí trả trước hạn"
+
+
+def test_estimate_tra_truoc_lon_hon_khoan_vay_thi_422():
+    res = post_estimate(prepay_amount=1_500_000_001, prepay_fee_percent=1)
+    assert res.status_code == 422
+    assert res.json()["detail"] == "Số tiền trả trước không được lớn hơn số tiền vay"
+
+
+def test_estimate_request_cu_van_nhu_truoc():
+    body = post_estimate().json()
+    assert body["ltv_percent"] is None and body["prepay"] is None
+    assert {"amount", "years", "rate", "method", "promo_rate", "promo_duration_months",
+            "monthly_payment", "total_interest", "max_loan", "updated_at"} <= set(body)
+
+
+@pytest.mark.parametrize("extra", [
+    {"prepay_amount": 0, "prepay_fee_percent": 1},
+    {"prepay_amount": 200_000_000, "prepay_fee_percent": -1},
+    {"prepay_amount": 200_000_000, "prepay_fee_percent": 101},
+])
+def test_estimate_phi_tra_truoc_ngoai_khoang_thi_422(extra):
+    assert post_estimate(**extra).status_code == 422
+
+
+# Góp ý PR #60: true bị đổi thành 1, NaN/Infinity làm server lỗi 500
+@pytest.mark.parametrize("extra", [
+    {"amount": True}, {"years": True}, {"promo_duration_months": True},
+    {"property_value": True}, {"rate": True}, {"prepay_amount": True, "prepay_fee_percent": 1},
+])
+def test_estimate_khong_nhan_true_false(extra):
+    assert post_estimate(**extra).status_code == 422
+
+
+@pytest.mark.parametrize("field", ["rate", "promo_rate", "max_ltv_percent", "max_dti_percent",
+                                   "prepay_fee_percent"])
+@pytest.mark.parametrize("value", ["NaN", "Infinity"])
+def test_estimate_khong_nhan_nan_vo_cuc(field, value):
+    body = '{"amount": 1500000000, "years": 20, "promo_duration_months": 12, ' \
+           '"property_value": 3000000000, "monthly_income": 40000000, "prepay_amount": 1, ' \
+           f'"prepay_fee_percent": 1, "{field}": {value}}}'
+    res = client.post("/api/estimate", content=body, headers={"Content-Type": "application/json"})
+    assert res.status_code == 422
 
 
 # ---------------------------------------------------------------------------
@@ -388,3 +461,4 @@ def test_rank_dau_vao_sai(payload):
 def test_rank_ranking_tu_choi_thi_bao_cau_tieng_viet(payload):
     res = rank(**payload)
     assert res.status_code == 422 and isinstance(res.json()["detail"], str)
+
