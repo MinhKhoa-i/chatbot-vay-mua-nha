@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import os
 import time
 from functools import lru_cache
@@ -10,9 +11,12 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, field_validator
 
-from finance.calculator import ANNUITY, max_loan, schedule
+from finance.calculator import ANNUITY, ltv, max_loan, prepay_fee, schedule
 from finance.ranking import rank_banks
 
 logger = logging.getLogger(__name__)
@@ -31,6 +35,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _json_safe(value):
+    """Đổi NaN/Infinity thành chuỗi để trả được JSON (JSON không có NaN)."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return str(value)
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    return value
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request, exc: RequestValidationError):
+    """Lỗi 422 như mặc định của FastAPI, nhưng gửi NaN/Infinity không làm server lỗi 500 (góp ý PR #60)."""
+    return JSONResponse(status_code=422, content={"detail": _json_safe(jsonable_encoder(exc.errors()))})
 
 
 @app.get("/api/health")
@@ -180,23 +201,37 @@ def chat(req: ChatRequest):
 class EstimateRequest(BaseModel):
     amount: int = Field(gt=0, description="Số tiền vay (VND, số nguyên)")
     years: int = Field(gt=0, le=35)
-    rate: float = Field(8.5, ge=0, description="Lãi suất %/năm (sau ưu đãi nếu có ưu đãi)")
+    rate: float = Field(8.5, ge=0, allow_inf_nan=False, description="Lãi suất %/năm (sau ưu đãi nếu có ưu đãi)")
     method: Literal["annuity", "reducing_balance"] = ANNUITY
-    promo_rate: Optional[float] = Field(None, ge=0, description="Lãi ưu đãi %/năm")
+    promo_rate: Optional[float] = Field(None, ge=0, allow_inf_nan=False, description="Lãi ưu đãi %/năm")
     promo_duration_months: int = Field(0, ge=0, description="Số tháng ưu đãi")
-    # Hạn mức vay tối đa (không bắt buộc): gửi đủ giá trị nhà và thu nhập thì backend tính thêm
+    # Có giá trị nhà thì trả thêm LTV; gửi đủ giá trị nhà và thu nhập thì tính thêm hạn mức vay tối đa
     property_value: Optional[int] = Field(None, gt=0, description="Giá trị nhà / tài sản bảo đảm (VND)")
     monthly_income: Optional[int] = Field(None, gt=0, description="Thu nhập ròng hằng tháng (VND)")
     existing_monthly_debt: int = Field(0, ge=0, description="Nợ khác phải trả hằng tháng (VND)")
-    max_ltv_percent: float = Field(80, ge=1, le=100, description="Tỷ lệ cho vay tối đa / giá trị nhà (%)")
-    max_dti_percent: float = Field(50, gt=0, le=100, description="Tỷ lệ trả nợ tối đa / thu nhập (%)")
+    max_ltv_percent: float = Field(80, ge=1, le=100, allow_inf_nan=False,
+                                   description="Tỷ lệ cho vay tối đa / giá trị nhà (%)")
+    max_dti_percent: float = Field(50, gt=0, le=100, allow_inf_nan=False,
+                                   description="Tỷ lệ trả nợ tối đa / thu nhập (%)")
+    # Phí trả nợ trước hạn (việc 16 tuần 3): gửi cả hai thì tính bằng prepay_fee() của calculator.py
+    prepay_amount: Optional[int] = Field(None, gt=0, description="Số gốc định trả trước (VND), không lớn hơn amount")
+    prepay_fee_percent: Optional[float] = Field(None, ge=0, le=100, allow_inf_nan=False,
+                                                description="Tỷ lệ phí trả trước hạn theo hợp đồng (%)")
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _khong_nhan_true_false(cls, value):
+        """Không cho true/false thay số (Pydantic tự đổi true thành 1)."""
+        if isinstance(value, bool):
+            raise ValueError("Phải là số, không nhận true/false")
+        return value
 
 
 def _max_loan(req: EstimateRequest) -> Optional[dict]:
-    """Gọi max_loan() của calculator.py; thiếu giá trị nhà và thu nhập thì trả None."""
-    if req.property_value is None and req.monthly_income is None:
-        return None
-    if req.property_value is None or req.monthly_income is None:
+    """Gọi max_loan() của calculator.py; không gửi thu nhập thì trả None."""
+    if req.monthly_income is None:
+        return None  # chỉ có giá trị nhà: vẫn trả ltv_percent, max_loan = null
+    if req.property_value is None:
         raise ValueError("Cần nhập cả giá trị nhà và thu nhập hằng tháng để tính hạn mức vay tối đa")
     result = max_loan(req.property_value, req.monthly_income, req.years * 12, req.rate,
                       req.method, req.promo_rate, req.promo_duration_months,
@@ -204,6 +239,25 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
                       max_ltv=req.max_ltv_percent, max_dti=req.max_dti_percent / 100)
     return {**result, "max_ltv_percent": float(req.max_ltv_percent),
             "max_dti_percent": float(req.max_dti_percent)}
+
+
+def _ltv_percent(req: EstimateRequest) -> Optional[float]:
+    """LTV (%) = ltv() của calculator.py × 100 (ltv() trả tỷ lệ, 0.5 = 50%). Không có giá trị nhà thì None."""
+    if req.property_value is None:
+        return None
+    return round(ltv(req.amount, req.property_value) * 100, 2)
+
+
+def _prepay(req: EstimateRequest) -> Optional[dict]:
+    """Phí trả nợ trước hạn bằng prepay_fee() của calculator.py. Không gửi cả hai trường thì None."""
+    if req.prepay_amount is None and req.prepay_fee_percent is None:
+        return None
+    if req.prepay_amount is None or req.prepay_fee_percent is None:
+        raise ValueError("Cần nhập cả số tiền trả trước và tỷ lệ phí trả trước hạn")
+    if req.prepay_amount > req.amount:
+        raise ValueError("Số tiền trả trước không được lớn hơn số tiền vay")
+    return {"amount": req.prepay_amount, "fee_percent": float(req.prepay_fee_percent),
+            "fee": prepay_fee(req.prepay_amount, req.prepay_fee_percent)}
 
 
 # estimate trong event `done` của ai_service (STT 18): frontend dùng để hiện thẻ ước tính
@@ -254,6 +308,7 @@ def estimate(req: EstimateRequest):
         rows = schedule(req.amount, req.years * 12, req.rate, req.method,
                         req.promo_rate, req.promo_duration_months)
         limit = _max_loan(req)
+        prepay = _prepay(req)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {
@@ -266,6 +321,8 @@ def estimate(req: EstimateRequest):
         "monthly_payment": rows[0]["payment"],  # tháng đầu (gốc đều: tháng cao nhất)
         "total_interest": sum(r["interest"] for r in rows),
         "max_loan": limit,
+        "ltv_percent": _ltv_percent(req),
+        "prepay": prepay,
         "updated_at": DATA_UPDATED,
     }
 
@@ -316,3 +373,4 @@ def rank(req: RankRequest):
         "updated_at": data.get("updated_at", DATA_UPDATED),
         "is_sample": True,
     }
+

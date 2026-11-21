@@ -104,7 +104,7 @@ Gửi lên:
 
 `promo_rate` và `promo_duration_months` phải đi cùng nhau: có cái này thì phải có cái kia, nếu không sẽ bị lỗi 422.
 
-Hạn mức vay tối đa (không bắt buộc). Gửi **cả** `property_value` và `monthly_income` thì backend tính thêm `max_loan` bằng `max_loan()` của `calculator.py`, dùng cùng `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` ở trên. Chỉ gửi một trong hai thì lỗi 422.
+LTV và hạn mức vay tối đa (không bắt buộc). Gửi `property_value` thì backend trả thêm `ltv_percent`. Gửi **cả** `property_value` và `monthly_income` thì tính thêm `max_loan` bằng `max_loan()` của `calculator.py`, dùng cùng `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` ở trên. Gửi `monthly_income` mà thiếu `property_value` thì lỗi 422.
 
 | Trường | Kiểu | Bắt buộc | Mặc định | Ràng buộc |
 |---|---|---|---|---|
@@ -113,6 +113,15 @@ Hạn mức vay tối đa (không bắt buộc). Gửi **cả** `property_value`
 | `existing_monthly_debt` | integer | Không | `0` | ≥ 0, nợ khác đang trả hằng tháng (VND) |
 | `max_ltv_percent` | number | Không | `80` | [1, 100], theo % (70 = 70%). Form gửi `loan_limit.max_ltv_percent` của ngân hàng đã chọn |
 | `max_dti_percent` | number | Không | `50` | (0, 100] |
+
+Phí trả nợ trước hạn (không bắt buộc). Gửi **cả** hai trường thì backend tính thêm `prepay` bằng `prepay_fee()` của `calculator.py`. Chỉ gửi một trong hai thì lỗi 422 với `detail` = "Cần nhập cả số tiền trả trước và tỷ lệ phí trả trước hạn".
+
+| Trường | Kiểu | Bắt buộc | Mặc định | Ràng buộc |
+|---|---|---|---|---|
+| `prepay_amount` | integer | Không | `null` | > 0, ≤ `amount`, số gốc định trả trước (VND) |
+| `prepay_fee_percent` | number | Không | `null` | [0, 100], tỷ lệ phí theo hợp đồng (%) |
+
+Trường số nguyên không nhận `true`/`false`; trường số thực không nhận `NaN`/`Infinity`. Gửi sai thì lỗi 422.
 
 Ví dụ:
 
@@ -133,6 +142,8 @@ Trả về:
   "monthly_payment": 13017349,
   "total_interest": 1624163639,
   "max_loan": null,
+  "ltv_percent": null,
+  "prepay": null,
   "updated_at": "2026-10-31"
 }
 ```
@@ -150,12 +161,20 @@ Khi gửi thêm `"property_value": 3000000000, "monthly_income": 40000000, "max_
 }
 ```
 
+và `"ltv_percent": 50.0` (1,5 tỷ / 3 tỷ). Khi gửi thêm `"prepay_amount": 200000000, "prepay_fee_percent": 1`:
+
+```json
+"prepay": { "amount": 200000000, "fee_percent": 1.0, "fee": 2000000 }
+```
+
 | Trường | Ghi chú |
 |---|---|
 | `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` | Trả lại đúng giá trị đã gửi. `ai_service` dùng các trường này để kiểm tra response có đúng là của request mình gửi không |
 | `monthly_payment` | Tiền trả **tháng đầu tiên**, VND, số nguyên. Niên kim: số tiền đều hằng tháng (trong thời gian ưu đãi). Gốc đều: tháng cao nhất |
 | `total_interest` | Tổng lãi cả kỳ hạn, VND, số nguyên |
 | `max_loan` | `null` nếu không gửi `property_value` và `monthly_income`. Nếu có: `max_loan` = hạn mức tối đa (VND) = min(`by_ltv`, `by_dti`); `by_ltv` = theo giá trị nhà; `by_dti` = theo thu nhập (tính với tháng phải trả **cao nhất**); `limited_by` = `"ltv"` hoặc `"dti"` cho biết bị giới hạn bởi cái nào; kèm hai tỷ lệ đã dùng |
+| `ltv_percent` | `null` nếu không gửi `property_value`. Nếu có: `ltv(amount, property_value) * 100` (hàm `ltv()` trả tỷ lệ 0,5 = 50%), làm tròn 2 chữ số thập phân. Dùng cho EVAL-06 |
+| `prepay` | `null` nếu không gửi `prepay_amount` và `prepay_fee_percent`. Nếu có: `amount` = số gốc trả trước, `fee_percent` = tỷ lệ phí, `fee` = phí (VND, số nguyên) từ `prepay_fee()`. Dùng cho EVAL-22 |
 | `updated_at` | Ngày cập nhật dữ liệu |
 
 Làm tròn đến đồng; phần chênh do làm tròn dồn vào tháng cuối nên tổng tiền gốc luôn bằng `amount`.
@@ -331,3 +350,4 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 ## 7. Việc còn mở
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.
+
