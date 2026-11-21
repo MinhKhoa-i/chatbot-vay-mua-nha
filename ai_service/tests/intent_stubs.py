@@ -7,7 +7,9 @@ class StubIntentClassifier:
     def __init__(self, intent: ChatIntent = ChatIntent.RETRIEVAL) -> None:
         self.intent = intent
         self.calls: list[tuple[str, tuple[tuple[str, str], ...]]] = []
+        self.memory_contexts: list[str] = []
 
-    async def classify(self, text: str, *, history=()) -> ChatIntent:
+    async def classify(self, text: str, *, history=(), memory_context="") -> ChatIntent:
         self.calls.append((text, history))
+        self.memory_contexts.append(memory_context)
         return self.intent

@@ -44,7 +44,7 @@ def test_retrieval_guidance_separates_examples_from_live_evidence():
 
 
 @pytest.mark.parametrize("name", [
-    PromptName.GREETING, PromptName.THANKS, PromptName.FAREWELL, PromptName.NO_EVIDENCE,
+    PromptName.NO_EVIDENCE,
 ])
 def test_local_replies_are_plain_text_without_unrendered_placeholders(name):
     reply = MarkdownPromptCatalog().get(name)

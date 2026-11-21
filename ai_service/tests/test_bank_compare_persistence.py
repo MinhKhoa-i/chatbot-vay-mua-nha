@@ -49,6 +49,33 @@ def test_bank_compare_state_codec_defaults_for_legacy_profile():
     assert decode_bank_compare_session({"slots": {}}) == BankCompareSession()
 
 
+def test_bank_compare_state_codec_migrates_old_default_method_as_not_explicit():
+    old_state = {
+        "amount": 1_000_000_000,
+        "years": 20,
+        "assumed_floating_rate": None,
+        "base_rate": None,
+        "method": "annuity",
+        "property_value": None,
+        "prepay_month": None,
+        "grace_period_months": 0,
+        "status": "collecting",
+    }
+
+    decoded = decode_bank_compare_session({"bank_compare_session": old_state})
+
+    assert decoded.method == "annuity"
+    assert decoded.method_explicit is False
+
+
+def test_bank_compare_state_codec_round_trips_explicit_method_marker():
+    state = BankCompareSession(method="annuity", method_explicit=True)
+
+    assert decode_bank_compare_session({
+        "bank_compare_session": encode_bank_compare_session(state),
+    }) == state
+
+
 @pytest.mark.parametrize("payload", [
     [],
     {"amount": 100},

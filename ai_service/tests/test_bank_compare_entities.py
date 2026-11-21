@@ -6,10 +6,18 @@ from app.domain.entities.bank_compare_session import BankCompareSession
 from app.domain.entities.bank_rank import BankRankRequest, BankRankResult, RankedBank
 
 
-def test_bank_compare_session_reports_only_required_missing_fields():
+def test_bank_compare_session_does_not_require_assumed_floating_rate():
     session = BankCompareSession(amount=1_500_000_000, years=20)
 
-    assert session.missing_fields == ("assumed_floating_rate",)
+    assert session.missing_fields == ()
+    assert session.complete
+    assert session.assumed_floating_rate is None
+
+
+def test_bank_compare_session_reports_amount_and_years_as_required():
+    session = BankCompareSession()
+
+    assert session.missing_fields == ("amount", "years")
     assert not session.complete
 
 
@@ -25,8 +33,11 @@ def test_bank_compare_session_accepts_explicit_assumed_rate():
 
 
 def test_bank_rank_request_preserves_api_defaults_and_nullable_options():
+    session = BankCompareSession()
     request = BankRankRequest(amount=1_500_000_000, years=20, assumed_floating_rate=10)
 
+    assert session.method == "annuity"
+    assert session.method_explicit is False
     assert request.method == "annuity"
     assert request.grace_period_months == 0
     assert request.prepay_month is None

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from app.domain.entities.bank_compare_session import BankCompareSession
 from app.domain.entities.bank_rank import BankRankRequest, BankRankResult, RankedBank
-from app.domain.ports.bank_compare_extractor import BankCompareExtractionError, BankCompareExtractor
+from app.domain.ports.bank_compare_extractor import BankCompareExtractor
 from app.domain.ports.bank_ranker import BankRankError, BankRanker
 from app.domain.ports.prompt_catalog import PromptCatalog, PromptName
 
@@ -45,7 +45,7 @@ class CompareBanksUseCase:
         request = BankRankRequest(
             amount=updated.amount,
             years=updated.years,
-            method=updated.method,
+            method=updated.method or "annuity",
             grace_period_months=updated.grace_period_months,
             prepay_month=updated.prepay_month,
             property_value=updated.property_value,
@@ -65,7 +65,6 @@ class CompareBanksUseCase:
         return {
             "amount": "số tiền muốn vay (VND)",
             "years": "thời hạn vay (nguyên năm, 1–35)",
-            "assumed_floating_rate": "lãi thả nổi giả định (%/năm; bạn tự chọn, mình không tự đặt)",
         }[name]
 
     def _render_result(self, session: BankCompareSession, result: BankRankResult) -> str:

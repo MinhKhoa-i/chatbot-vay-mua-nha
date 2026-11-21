@@ -19,10 +19,8 @@ class PromptName(StrEnum):
     TURN_GUIDANCE = "turn_guidance"
     GROUNDING = "grounding"
     RETRIEVAL_GUIDANCE = "retrieval_guidance"
+    GENERAL_GUIDANCE = "general_guidance"
     RETRIEVAL_QUERY = "retrieval_query"
-    GREETING = "greeting"
-    THANKS = "thanks"
-    FAREWELL = "farewell"
     NO_EVIDENCE = "no_evidence"
 
 

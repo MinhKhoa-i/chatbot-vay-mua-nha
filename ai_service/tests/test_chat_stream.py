@@ -44,7 +44,7 @@ class FakeCompletion(ChatCompletionPort):
         self.received_knowledge_context = ""
 
     async def stream_reply(
-        self, text: str, *, history=(), guidance="", knowledge_context=""
+        self, text: str, *, history=(), memory_context="", guidance="", knowledge_context=""
     ) -> AsyncIterator[str]:
         self.received_text = text
         self.received_history = history
@@ -90,10 +90,12 @@ def test_endpoint_streams_sse_deltas_and_never_echoes_conversation_id(monkeypatc
             assert response.status_code == 200
             assert response.headers["content-type"].startswith("text/event-stream")
             assert response.headers["cache-control"] == "no-store"
-            assert 'event: delta\ndata: {"text": "Xin chào!' in response.text
+            assert 'event: delta\ndata: {"text": "Xin chào"}' in response.text
             assert 'event: done\ndata: {"status": "completed"}' in response.text
             assert str(conversation_id) not in response.text
-        assert completion.received_text is None
+        assert completion.received_text == "Xin chào"
+        assert completion.received_guidance == get_prompt_catalog().get("general_guidance")
+        assert completion.received_knowledge_context == ""
 
     asyncio.run(run())
 

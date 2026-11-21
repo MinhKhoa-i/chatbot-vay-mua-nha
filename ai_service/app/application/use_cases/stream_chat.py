@@ -10,6 +10,7 @@ from app.application.use_cases.compare_banks import CompareBanksUseCase
 from app.application.use_cases.estimate_loan import EstimateLoanUseCase
 from app.domain.ports.loan_calculator import LoanCalculationError
 from app.domain.entities.chat_orchestration import ChatIntent
+from app.domain.entities.conversation_memory import ConversationMemory
 from app.domain.entities.knowledge_evidence import GroundedContext
 from app.domain.entities.chat_request import ChatEvent, ChatRequest, ChatSnapshot, ChatSnapshotUpdate, ChatTurnError
 from app.domain.errors import ChatError, RetrievalError, UnexpectedChatError
@@ -80,6 +81,7 @@ class StreamChatUseCase:
                 return
 
             snapshot = claim.snapshot
+            memory_context = snapshot.conversation_memory.to_prompt_context()
             estimate_turn = None
             bank_compare_turn = None
             if snapshot.estimate_session.active and self._estimate is not None:
@@ -98,7 +100,9 @@ class StreamChatUseCase:
                     intent = ChatIntent.BANK_COMPARE
                 else:
                     async with asyncio.timeout(10):
-                        intent = await self._classifier.classify(request.text, history=snapshot.history)
+                        intent = await self._classifier.classify(
+                            request.text, history=snapshot.history, memory_context=memory_context,
+                        )
             except TimeoutError as exc:
                 raise IntentClassificationError("CLASSIFICATION_TIMEOUT") from exc
             estimate_state = None
@@ -109,7 +113,10 @@ class StreamChatUseCase:
                 if self._estimate is None:
                     raise LoanCalculationError("ESTIMATE_NOT_CONFIGURED", retryable=False)
                 if estimate_turn is None:
-                    estimate_turn = await self._estimate.execute(request.text, snapshot.estimate_session)
+                    session = snapshot.estimate_session if snapshot.estimate_session.active else (
+                        snapshot.conversation_memory.to_estimate_session()
+                    )
+                    estimate_turn = await self._estimate.execute(request.text, session)
                 if not estimate_turn.handled:
                     # An unrelated message must never authorize a calculator call.
                     intent = ChatIntent.RETRIEVAL
@@ -121,9 +128,10 @@ class StreamChatUseCase:
                 if self._bank_compare is None:
                     raise ChatError("BANK_COMPARE_NOT_CONFIGURED", stage="bank_compare", retryable=False)
                 if bank_compare_turn is None:
-                    bank_compare_turn = await self._bank_compare.execute(
-                        request.text, snapshot.bank_compare_session,
+                    session = snapshot.bank_compare_session if snapshot.bank_compare_session.active else (
+                        snapshot.conversation_memory.to_bank_compare_session()
                     )
+                    bank_compare_turn = await self._bank_compare.execute(request.text, session)
                 if not bank_compare_turn.handled:
                     intent = ChatIntent.RETRIEVAL
                 else:
@@ -136,7 +144,9 @@ class StreamChatUseCase:
                 deterministic = bank_compare_turn.answer
             else:
                 stage = "retrieval"
-                grounded = await self._retrieve(intent, request.text, snapshot.history)
+                grounded = await self._retrieve(
+                    intent, request.text, snapshot.history, memory_context,
+                )
                 stage = "prompt"
                 deterministic = self._response_policy.deterministic_reply(intent, request.text, grounded)
             answer_parts: list[str] = []
@@ -144,12 +154,19 @@ class StreamChatUseCase:
                 answer_parts.append(deterministic)
                 yield ChatEvent("delta", {"text": deterministic})
             else:
-                guidance = self._response_policy.retrieval_guidance
+                guidance = (
+                    self._response_policy.general_guidance
+                    if intent == ChatIntent.GENERAL
+                    else self._response_policy.retrieval_guidance
+                )
                 stage = "model"
                 try:
                     async with asyncio.timeout(45):
                         async for fragment in self._completion.stream_reply(
-                            request.text, history=snapshot.history, guidance=guidance,
+                            request.text,
+                            history=snapshot.history,
+                            memory_context=memory_context,
+                            guidance=guidance,
                             knowledge_context=grounded.prompt_context,
                         ):
                             answer_parts.append(fragment)
@@ -167,8 +184,12 @@ class StreamChatUseCase:
                 request, request_id=snapshot.request_id, lease_token=snapshot.lease_token,
                 snapshot_version=snapshot.conversation_version, answer=answer,
                 state_update=ChatSnapshotUpdate(
-                    intent=intent, estimate_session=estimate_state,
+                    intent=intent,
+                    estimate_session=estimate_state,
                     bank_compare_session=bank_compare_state,
+                    conversation_memory=self._updated_memory(
+                        snapshot, estimate_state, bank_compare_state, len(snapshot.history) + 1,
+                    ),
                 ),
                 estimate=estimate_result,
             )
@@ -189,6 +210,37 @@ class StreamChatUseCase:
                 await self._record_failure(request, snapshot, error)
             raise error from exc
 
+    @staticmethod
+    def _updated_memory(
+        snapshot: ChatSnapshot,
+        estimate_state,
+        bank_compare_state,
+        source_seq: int,
+    ) -> ConversationMemory | None:
+        if estimate_state is not None and estimate_state.status != "idle":
+            return snapshot.conversation_memory.merge_estimate(
+                amount=estimate_state.amount,
+                years=estimate_state.years,
+                user_provided_rate=estimate_state.rate,
+                promo_rate=estimate_state.promo_rate,
+                promo_duration_months=estimate_state.promo_duration_months,
+                repayment_method=estimate_state.method,
+                source_seq=source_seq,
+            )
+        if bank_compare_state is not None and bank_compare_state.status != "idle":
+            return snapshot.conversation_memory.merge_bank_comparison(
+                amount=bank_compare_state.amount,
+                years=bank_compare_state.years,
+                repayment_method=(bank_compare_state.method if bank_compare_state.method_explicit else None),
+                source_seq=source_seq,
+                property_value=bank_compare_state.property_value,
+                prepay_month=bank_compare_state.prepay_month,
+                grace_period_months=bank_compare_state.grace_period_months,
+                base_rate=bank_compare_state.base_rate,
+                assumed_floating_rate=bank_compare_state.assumed_floating_rate,
+            )
+        return None
+
     async def _record_failure(self, request: ChatRequest, snapshot: ChatSnapshot, error: ChatError) -> None:
         try:
             await self._repository.fail(
@@ -200,14 +252,18 @@ class StreamChatUseCase:
             logger.exception("Failed to record chat failure (original_code=%s)", error.code)
 
     async def _retrieve(
-        self, intent: ChatIntent, text: str, history: tuple[tuple[str, str], ...]
+        self,
+        intent: ChatIntent,
+        text: str,
+        history: tuple[tuple[str, str], ...],
+        memory_context: str = "",
     ) -> GroundedContext:
         if intent == ChatIntent.GENERAL:
             return GroundedContext((), "", ())
         if self._retrieval is None:
             raise RetrievalError("RETRIEVAL_NOT_CONFIGURED", retryable=False)
         # Prompt errors must not be mislabeled as a search failure.
-        query = self._query_builder.build(text, history)
+        query = self._query_builder.build(text, history, memory_context)
         try:
             async with asyncio.timeout(15):
                 return await self._retrieval.retrieve(query)

@@ -16,10 +16,6 @@ class ConversationNotFound(LookupError):
     pass
 
 
-class ConversationStateUnavailable(RuntimeError):
-    pass
-
-
 class ConversationManagement:
     """Use cases for creating, reading, listing and deleting conversations."""
 

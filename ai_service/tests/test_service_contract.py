@@ -181,14 +181,10 @@ def test_app_logger_does_not_duplicate_records_with_root_handler():
 
 def test_greeting_does_not_advertise_unimplemented_calculations():
     catalog = MarkdownPromptCatalog()
-    greeting = catalog.get(PromptName.GREETING)
+    guidance = catalog.get(PromptName.GENERAL_GUIDANCE)
     system = catalog.get(PromptName.CHAT_SYSTEM)
 
-    assert "backend" not in greeting
-    assert "số tiền vay" in greeting and "lãi suất (%/năm)" in greeting and "cách trả nợ" in greeting
-    assert "xác nhận lại với bạn rồi mới tính" in greeting
-    assert "không phải đánh giá khả năng vay" in greeting and "chưa gồm phí" in greeting
+    assert "không tự tính toán khoản vay" in guidance
     assert "Không tự tính tiền trả nợ" in system
     assert "kết thúc bằng một câu disclaimer ngắn do bạn viết" in system
     assert "không cần disclaimer này" in system
-    assert "công cụ tính toán chưa được tích hợp" not in greeting

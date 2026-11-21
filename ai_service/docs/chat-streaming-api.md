@@ -54,11 +54,11 @@ Malformed requests return HTTP 422 before streaming. Requests larger than 20 KiB
 
 Chat has three handled paths:
 
-- `general`: a complete greeting, thank-you or farewell message. The application answers locally without calling embeddings, retrieval or the chat model.
+- `general`: ordinary conversation, including greetings, thanks and farewells. The application calls the chat model with `general_guidance.md`, without embeddings or knowledge retrieval.
 - `retrieval`: knowledge questions, including uncertain inputs and greetings mixed with questions. The application searches approved knowledge first; only usable evidence permits a model call.
 - `estimate`: a loan-payment estimate handled by the dedicated estimate use case. It collects amount, term and fixed rate, asks the user to confirm the scenario, and only then calls the backend calculator. It does not call knowledge retrieval or ask the chat model to calculate.
 
-The social-intent classifier normalizes case, Vietnamese accents and punctuation, then matches complete social phrases, not substrings. For example, `Xin chào!` is `general`, while `Chào bạn, lãi suất bao nhiêu?` and `Tôi muốn vay 10 tỷ` are knowledge `retrieval` unless an active estimate session handles the request. This is deliberately conservative, not a semantic multilingual classifier: unrecognized social phrasing also takes the retrieval path.
+Intent classification uses the configured model with conversation context; chat no longer uses the old exact-phrase social normalizer. General replies use the model rather than fixed greeting, thank-you or farewell templates.
 
 For conversational searches, the application includes up to two recent non-social user questions (each capped at 1,000 characters, selected from the latest 20 history messages) alongside the current question. Assistant replies are never included as retrieval evidence. This lightweight context helps follow-up questions without introducing an extra model call; it does not guarantee reference resolution across topic changes. The answer model receives up to the latest 20 committed user/assistant messages, the current question and the retrieved context. Neither the conversation ID nor legacy task/profile state is sent to the model.
 
@@ -79,9 +79,7 @@ All chat prompts and deterministic reply text live in `app/infrastructure/prompt
 | `grounding.md` | Source-grounding instructions and retrieved content | `{knowledge_context}` |
 | `retrieval_guidance.md` | Instructions for retrieval answers | None |
 | `retrieval_query.md` | Contextualized follow-up search query | `{previous_questions}`, `{text}` |
-| `greeting.md` | Local greeting reply | None |
-| `thanks.md` | Local thank-you reply | None |
-| `farewell.md` | Local farewell reply | None |
+| `general_guidance.md` | Instructions for general conversation replies | None |
 | `no_evidence.md` | Local reply when usable evidence is unavailable | None |
 
 `PromptCatalog` is a domain port injected into application services. `MarkdownPromptCatalog` implements file loading in infrastructure; the API composition root provides the same catalog to the application and model adapter. Application/domain code does not read files or import the infrastructure loader.
@@ -94,7 +92,7 @@ Keep the required placeholders in template files. Templates use Python `str.form
 
 Technical failures use domain `ChatError` subclasses containing `code`, `stage`, `retryable` and `status_code`. Adapters/repository boundaries raise them where failures occur and preserve the original exception with `raise ... from exc`. The application records a failed claimed request, then re-raises; a failure while recording the failure is logged but never replaces the original exception. Existing `ChatTurnError` lease/conflict decisions are preserved.
 
-Initialization failures before the stream return an HTTP error with `detail: {"code": "...", "retryable": false}`. After streaming starts, HTTP remains 200 and the endpoint sends `event: error` with `{"code": "...", "retryable": ...}`, never `done`. Server logs include the stage and chained traceback; public payloads omit exception text, provider bodies, database details and filesystem paths. Prompt/model configuration is no longer checked in the route itself: the responsible resource/provider raises the error. In particular, social replies and replay do not require configured chat-model credentials.
+Initialization failures before the stream return an HTTP error with `detail: {"code": "...", "retryable": false}`. After streaming starts, HTTP remains 200 and the endpoint sends `event: error` with `{"code": "...", "retryable": ...}`, never `done`. Server logs include the stage and chained traceback; public payloads omit exception text, provider bodies, database details and filesystem paths. Prompt/model configuration is no longer checked in the route itself: the responsible resource/provider raises the error. Replay does not call the chat model; newly generated general replies require configured chat-model credentials.
 
 | Source | Codes | Retryable |
 | --- | --- | --- |

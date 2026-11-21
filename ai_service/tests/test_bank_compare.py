@@ -51,7 +51,7 @@ def ranked_bank(*, total_cost=466_928_374, prepay_fee=28_349_347):
 
 
 @pytest.mark.asyncio
-async def test_collects_required_rate_and_does_not_rank_before_all_required_fields():
+async def test_ranks_without_assumed_floating_rate_after_required_fields_are_collected():
     extractor = Extractor(
         BankCompareExtraction("update", {"amount": 1_500_000_000}),
         BankCompareExtraction("update", {"years": 20}),
@@ -63,11 +63,12 @@ async def test_collects_required_rate_and_does_not_rank_before_all_required_fiel
     second = await case.execute("20 năm", first.session)
 
     assert first.session.amount == 1_500_000_000
-    assert "thời hạn vay" in first.answer and "lãi thả nổi giả định" in first.answer
+    assert "thời hạn vay" in first.answer
+    assert "lãi thả nổi giả định" not in first.answer
     assert second.session.years == 20
-    assert "lãi thả nổi giả định" in second.answer
     assert second.session.assumed_floating_rate is None
-    assert ranker.calls == []
+    assert len(ranker.calls) == 1
+    assert ranker.calls[0].assumed_floating_rate is None
 
 
 @pytest.mark.asyncio
@@ -313,7 +314,7 @@ async def test_extractor_sends_isolated_prompt_and_session_to_provider():
             result = await extractor.extract("Vay 1,5 tỷ trong 20 năm, giả định lãi 10%", BankCompareSession())
 
     body = __import__("json").loads(requests[0].content)
-    assert "không tự chọn, tra cứu hay suy ra tỷ lệ này" in body["messages"][0]["content"]
+    assert "không hỏi bắt buộc, tự chọn, tra cứu hay suy ra tỷ lệ này" in body["messages"][0]["content"]
     assert body["messages"][1]["content"].find('"message"') >= 0
     assert result.updates == {
         "amount": 1_500_000_000, "years": 20, "assumed_floating_rate": Decimal("10"),

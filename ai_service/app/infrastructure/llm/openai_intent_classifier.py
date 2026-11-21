@@ -26,7 +26,7 @@ class OpenAIIntentClassifier:
         self._timeout = timeout_seconds
 
     async def classify(
-        self, text: str, *, history: tuple[tuple[str, str], ...] = (),
+        self, text: str, *, history: tuple[tuple[str, str], ...] = (), memory_context: str = "",
     ) -> ChatIntent:
         if not self._base_url or not self._api_key or not self._model:
             raise IntentClassificationError("CLASSIFICATION_NOT_CONFIGURED", retryable=False)
@@ -38,19 +38,49 @@ class OpenAIIntentClassifier:
                 base_url=self._base_url, api_key=self._api_key,
                 timeout=self._timeout, max_retries=0,
             ) as client:
+                from openai.types.chat import ChatCompletionMessageParam
+                classification_input = {
+                    "history": [
+                        {"role": role, "content": content[:1_000]}
+                        for role, content in history[-6:]
+                        if role in {"user", "assistant"}
+                    ],
+                    "memory": memory_context,
+                    "current_message": text,
+                }
+                messages: list[ChatCompletionMessageParam] = [
+                    {
+                        "role": "system",
+                        "content": instruction,
+                    },
+                    {
+                        "role": "user",
+                        "content": json.dumps(classification_input, ensure_ascii=False),
+                    },
+                ]
+
                 response = await client.chat.completions.create(
                     model=self._model,
-                    messages=[
-                        {"role": "system", "content": instruction},
-                        *[
-                            {"role": role, "content": content[:1_000]}
-                            for role, content in history[-6:]
-                            if role in {"user", "assistant"}
-                        ],
-                        {"role": "user", "content": text},
-                    ],
+                    messages=messages,
                     stream=False,
-                    response_format={"type": "json_object"},
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "chat_intent",
+                            "strict": True,
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "intent": {
+                                        "type": "string",
+                                        "enum": [intent.value for intent in ChatIntent],
+                                    },
+                                },
+                                "required": ["intent"],
+                                "additionalProperties": False,
+                            },
+                        },
+                    },
                     max_tokens=INTENT_MAX_TOKENS,
                 )
         except APIError as exc:
@@ -65,7 +95,7 @@ class OpenAIIntentClassifier:
                 usage=usage,
                 status="success" if usage is not None else "error_or_unknown_usage",
             )
-        if not response.choices or response.choices[0].finish_reason != "stop":
+        if response is None or not response.choices or response.choices[0].finish_reason != "stop":
             raise IntentClassificationError("CLASSIFICATION_INVALID_RESPONSE")
         return self._parse_intent(response.choices[0].message.content)
 

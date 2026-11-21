@@ -34,6 +34,7 @@ class MarkdownPromptCatalog:
                 PromptName.TURN_GUIDANCE: {"guidance": ""},
                 PromptName.GROUNDING: {"knowledge_context": ""},
                 PromptName.RETRIEVAL_QUERY: {"previous_questions": "", "text": ""},
+                PromptName.GENERAL_GUIDANCE: {},
                 PromptName.ESTIMATE_QUESTIONS: {"fields": ""},
                 PromptName.ESTIMATE_CONFIRMATION: {"amount": "", "years": "", "rate_text": "", "method_text": ""},
                 PromptName.ESTIMATE_RESULT: {

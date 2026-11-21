@@ -3,6 +3,7 @@ from uuid import UUID
 
 from app.domain.entities.bank_compare_session import BankCompareSession
 from app.domain.entities.chat_orchestration import ChatIntent
+from app.domain.entities.conversation_memory import ConversationMemory
 from app.domain.entities.estimate_session import EstimateSession
 
 
@@ -22,6 +23,7 @@ class ChatSnapshot:
     request_id: UUID
     estimate_session: EstimateSession = EstimateSession()
     bank_compare_session: BankCompareSession = BankCompareSession()
+    conversation_memory: ConversationMemory = ConversationMemory()
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +52,7 @@ class ChatSnapshotUpdate:
     intent: ChatIntent
     estimate_session: EstimateSession | None = None
     bank_compare_session: BankCompareSession | None = None
+    conversation_memory: ConversationMemory | None = None
 
 
 @dataclass(frozen=True, slots=True)

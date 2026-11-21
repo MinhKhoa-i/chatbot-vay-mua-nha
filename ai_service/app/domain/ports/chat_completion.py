@@ -21,6 +21,7 @@ class ChatCompletionPort(Protocol):
         text: str,
         *,
         history: tuple[tuple[str, str], ...] = (),
+        memory_context: str = "",
         guidance: str = "",
         knowledge_context: str = "",
     ) -> AsyncIterator[str]:

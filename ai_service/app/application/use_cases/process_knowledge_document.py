@@ -2,7 +2,6 @@ import math
 from uuid import UUID
 
 from app.application.services.knowledge_chunker import KnowledgeChunker
-from app.domain.entities.knowledge_document import IngestionStatus
 from app.domain.ports.knowledge_ingestion import DocumentExtractor, KnowledgeRepository, TextEmbedder
 
 
