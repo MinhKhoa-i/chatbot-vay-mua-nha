@@ -60,6 +60,9 @@ def test_knowledge_routes_require_admin_api_key(monkeypatch):
     from app import main
     from app.presentation.api import knowledge_dependencies
 
+    monkeypatch.setattr(main, "get_async_session_factory", Mock())
+    monkeypatch.setattr(main, "dispose_database", AsyncMock())
+
     document_id = uuid4()
     document = SimpleNamespace(
         id=document_id,
@@ -124,6 +127,8 @@ def test_empty_admin_api_key_rejects_knowledge_routes(monkeypatch):
     from app import main
     from app.presentation.api import knowledge_dependencies
 
+    monkeypatch.setattr(main, "get_async_session_factory", Mock())
+    monkeypatch.setattr(main, "dispose_database", AsyncMock())
     monkeypatch.setattr(knowledge_dependencies, "get_settings", lambda: SimpleNamespace(admin_api_key=""))
 
     with TestClient(main.app) as client:
