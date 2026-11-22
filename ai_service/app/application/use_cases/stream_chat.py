@@ -1,7 +1,9 @@
 import asyncio
+import json
 import logging
 import re
 from collections.abc import AsyncIterator
+from dataclasses import asdict
 
 from app.application.services.chat_response_policy import ChatResponsePolicy
 from app.application.services.request_fingerprint import chat_request_fingerprint
@@ -18,7 +20,7 @@ from app.domain.ports.chat_completion import ChatCompletionPort, ChatProviderUna
 from app.domain.ports.chat_intent_classifier import ChatIntentClassifier, IntentClassificationError
 from app.domain.ports.chat_turn_repository import ChatTurnRepository
 from app.domain.ports.knowledge_retrieval import KnowledgeRetriever
-from app.domain.ports.prompt_catalog import PromptCatalog
+from app.domain.ports.prompt_catalog import PromptCatalog, PromptName
 
 logger = logging.getLogger(__name__)
 _CITATION_LABEL_PATTERN = re.compile(r"\[(\d+)\]")
@@ -48,6 +50,7 @@ class StreamChatUseCase:
         estimate: EstimateLoanUseCase | None = None,
         bank_compare: CompareBanksUseCase | None = None,
     ) -> None:
+        self._prompts = prompts
         self._estimate = estimate
         self._bank_compare = bank_compare
         self._completion = completion
@@ -140,8 +143,16 @@ class StreamChatUseCase:
                 grounded = GroundedContext((), "", ())
                 deterministic = estimate_turn.answer
             elif intent == ChatIntent.BANK_COMPARE:
-                grounded = GroundedContext((), "", ())
-                deterministic = bank_compare_turn.answer
+                if bank_compare_turn.result is not None:
+                    context = json.dumps({
+                        "scenario": asdict(bank_compare_turn.session),
+                        "result": asdict(bank_compare_turn.result),
+                    }, ensure_ascii=False, default=str)
+                    grounded = GroundedContext((), context, ())
+                    deterministic = None
+                else:
+                    grounded = GroundedContext((), "", ())
+                    deterministic = bank_compare_turn.answer
             else:
                 stage = "retrieval"
                 grounded = await self._retrieve(
@@ -154,11 +165,14 @@ class StreamChatUseCase:
                 answer_parts.append(deterministic)
                 yield ChatEvent("delta", {"text": deterministic})
             else:
-                guidance = (
-                    self._response_policy.general_guidance
-                    if intent == ChatIntent.GENERAL
-                    else self._response_policy.retrieval_guidance
-                )
+                if intent == ChatIntent.BANK_COMPARE:
+                    guidance = self._prompts.get(PromptName.BANK_COMPARE_GUIDANCE)
+                else:
+                    guidance = (
+                        self._response_policy.general_guidance
+                        if intent == ChatIntent.GENERAL
+                        else self._response_policy.retrieval_guidance
+                    )
                 stage = "model"
                 try:
                     async with asyncio.timeout(45):

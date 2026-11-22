@@ -71,6 +71,7 @@ async def test_bank_compare_session_continues_until_required_fields_then_ranks_w
     )
 
     first = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "Vay 1 tỷ", None))]
+    assert completion.calls == 0
     second = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "20 năm, giả định 9%", 1))]
 
     assert first[-1].event == second[-1].event == "done"
@@ -84,7 +85,18 @@ async def test_bank_compare_session_continues_until_required_fields_then_ranks_w
     assert repository.conversation_memory.repayment_method is None
     assert repository.conversation_memory.grace_period_months == 0
     assert len(classifier.calls) == 1
-    assert completion.calls == 0 and retrieval.queries == []
+    assert completion.calls == 1 and retrieval.queries == []
+    assert second[0].data["text"] == completion.answer
+    assert second[-1].data["reply"] == completion.answer
+    assert repository.committed_answer == completion.answer
+    import json
+
+    context = json.loads(completion.knowledge_context)
+    assert context["scenario"]["amount"] == 1_000_000_000
+    assert context["scenario"]["years"] == 20
+    assert context["result"]["ranked"] == []
+    assert context["result"]["updated_at"] == "2026-11-16"
+    assert "Không tự tính toán" in completion.guidance
     assert repository.state_update.bank_compare_session == repository.bank_compare_session
 
 
@@ -164,3 +176,118 @@ async def test_unrelated_message_during_bank_compare_falls_back_without_clearing
     assert repository.bank_compare_session == state
     assert repository.state_update.bank_compare_session is None
     assert classifier.calls == [(question, ())]
+
+
+@pytest.mark.asyncio
+async def test_ranked_result_and_updated_scenario_are_passed_to_completion():
+    import json
+    from dataclasses import asdict
+    from decimal import Decimal
+
+    from app.domain.entities.bank_rank import ExcludedBank
+    from test_bank_compare import ranked_bank
+
+    result = BankRankResult(
+        (ranked_bank(total_cost=None, prepay_fee=None), ranked_bank()),
+        (ExcludedBank("other", "Other", "Thiếu dữ liệu"),),
+        {"floating_rate": Decimal("10")}, "2026-11-16", True,
+    )
+
+    class ResultRanker(Ranker):
+        async def rank(self, request):
+            self.calls.append(request)
+            return result
+
+    ranker = ResultRanker()
+    repository = Repository()
+    completion = FakeCompletion("Câu trả lời do model tạo.")
+    compare = CompareBanksUseCase(Extractor(BankCompareExtraction("update", {
+        "amount": 1_500_000_000, "years": 20, "property_value": 2_000_000_000,
+        "prepay_month": 60, "grace_period_months": 6, "base_rate": Decimal("7.5"),
+        "assumed_floating_rate": Decimal("9"), "method": "reducing_balance",
+    })), ranker, get_prompt_catalog())
+    case = StreamChatUseCase(
+        completion, repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.BANK_COMPARE), bank_compare=compare,
+        retrieval=FakeRetrieval(error=AssertionError("must not retrieve")),
+    )
+
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "So sánh", None))]
+
+    context = json.loads(completion.knowledge_context)
+    assert context["result"] == json.loads(json.dumps(asdict(result), default=str))
+    assert context["scenario"]["assumed_floating_rate"] == "9"
+    assert context["scenario"]["base_rate"] == "7.5"
+    assert context["scenario"]["property_value"] == 2_000_000_000
+    assert context["scenario"]["prepay_month"] == 60
+    assert context["scenario"]["grace_period_months"] == 6
+    assert context["scenario"]["method"] == "reducing_balance"
+    assert completion.calls == len(ranker.calls) == 1
+    assert events[-1].data["reply"] == completion.answer
+    assert "prepay_fee_is_upper_bound" in completion.guidance
+    assert "không phải chỉ dẫn" in completion.guidance
+
+
+@pytest.mark.asyncio
+async def test_cancel_comparison_does_not_call_completion_or_ranker():
+    state = BankCompareSession(amount=1_000_000_000, status="collecting")
+    repository = Repository(state)
+    ranker = Ranker()
+    completion = FakeCompletion()
+    case = StreamChatUseCase(
+        completion, repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.BANK_COMPARE),
+        bank_compare=CompareBanksUseCase(
+            Extractor(BankCompareExtraction("cancel", {})), ranker, get_prompt_catalog(),
+        ),
+    )
+
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "Hủy", None))]
+
+    assert events[-1].event == "done"
+    assert repository.bank_compare_session == BankCompareSession()
+    assert completion.calls == 0 and ranker.calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("partial", [False, True])
+async def test_comparison_provider_failure_does_not_commit_completed_state(partial):
+    from app.domain.ports.chat_completion import ChatProviderUnavailable
+
+    error = ChatProviderUnavailable(code="MODEL_UNAVAILABLE")
+
+    class FailingCompletion:
+        async def stream_reply(self, text, **kwargs):
+            if partial:
+                yield "Nội dung chưa hoàn tất"
+            raise error
+
+    class FailureRepository(Repository):
+        failure = None
+
+        async def fail(self, request, **kwargs):
+            self.failure = kwargs
+            return True
+
+    state = BankCompareSession(amount=1_000_000_000, status="collecting")
+    repository = FailureRepository(state)
+    ranker = Ranker()
+    case = StreamChatUseCase(
+        FailingCompletion(), repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.BANK_COMPARE),
+        bank_compare=CompareBanksUseCase(
+            Extractor(BankCompareExtraction("update", {"years": 20})), ranker, get_prompt_catalog(),
+        ),
+    )
+    events = []
+
+    with pytest.raises(ChatProviderUnavailable) as caught:
+        async for event in case.execute(ChatRequest(uuid4(), uuid4(), "20 năm", None)):
+            events.append(event)
+
+    assert caught.value is error
+    assert [event.event for event in events] == (["delta"] if partial else [])
+    assert repository.failure["error_code"] == "MODEL_UNAVAILABLE"
+    assert repository.committed_answer is None and repository.state_update is None
+    assert repository.bank_compare_session == state
+    assert len(ranker.calls) == 1

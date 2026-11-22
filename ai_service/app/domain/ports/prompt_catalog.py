@@ -13,6 +13,7 @@ class PromptName(StrEnum):
     BANK_COMPARE_EXTRACTION = "bank_compare_extraction"
     BANK_COMPARE_QUESTIONS = "bank_compare_questions"
     BANK_COMPARE_RESULT = "bank_compare_result"
+    BANK_COMPARE_GUIDANCE = "bank_compare_guidance"
     BANK_COMPARE_CANCELLED = "bank_compare_cancelled"
     INTENT_CLASSIFICATION = "intent_classification"
     CHAT_SYSTEM = "chat_system"
