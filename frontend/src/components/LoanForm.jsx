@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ApiError, estimateLoan, getBanks } from "../lib/api.js";
+import { ApiError, estimateLoan, getBanks, rankBanks } from "../lib/api.js";
 import { DEFAULT_RATE, fmtDate, shortVnd, vnd } from "../lib/loan.js";
 import { Icon } from "./icons.jsx";
 
@@ -204,6 +204,115 @@ function Result({ result, onAsk, askLabel }) {
       <button type="button" onClick={onAsk} className="w-full rounded-xl bg-ink px-5 py-3.5 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
         {askLabel}
       </button>
+    </section>
+  );
+}
+
+// So sánh ngân hàng (việc 18 tuần 3): gọi POST /api/banks/rank cho đúng khoản vay vừa tính.
+// Mọi số lấy từ API (rank_banks() ở backend), giao diện không tự tính.
+// Dữ liệu chưa có lãi sau ưu đãi nên gửi lãi trong form làm assumed_floating_rate.
+function BankCompare({ result }) {
+  const { est, bank, price } = result;
+  const [state, setState] = useState({ status: "idle" });
+  useEffect(() => { setState({ status: "idle" }); }, [result]); // tính lại thì bảng cũ không còn đúng
+
+  const rateText = String(est.rate).replace(".", ",");
+  async function load() {
+    setState({ status: "loading" });
+    const params = { amount: est.amount, years: est.years, method: est.method, assumed_floating_rate: est.rate };
+    if (price) params.property_value = price;
+    try {
+      setState({ status: "done", data: await rankBanks(params) });
+    } catch (err) {
+      setState({
+        status: "error",
+        message: err instanceof ApiError ? err.message : "Không kết nối được máy chủ để so sánh ngân hàng. Hãy kiểm tra backend đang chạy rồi thử lại.",
+      });
+    }
+  }
+
+  const shell = "flex flex-col gap-3 rounded-[18px] border border-line bg-white p-5";
+  const title = <h3 id="bank-compare" className="text-[15px] font-medium">So sánh các ngân hàng</h3>;
+
+  if (state.status === "idle") {
+    return (
+      <section aria-labelledby="bank-compare" className={shell}>
+        {title}
+        <p className="text-[13px] leading-relaxed text-muted">
+          Xếp các gói vay mẫu theo tổng chi phí cho khoản vay này. Ngân hàng chưa công bố lãi sau ưu đãi được tính với lãi giả định {rateText}%/năm (lãi bạn nhập trong form).
+        </p>
+        <button type="button" onClick={load}
+          className="w-full rounded-xl border border-line bg-white px-5 py-3 text-sm font-medium transition-colors hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          So sánh các ngân hàng
+        </button>
+      </section>
+    );
+  }
+  if (state.status === "loading") {
+    return <section aria-labelledby="bank-compare" className={shell}>{title}<p className="text-sm text-muted" role="status">Đang so sánh các ngân hàng...</p></section>;
+  }
+  if (state.status === "error") {
+    return (
+      <section aria-labelledby="bank-compare" className={shell} role="alert">
+        {title}
+        <p className="text-sm text-[#c0443f]">{state.message}</p>
+        <button type="button" onClick={load} className="w-fit text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">Thử lại</button>
+      </section>
+    );
+  }
+
+  const { ranked, excluded, assumptions, updated_at: updated } = state.data;
+  const assumedRate = assumptions?.floating_rate;
+  return (
+    <section aria-labelledby="bank-compare" className={shell}>
+      <div>
+        {title}
+        <p className="mt-0.5 text-xs text-muted">Từ rẻ đến đắt theo tổng chi phí cả kỳ hạn của khoản vay vừa tính.</p>
+      </div>
+      {ranked.length === 0 ? (
+        <p className="text-sm text-muted">Không có gói vay nào phù hợp với khoản vay này.</p>
+      ) : (
+        <ol className="flex flex-col divide-y divide-line">
+          {ranked.map((b, i) => (
+            <li key={b.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-medium text-brand">{i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
+                  {b.short_name}
+                  {bank?.id === b.id && <span className="rounded-full bg-mint px-2 py-0.5 text-[11px] font-normal text-brand">Đang chọn</span>}
+                </p>
+                <p className="mt-0.5 text-xs leading-snug text-muted">{b.package_name}</p>
+                <dl className="mt-2 grid grid-cols-2 gap-2 text-[13px]">
+                  <div>
+                    <dt className="text-xs text-muted">Tổng chi phí</dt>
+                    <dd className="font-medium">
+                      {b.total_cost == null ? "Chưa rõ phí trả trước" : vnd(b.total_cost)}
+                      {b.total_cost != null && b.prepay_fee_is_upper_bound && <span className="font-normal text-muted"> (tối đa)</span>}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Trả tháng đầu</dt>
+                    <dd className="font-medium">{vnd(b.first_payment)}</dd>
+                  </div>
+                </dl>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+      {excluded.length > 0 && (
+        <div className="rounded-xl bg-soft px-4 py-3">
+          <p className="text-sm font-medium">Không phù hợp với khoản vay này</p>
+          <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-relaxed">
+            {excluded.map((b) => <li key={b.id}><span className="font-medium">{b.short_name}</span>: {b.reason}</li>)}
+          </ul>
+        </div>
+      )}
+      <p className="text-xs leading-relaxed text-muted">
+        {assumedRate != null && `Lãi sau ưu đãi giả định ${String(assumedRate).replace(".", ",")}%/năm cho ngân hàng chưa công bố, không phải lãi suất của ngân hàng. `}
+        Tổng chi phí là tiền lãi cả kỳ hạn, chưa gồm bảo hiểm và các phí khác. Thứ tự chỉ để tham khảo, không phải khuyến nghị.
+        {updated && ` Dữ liệu ngân hàng cập nhật ${fmtDate(updated)}.`}
+      </p>
     </section>
   );
 }
@@ -444,7 +553,12 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
 
       <div ref={resultRef} aria-live="polite"
         className={`bg-[#fbfdf8] p-5 sm:p-6 lg:w-[440px] lg:shrink-0 lg:overflow-y-auto ${result ? "" : "hidden lg:block"}`}>
-        {result ? <Result result={result} onAsk={ask} askLabel={askLabel} /> : <EmptyResult />}
+        {result ? (
+          <div className="flex flex-col gap-4">
+            <Result result={result} onAsk={ask} askLabel={askLabel} />
+            <BankCompare result={result} />
+          </div>
+        ) : <EmptyResult />}
       </div>
       </div>
     </div>

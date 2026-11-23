@@ -1,5 +1,5 @@
 import { API_URL, DATA_UPDATED, USE_MOCK } from "../config.js";
-import { maxLoan, schedule } from "./loan.js";
+import { ltv, maxLoan, prepayFee, schedule } from "./loan.js";
 
 // Lỗi có câu tiếng Việt để hiện thẳng cho người dùng (422 từ backend hoặc kiểm tra ở mock)
 export class ApiError extends Error {}
@@ -53,8 +53,10 @@ export async function getBanks() {
 
 // POST /api/estimate (docs/api.md, mục 3.3)
 // params: { amount, years, rate, method, promo_rate?, promo_duration_months?,
-//           property_value?, monthly_income?, existing_monthly_debt?, max_ltv_percent?, max_dti_percent? }
-// Gửi cả property_value và monthly_income thì response có max_loan (hạn mức vay tối đa), không thì null.
+//           property_value?, monthly_income?, existing_monthly_debt?, max_ltv_percent?, max_dti_percent?,
+//           prepay_amount?, prepay_fee_percent? }
+// Có property_value thì response có ltv_percent; gửi cả property_value và monthly_income thì có max_loan
+// (hạn mức vay tối đa); gửi cả prepay_amount và prepay_fee_percent thì có prepay. Không gửi thì null.
 export async function estimateLoan(params) {
   const body = { method: "annuity", promo_rate: null, promo_duration_months: 0, ...params };
   if (!USE_MOCK) {
@@ -68,6 +70,26 @@ export async function estimateLoan(params) {
   return mockEstimate(body);
 }
 
+// POST /api/banks/rank (docs/api.md, mục 3.5)
+// params: { amount, years, method?, grace_period_months?, prepay_month?, property_value?, base_rate?, assumed_floating_rate? }
+// -> { ranked[], excluded[], assumptions, updated_at, is_sample }. Dữ liệu ngân hàng chưa có lãi thả nổi,
+// nên phải gửi assumed_floating_rate, nếu không cả 8 ngân hàng nằm trong excluded.
+export async function rankBanks(params) {
+  const body = { method: "annuity", ...params };
+  if (!USE_MOCK) {
+    return request("/api/banks/rank", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+  // Mock không chép thuật toán xếp hạng sang JS: trả kết quả thật đã lưu (1,5 tỷ, 20 năm, lãi giả định 10%)
+  const { default: sample } = await import("./mock/rank_sample.json");
+  await delay(500);
+  const { _ghi_chu, ...result } = sample;
+  return result;
+}
+
 // ---- Dữ liệu mẫu (chỉ dùng khi VITE_USE_MOCK=true) ----
 // Giống backend/app/main.py: cùng trường trả về, cùng câu báo lỗi
 function mockEstimate(body) {
@@ -75,9 +97,11 @@ function mockEstimate(body) {
   if (!Number.isInteger(years) || years < 1 || years > 35) throw new ApiError("Thời hạn vay phải từ 1 đến 35 năm");
   let rows;
   let limit = null;
+  let prepay = null;
   try {
     rows = schedule(amount, years * 12, rate, method, promo_rate, promo_duration_months);
     limit = mockMaxLoan(body);
+    prepay = mockPrepay(body);
   } catch (e) {
     throw new ApiError(e.message);
   }
@@ -86,14 +110,32 @@ function mockEstimate(body) {
     monthly_payment: rows[0].payment,
     total_interest: rows.reduce((t, r) => t + r.interest, 0),
     max_loan: limit,
+    ltv_percent: mockLtvPercent(body),
+    prepay,
     updated_at: DATA_UPDATED,
   };
 }
 
+// _ltv_percent() trong main.py: ltv() trả tỷ lệ (0,5 = 50%) nên nhân 100, làm tròn 2 chữ số
+function mockLtvPercent(body) {
+  if (body.property_value == null) return null;
+  return Math.round(ltv(body.amount, body.property_value) * 100 * 100) / 100;
+}
+
+// _prepay() trong main.py: cần cả hai trường, số trả trước không lớn hơn số vay
+function mockPrepay(body) {
+  const { prepay_amount: prepaid = null, prepay_fee_percent: percent = null } = body;
+  if (prepaid == null && percent == null) return null;
+  if (prepaid == null || percent == null) throw new RangeError("Cần nhập cả số tiền trả trước và tỷ lệ phí trả trước hạn");
+  if (prepaid > body.amount) throw new RangeError("Số tiền trả trước không được lớn hơn số tiền vay");
+  return { amount: prepaid, fee_percent: percent, fee: prepayFee(prepaid, percent) };
+}
+
+// _max_loan() trong main.py: chỉ có giá trị nhà thì không báo lỗi (vẫn có ltv_percent), max_loan = null
 function mockMaxLoan(body) {
   const { property_value: value = null, monthly_income: income = null } = body;
-  if (value == null && income == null) return null;
-  if (value == null || income == null) throw new RangeError("Cần nhập cả giá trị nhà và thu nhập hằng tháng để tính hạn mức vay tối đa");
+  if (income == null) return null;
+  if (value == null) throw new RangeError("Cần nhập cả giá trị nhà và thu nhập hằng tháng để tính hạn mức vay tối đa");
   const ltv = body.max_ltv_percent ?? 80;
   const dti = body.max_dti_percent ?? 50;
   const result = maxLoan(value, income, body.years * 12, body.rate, body.method, body.promo_rate,

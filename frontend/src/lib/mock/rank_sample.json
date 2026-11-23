@@ -1,0 +1,115 @@
+{
+  "ranked": [
+    {
+      "id": "bidv",
+      "short_name": "BIDV",
+      "package_name": "Vay nhu cầu nhà ở (Gói Ngôi nhà đầu tiên)",
+      "total_cost": 1955009765,
+      "total_interest": 1955009765,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 13495889,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    },
+    {
+      "id": "vietcombank",
+      "short_name": "Vietcombank",
+      "package_name": "Nhà Mới An Cư (nhà tại dự án đã có Giấy chứng nhận)",
+      "total_cost": 1955009765,
+      "total_interest": 1955009765,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 13495889,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    },
+    {
+      "id": "acb",
+      "short_name": "ACB",
+      "package_name": "Vay Mua Nhà Đất",
+      "total_cost": 1974077920,
+      "total_interest": 1974077920,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 14475325,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    },
+    {
+      "id": "agribank",
+      "short_name": "Agribank",
+      "package_name": "Vay mua nhà ở thương mại",
+      "total_cost": 1974077920,
+      "total_interest": 1974077920,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 14475325,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    },
+    {
+      "id": "mbbank",
+      "short_name": "MB Bank",
+      "package_name": "Cho vay mua nhà đất, căn hộ dự án (Gói MB Dream Home)",
+      "total_cost": 1974077920,
+      "total_interest": 1974077920,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 14475325,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    },
+    {
+      "id": "techcombank",
+      "short_name": "Techcombank",
+      "package_name": "Vay mua bất động sản có Giấy chứng nhận",
+      "total_cost": 1974077920,
+      "total_interest": 1974077920,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 14475325,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    },
+    {
+      "id": "vietinbank",
+      "short_name": "VietinBank",
+      "package_name": "Cho vay nhận quyền sử dụng đất, mua, xây dựng, sửa chữa nhà và/hoặc công trình xây dựng",
+      "total_cost": 1974077920,
+      "total_interest": 1974077920,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 14475325,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    },
+    {
+      "id": "vpbank",
+      "short_name": "VPBank",
+      "package_name": "Ưu đãi vay mua nhà VPBank (chương trình khách hàng trẻ)",
+      "total_cost": 1974077920,
+      "total_interest": 1974077920,
+      "prepay_fee": 0,
+      "prepay_fee_known": true,
+      "prepay_fee_is_upper_bound": false,
+      "first_payment": 14475325,
+      "floating_rate": 10.0,
+      "floating_rate_assumed": true
+    }
+  ],
+  "excluded": [],
+  "assumptions": {
+    "floating_rate": 10.0
+  },
+  "updated_at": "2026-11-16",
+  "is_sample": true,
+  "_ghi_chu": "Kết quả thật của POST /api/banks/rank với amount=1500000000, years=20, method=annuity, assumed_floating_rate=10 (tạo lại bằng backend khi dữ liệu ngân hàng đổi). Chỉ dùng cho chế độ mock."
+}
