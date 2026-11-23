@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -55,13 +56,14 @@ class Repository(FakeRepository):
 
 
 @pytest.mark.asyncio
-async def test_bank_compare_session_continues_until_required_fields_then_ranks_without_assumed_rate():
+async def test_bank_compare_session_asks_for_assumed_rate_before_ranking():
     repository = Repository()
     classifier = StubIntentClassifier(ChatIntent.BANK_COMPARE)
     ranker = Ranker()
     compare = CompareBanksUseCase(Extractor(
         BankCompareExtraction("update", {"amount": 1_000_000_000}),
         BankCompareExtraction("update", {"years": 20}),
+        BankCompareExtraction("update", {"assumed_floating_rate": Decimal("9")}),
     ), ranker, get_prompt_catalog())
     retrieval = FakeRetrieval(error=AssertionError("must not retrieve"))
     completion = FakeCompletion()
@@ -72,28 +74,40 @@ async def test_bank_compare_session_continues_until_required_fields_then_ranks_w
 
     first = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "Vay 1 tỷ", None))]
     assert completion.calls == 0
-    second = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "20 năm, giả định 9%", 1))]
+    second = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "20 năm", 1))]
 
     assert first[-1].event == second[-1].event == "done"
     assert "thời hạn vay" in first[0].data["text"]
+    assert "Các ngân hàng chưa công bố lãi sau ưu đãi. Bạn muốn giả định lãi sau ưu đãi bao nhiêu %/năm để so sánh (ví dụ 10)?" in second[0].data["text"]
+    assert repository.bank_compare_session.status == "collecting"
+    assert repository.bank_compare_session.assumed_floating_rate is None
+    assert ranker.calls == []
+    assert completion.calls == 0 and retrieval.queries == []
+    assert repository.state_update.bank_compare_session == repository.bank_compare_session
+
+    third = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "9%/năm", 2))]
+
+    assert third[-1].event == "done"
     assert repository.bank_compare_session.status == "completed"
     assert len(ranker.calls) == 1
     assert ranker.calls[0].amount == 1_000_000_000
-    assert ranker.calls[0].assumed_floating_rate is None
+    assert ranker.calls[0].years == 20
+    assert ranker.calls[0].assumed_floating_rate == 9
     assert ranker.calls[0].method == "annuity"
     assert repository.bank_compare_session.method_explicit is False
     assert repository.conversation_memory.repayment_method is None
     assert repository.conversation_memory.grace_period_months == 0
     assert len(classifier.calls) == 1
     assert completion.calls == 1 and retrieval.queries == []
-    assert second[0].data["text"] == completion.answer
-    assert second[-1].data["reply"] == completion.answer
+    assert third[0].data["text"] == completion.answer
+    assert third[-1].data["reply"] == completion.answer
     assert repository.committed_answer == completion.answer
     import json
 
     context = json.loads(completion.knowledge_context)
     assert context["scenario"]["amount"] == 1_000_000_000
     assert context["scenario"]["years"] == 20
+    assert context["scenario"]["assumed_floating_rate"] == "9"
     assert context["result"]["ranked"] == []
     assert context["result"]["updated_at"] == "2026-11-16"
     assert "Không tự tính toán" in completion.guidance
@@ -276,7 +290,9 @@ async def test_comparison_provider_failure_does_not_commit_completed_state(parti
         FailingCompletion(), repository, prompts=get_prompt_catalog(),
         classifier=StubIntentClassifier(ChatIntent.BANK_COMPARE),
         bank_compare=CompareBanksUseCase(
-            Extractor(BankCompareExtraction("update", {"years": 20})), ranker, get_prompt_catalog(),
+            Extractor(BankCompareExtraction("update", {
+                "years": 20, "assumed_floating_rate": Decimal("9"),
+            })), ranker, get_prompt_catalog(),
         ),
     )
     events = []

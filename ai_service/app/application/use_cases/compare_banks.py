@@ -39,9 +39,25 @@ class CompareBanksUseCase:
 
         updated = session.updated(extraction.updates)
         if updated.missing_fields:
+            assumed_rate_missing = "assumed_floating_rate" in updated.missing_fields
+            fields = ", ".join(
+                self._field_label(name)
+                for name in updated.missing_fields
+                if name != "assumed_floating_rate"
+            )
             return BankCompareTurn(self._prompts.get(PromptName.BANK_COMPARE_QUESTIONS).format(
-                fields=", ".join(self._field_label(name) for name in updated.missing_fields),
-            ), updated)
+                fields_question=(
+                    f"Để có thể so sánh và xếp hạng các gói vay phù hợp với kịch bản của bạn, "
+                    f"mình cần bổ sung một số thông tin sau: **{fields}**."
+                    if fields else ""
+                ),
+                assumed_rate_question=(
+                    "Các ngân hàng chưa công bố lãi sau ưu đãi. Bạn muốn giả định lãi sau ưu đãi "
+                    "bao nhiêu %/năm để so sánh (ví dụ 10)?"
+                    if assumed_rate_missing else ""
+                ),
+            ).strip(), updated)
+        assert updated.amount is not None and updated.years is not None
         request = BankRankRequest(
             amount=updated.amount,
             years=updated.years,
@@ -65,9 +81,11 @@ class CompareBanksUseCase:
         return {
             "amount": "số tiền muốn vay (VND)",
             "years": "thời hạn vay (nguyên năm, 1–35)",
+            "assumed_floating_rate": "lãi sau ưu đãi giả định (%/năm)",
         }[name]
 
     def _render_result(self, session: BankCompareSession, result: BankRankResult) -> str:
+        assert session.amount is not None
         ranked_text = "\n".join(
             self._ranked_line(index, bank)
             for index, bank in enumerate(result.ranked, start=1)

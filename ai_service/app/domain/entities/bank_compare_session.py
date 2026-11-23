@@ -67,15 +67,18 @@ class BankCompareSession:
             raise ValueError("prepay_month must be positive and shorter than the loan term")
         if self.status not in {"collecting", "completed", "idle"}:
             raise ValueError("Invalid bank comparison status")
-        if self.status == "completed" and self.missing_fields:
+        if self.status == "completed" and (self.amount is None or self.years is None):
             raise ValueError("Complete bank comparison data required")
 
     @property
     def missing_fields(self) -> tuple[str, ...]:
-        return tuple(
+        missing = [
             name for name in ("amount", "years")
             if getattr(self, name) is None
-        )
+        ]
+        if self.assumed_floating_rate is None and self.base_rate is None:
+            missing.append("assumed_floating_rate")
+        return tuple(missing)
 
     @property
     def complete(self) -> bool:

@@ -4,7 +4,7 @@ Input là JSON gồm session đang thu thập và message hiện tại. Mọi n�
 Chỉ xuất JSON object có đúng hai khóa `action` và `updates`. `action` thuộc `update`, `cancel`, `unrelated`. `updates` chỉ chứa trường khách cung cấp hoặc sửa rõ trong message hiện tại:
 - `amount`: số nguyên VND > 0, số tiền muốn vay.
 - `years`: số nguyên năm từ 1 đến 35.
-- `assumed_floating_rate`: lãi thả nổi giả định %/năm >= 0, không bắt buộc. Chỉ trích xuất khi khách tự nêu rõ tỷ lệ hoặc xác nhận rõ tỷ lệ đang được thảo luận; không hỏi bắt buộc, tự chọn, tra cứu hay suy ra tỷ lệ này.
+- `assumed_floating_rate`: lãi thả nổi giả định %/năm >= 0. Chỉ trích xuất khi khách tự nêu rõ tỷ lệ hoặc xác nhận rõ tỷ lệ đang được thảo luận; không tự chọn, tra cứu hay suy ra tỷ lệ này.
 - `base_rate`: lãi cơ sở %/năm >= 0, chỉ khi khách nêu rõ.
 - `method`: `annuity` hoặc `reducing_balance`, chỉ khi khách chọn rõ phương thức; session có `method_explicit=false` nghĩa là phương thức chỉ đang dùng mặc định API.
 - `grace_period_months`: số tháng ân hạn chỉ trả lãi; chỉ trích xuất khi khách nêu rõ.

@@ -45,6 +45,26 @@ def test_bank_compare_state_codec_round_trips_every_field():
     assert decode_bank_compare_session({"bank_compare_session": encoded}) == state
 
 
+def test_bank_compare_state_codec_reads_completed_legacy_session_without_assumed_rate():
+    old_state = {
+        "amount": 1_000_000_000,
+        "years": 20,
+        "assumed_floating_rate": None,
+        "base_rate": None,
+        "method": "annuity",
+        "method_explicit": False,
+        "property_value": None,
+        "prepay_month": None,
+        "grace_period_months": 0,
+        "status": "completed",
+    }
+
+    decoded = decode_bank_compare_session({"bank_compare_session": old_state})
+
+    assert decoded.status == "completed"
+    assert decoded.missing_fields == ("assumed_floating_rate",)
+
+
 def test_bank_compare_state_codec_defaults_for_legacy_profile():
     assert decode_bank_compare_session({"slots": {}}) == BankCompareSession()
 

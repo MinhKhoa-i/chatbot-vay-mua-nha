@@ -51,10 +51,11 @@ def ranked_bank(*, total_cost=466_928_374, prepay_fee=28_349_347):
 
 
 @pytest.mark.asyncio
-async def test_ranks_without_assumed_floating_rate_after_required_fields_are_collected():
+async def test_asks_for_assumed_rate_before_ranking():
     extractor = Extractor(
         BankCompareExtraction("update", {"amount": 1_500_000_000}),
         BankCompareExtraction("update", {"years": 20}),
+        BankCompareExtraction("update", {"assumed_floating_rate": Decimal("10")}),
     )
     ranker = Ranker()
     case = CompareBanksUseCase(extractor, ranker, get_prompt_catalog())
@@ -62,13 +63,40 @@ async def test_ranks_without_assumed_floating_rate_after_required_fields_are_col
     first = await case.execute("Vay 1,5 tỷ", BankCompareSession())
     second = await case.execute("20 năm", first.session)
 
-    assert first.session.amount == 1_500_000_000
     assert "thời hạn vay" in first.answer
-    assert "lãi thả nổi giả định" not in first.answer
+    assert "Các ngân hàng chưa công bố lãi sau ưu đãi. Bạn muốn giả định lãi sau ưu đãi bao nhiêu %/năm để so sánh (ví dụ 10)?" in second.answer
+    assert second.answer.count("lãi sau ưu đãi") == 2
+    assert "mình cần bổ sung một số thông tin sau" not in second.answer
+    assert "lãi sau ưu đãi giả định (%/năm)" not in second.answer
     assert second.session.years == 20
     assert second.session.assumed_floating_rate is None
+    assert second.session.status == "collecting"
+    assert ranker.calls == []
+
+    third = await case.execute("10%/năm", second.session)
+
+    assert third.session.assumed_floating_rate == Decimal("10")
     assert len(ranker.calls) == 1
+    assert ranker.calls[0].assumed_floating_rate == Decimal("10")
+
+
+@pytest.mark.asyncio
+async def test_base_rate_does_not_require_assumed_floating_rate():
+    ranker = Ranker()
+    case = CompareBanksUseCase(
+        Extractor(BankCompareExtraction("update", {
+            "amount": 1_500_000_000, "years": 20, "base_rate": Decimal("7.5"),
+        })),
+        ranker,
+        get_prompt_catalog(),
+    )
+
+    turn = await case.execute("So sánh khoản vay", BankCompareSession())
+
+    assert len(ranker.calls) == 1
+    assert ranker.calls[0].base_rate == Decimal("7.5")
     assert ranker.calls[0].assumed_floating_rate is None
+    assert turn.session.status == "completed"
 
 
 @pytest.mark.asyncio
@@ -314,7 +342,8 @@ async def test_extractor_sends_isolated_prompt_and_session_to_provider():
             result = await extractor.extract("Vay 1,5 tỷ trong 20 năm, giả định lãi 10%", BankCompareSession())
 
     body = __import__("json").loads(requests[0].content)
-    assert "không hỏi bắt buộc, tự chọn, tra cứu hay suy ra tỷ lệ này" in body["messages"][0]["content"]
+    assert "không tự chọn, tra cứu hay suy ra tỷ lệ này" in body["messages"][0]["content"]
+    assert "không bắt buộc" not in body["messages"][0]["content"]
     assert body["messages"][1]["content"].find('"message"') >= 0
     assert result.updates == {
         "amount": 1_500_000_000, "years": 20, "assumed_floating_rate": Decimal("10"),
