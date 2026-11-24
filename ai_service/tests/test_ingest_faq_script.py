@@ -7,16 +7,20 @@ import pytest
 
 from scripts import ingest_faq
 
-def test_repository_faq_file_has_60_entries_in_5_categories():
+def test_repository_faq_file_has_90_entries_in_7_categories():
     data, items = ingest_faq.load_faqs(ingest_faq.DEFAULT_SOURCE)
-    assert len(items) == 60
+    assert len(items) == 90
     assert set(Counter(item["category"] for item in items)) == {
         "DIEU_KIEN_VAY",
         "HO_SO_PHAP_LY",
         "LAI_SUAT",
         "PHI_TRA_TRUOC_HAN",
         "BAO_HIEM_KHOAN_VAY",
+        "RUI_RO",
+        "LOI_KHUYEN",
     }
+    counts = Counter(item["category"] for item in items)
+    assert counts["RUI_RO"] == counts["LOI_KHUYEN"] == 15
     assert data["disclaimer"]
 
 
