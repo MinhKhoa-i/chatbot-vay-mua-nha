@@ -1,5 +1,5 @@
 {
-  "title": "60 câu hỏi thường gặp về tư vấn vay mua nhà tại Việt Nam",
+  "title": "90 câu hỏi thường gặp về tư vấn vay mua nhà tại Việt Nam",
   "disclaimer": "Thông tin mang tính tham khảo, không thay thế quyết định phê duyệt hoặc tư vấn pháp lý của ngân hàng. Lãi suất, phí và điều kiện sản phẩm cần xác nhận trực tiếp với ngân hàng tại thời điểm vay.",
   "faqs": [
     {
@@ -736,6 +736,336 @@
         "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o"
       ],
       "last_updated": "2026-11-15"
+    },
+    {
+      "id": "FAQ-61",
+      "category": "RUI_RO",
+      "question": "Vì sao tiền trả nợ có thể tăng khi hết thời gian ưu đãi?",
+      "answer": "Lãi ưu đãi chỉ áp dụng trong thời gian xác định; sau đó khoản vay có thể chuyển sang cơ chế điều chỉnh theo hợp đồng. Nên kiểm tra lãi tham chiếu, biên độ và kỳ điều chỉnh; xác nhận với ngân hàng trước khi lập kế hoạch trả nợ.",
+      "applicable_scope": "Khoản 5 Điều 13; cơ chế lãi suất điều chỉnh tại Việt Nam.",
+      "source_name": "Thông tư 39/2016/TT-NHNN, bản hợp nhất 86/VBHN-NHNN",
+      "source_url": "https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/7/86-vbhn-nhnn.pdf",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-62",
+      "category": "RUI_RO",
+      "question": "Nên kiểm tra rủi ro lãi suất tăng bằng cách nào?",
+      "answer": "Có thể yêu cầu mô phỏng cùng khoản vay ở nhiều giả định lãi suất, rồi đối chiếu khoản trả với ngân sách. Đây là kiểm tra sức chịu đựng, không phải dự báo lãi thị trường; số tiền cụ thể cần do công cụ tính với giả định rõ ràng cung cấp.",
+      "applicable_scope": "Nguyên tắc so sánh kịch bản; không áp dụng biểu mẫu hoặc pháp luật Hoa Kỳ.",
+      "source_name": "CFPB – Compare and negotiate your loan offers",
+      "source_url": "https://www.consumerfinance.gov/owning-a-home/compare/compare-loan-estimates/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-63",
+      "category": "RUI_RO",
+      "question": "Mất việc hoặc giảm thu nhập giữa thời gian vay có rủi ro gì?",
+      "answer": "Thu nhập giảm có thể khiến ngân sách không đủ cho kỳ trả nợ. Nên rà soát nguồn tiền và liên hệ sớm ngân hàng để trao đổi phương án; việc hỗ trợ phụ thuộc hồ sơ và thỏa thuận, không mặc nhiên được hoãn trả.",
+      "applicable_scope": "Nguyên tắc liên hệ sớm khi khó trả nợ; không áp dụng chương trình hỗ trợ của Hoa Kỳ.",
+      "source_name": "CFPB – If I cannot pay my mortgage loan, what are my options?",
+      "source_url": "https://www.consumerfinance.gov/ask-cfpb/if-i-cant-pay-my-mortgage-loan-what-are-my-options-en-268/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-64",
+      "category": "RUI_RO",
+      "question": "Người cùng đóng tiền trả nợ ngừng đóng góp thì cần lưu ý gì?",
+      "answer": "Ngân sách dựa vào nhiều người có thể thiếu hụt khi một người ngừng đóng góp. Nên thống nhất trước phương án dự phòng và kiểm tra trách nhiệm trong hợp đồng với ngân hàng; thỏa thuận nội bộ không tự sửa nghĩa vụ đã ký.",
+      "applicable_scope": "Giáo dục tài chính về phụ thuộc nguồn đóng góp; nghĩa vụ pháp lý tại Việt Nam phải xác nhận riêng.",
+      "source_name": "CFPB – Making the move to homeownership on your own or with someone else",
+      "source_url": "https://www.consumerfinance.gov/archive/blog/making-move-homeownership-your-own-or-someone-else/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-65",
+      "category": "RUI_RO",
+      "question": "Tỷ lệ trả nợ trên thu nhập cao có đồng nghĩa khoản vay chắc chắn bị từ chối không?",
+      "answer": "Không. Tỷ lệ này phản ánh gánh nặng nợ nhưng giới hạn khác nhau theo sản phẩm và bên cho vay. Nên tính cả nợ hiện có, làm rõ thu nhập trước hay sau khấu trừ và đánh giá tiền còn lại cho sinh hoạt; không dùng một ngưỡng chung để hứa duyệt hoặc từ chối.",
+      "applicable_scope": "Khái niệm DTI; CFPB dùng thu nhập trước khấu trừ, không thay thế quy ước thu nhập của dự án.",
+      "source_name": "CFPB – What is a debt-to-income ratio?",
+      "source_url": "https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-66",
+      "category": "RUI_RO",
+      "question": "Vay gần bằng giá nhà có rủi ro gì khi giá nhà giảm?",
+      "answer": "Vốn chủ sở hữu trong nhà có thể giảm; nếu giá trị nhà thấp hơn dư nợ, bán nhà có thể không đủ trả nợ và chi phí. Nên cân nhắc mức vay và khả năng nắm giữ dài hạn, không giả định giá nhà luôn tăng.",
+      "applicable_scope": "Rủi ro kinh tế của giá nhà; không suy diễn quyền xử lý tài sản theo luật nước ngoài.",
+      "source_name": "CFPB – Consider whether it is the right time for you to buy",
+      "source_url": "https://www.consumerfinance.gov/owning-a-home/prepare/consider-whether-its-the-right-time-for-you-to-buy/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-67",
+      "category": "RUI_RO",
+      "question": "Ngân hàng định giá thấp hơn giá mua có thể ảnh hưởng kế hoạch vay thế nào?",
+      "answer": "Nếu hạn mức sản phẩm tính theo giá trị bảo đảm được chấp nhận, giá mua cao hơn không tự làm tăng hạn mức. Nên hỏi rõ cơ sở định giá và số tiền dự kiến tài trợ; chuẩn bị phương án vốn bổ sung trước khi cam kết mua.",
+      "applicable_scope": "Sản phẩm có tỷ lệ tài trợ trên giá trị tài sản bảo đảm; phải xác nhận ngân hàng cụ thể.",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận, phần câu hỏi thường gặp",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-68",
+      "category": "RUI_RO",
+      "question": "Trả trước hạn có thể phát sinh chi phí ngoài số tiền gốc không?",
+      "answer": "Có thể có phí theo thỏa thuận. Nên yêu cầu ngân hàng xác nhận số tiền tất toán, lãi đến ngày trả và điều kiện miễn giảm trước khi chuyển tiền.",
+      "applicable_scope": "Khoản 1 Điều 14 và khoản 2 Điều 18; không nêu biểu phí ngân hàng.",
+      "source_name": "Thông tư 39/2016/TT-NHNN, bản hợp nhất 86/VBHN-NHNN",
+      "source_url": "https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/7/86-vbhn-nhnn.pdf",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-69",
+      "category": "RUI_RO",
+      "question": "Chậm trả gốc hoặc lãi có thể làm nghĩa vụ thanh toán tăng như thế nào?",
+      "answer": "Có thể phát sinh lãi chậm trả hoặc lãi trên nợ gốc quá hạn theo loại nghĩa vụ và điều khoản áp dụng. Nên yêu cầu bảng phân tách; không coi mọi khoản phát sinh đều là một loại phí phạt.",
+      "applicable_scope": "Khoản 4 Điều 13; đối chiếu hợp đồng và quy định áp dụng.",
+      "source_name": "Thông tư 39/2016/TT-NHNN, bản hợp nhất 86/VBHN-NHNN",
+      "source_url": "https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/7/86-vbhn-nhnn.pdf",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-70",
+      "category": "RUI_RO",
+      "question": "Nợ quá hạn có thể ảnh hưởng lịch sử tín dụng CIC không?",
+      "answer": "Có thể. Techcombank giải thích việc phân loại nợ và báo cáo CIC gắn với tình trạng quá hạn. Lịch sử này có thể ảnh hưởng thẩm định khoản vay sau; không thể suy ra nhóm nợ cụ thể hoặc thời điểm được vay lại nếu chưa có dữ liệu chính thức.",
+      "applicable_scope": "Hỏi đáp về quá hạn và lịch sử tín dụng; không thay thế kết quả tra cứu CIC.",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận, phần câu hỏi thường gặp",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-71",
+      "category": "RUI_RO",
+      "question": "Khoản vay có hỗ trợ lãi từ chủ đầu tư có rủi ro gì khi hết hỗ trợ?",
+      "answer": "Khi thời gian hỗ trợ kết thúc, khách hàng cần tự bố trí tiền lãi theo thỏa thuận. Nên kiểm tra mốc kết thúc và thông báo kỳ trả nợ, đồng thời lập ngân sách cho giai đoạn sau hỗ trợ với ngân hàng.",
+      "applicable_scope": "Hỏi đáp khoản vay nhà dự án; điều kiện hỗ trợ phụ thuộc chương trình.",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận, phần câu hỏi thường gặp",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-72",
+      "category": "RUI_RO",
+      "question": "Bị yêu cầu mua bảo hiểm tự nguyện để được vay thì nên xử lý thế nào?",
+      "answer": "Không được gắn việc bán bảo hiểm không bắt buộc với cung ứng dịch vụ ngân hàng. Nên yêu cầu làm rõ loại bảo hiểm, căn cứ và điều khoản bằng văn bản; phản ánh qua kênh chính thức nếu có dấu hiệu ép buộc. Cần phân biệt bảo hiểm tài sản bắt buộc hoặc theo thỏa thuận hợp lệ.",
+      "applicable_scope": "Khoản 5 Điều 15 Luật Các TCTD; phân biệt bảo hiểm tự nguyện và bảo hiểm tài sản.",
+      "source_name": "Bộ Tài chính, Cục Quản lý, giám sát bảo hiểm – tài liệu về hoạt động đại lý bảo hiểm, dẫn khoản 5 Điều 15 Luật Các TCTD",
+      "source_url": "https://vidi.mof.gov.vn/api/mediafile/media-article/9b7aa303-52d3-4ae7-8f63-e02a43ad63bc/e937c9ed-09a5-4e35-9c42-5074b0251a34.pdf",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-73",
+      "category": "RUI_RO",
+      "question": "Chỉ nhìn mức lãi quảng cáo thấp có thể dẫn đến lựa chọn sai không?",
+      "answer": "Có thể bỏ sót thời gian ưu đãi, lãi điều chỉnh và các chi phí khác. Nên so sánh tổng chi phí trên cùng giả định và kiểm tra điều kiện hưởng ưu đãi; mức ban đầu thấp không chứng minh cả khoản vay rẻ hơn.",
+      "applicable_scope": "Nguyên tắc so sánh chi phí; xác nhận điều kiện sản phẩm tại Việt Nam.",
+      "source_name": "CFPB – Compare and negotiate your loan offers",
+      "source_url": "https://www.consumerfinance.gov/owning-a-home/compare/compare-loan-estimates/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-74",
+      "category": "RUI_RO",
+      "question": "Có rủi ro gì nếu dùng hết tiền tiết kiệm để trả phần giá mua ban đầu?",
+      "answer": "Gia đình có thể thiếu tiền khi phát sinh sửa chữa, chi phí y tế hoặc mất thu nhập. Nên giữ khoản dự phòng phù hợp hoàn cảnh thay vì chỉ bảo đảm đủ tiền mua; quy mô dự phòng không có một mức chung cho mọi hộ.",
+      "applicable_scope": "Nguyên tắc dự phòng tài chính cá nhân, không phải điều kiện duyệt vay.",
+      "source_name": "CFPB – An essential guide to building an emergency fund",
+      "source_url": "https://www.consumerfinance.gov/an-essential-guide-to-building-an-emergency-fund/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-75",
+      "category": "RUI_RO",
+      "question": "Ân hạn nợ gốc có làm khoản trả sau đó tăng không?",
+      "answer": "Có thể. Nếu tổng kỳ hạn giữ nguyên và gốc được phân bổ vào thời gian còn lại, khoản trả sau ân hạn có thể cao hơn. Nên yêu cầu lịch trả cả trước và sau ân hạn; miễn trả gốc không mặc nhiên miễn lãi.",
+      "applicable_scope": "Khoản 1 Điều 18; hệ quả mô phỏng theo giả định kỳ hạn giữ nguyên, không phải chính sách chung.",
+      "source_name": "Thông tư 39/2016/TT-NHNN, bản hợp nhất 86/VBHN-NHNN",
+      "source_url": "https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/7/86-vbhn-nhnn.pdf",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-76",
+      "category": "LOI_KHUYEN",
+      "question": "Nên chuẩn bị vốn tự có thế nào trước khi vay mua nhà?",
+      "answer": "Nên lập ngân sách gồm phần giá mua không được tài trợ và các chi phí giao dịch, chuyển nhà, sửa chữa nếu có, đồng thời giữ dự phòng. Phần vốn phù hợp phụ thuộc giá nhà, khoản vay và khả năng tài chính; cần xác nhận hạn mức với ngân hàng.",
+      "applicable_scope": "Nguyên tắc lập ngân sách; không áp dụng mức thuế, phí hoặc tỷ lệ vốn của Hoa Kỳ.",
+      "source_name": "CFPB – Figure out how much you want to spend",
+      "source_url": "https://www.consumerfinance.gov/owning-a-home/prepare/figure-out-how-much-you-want-to-spend/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-77",
+      "category": "LOI_KHUYEN",
+      "question": "Quỹ dự phòng trước khi vay nên đủ bao nhiêu tháng?",
+      "answer": "Nên ước tính theo chi tiêu thiết yếu, nghĩa vụ nợ và thời gian dự kiến khôi phục thu nhập. Mức cần giữ tùy độ ổn định việc làm và nguồn hỗ trợ; không có số tháng bắt buộc chung. Có thể xây quỹ dần và tách khỏi tiền chi tiêu thường xuyên.",
+      "applicable_scope": "Tham khảo về quy mô quỹ phụ thuộc hoàn cảnh; không quy định số tháng cố định.",
+      "source_name": "CFPB – An essential guide to building an emergency fund",
+      "source_url": "https://www.consumerfinance.gov/an-essential-guide-to-building-an-emergency-fund/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-78",
+      "category": "LOI_KHUYEN",
+      "question": "Nên dành tối đa bao nhiêu phần thu nhập để trả nợ?",
+      "answer": "Nên xem tổng nghĩa vụ nợ và phần thu nhập còn lại sau chi tiêu thiết yếu, thay vì chỉ chọn một tỷ lệ. Cần thống nhất thu nhập trước hay sau khấu trừ và dùng ngưỡng tham khảo đã được xác định rõ; ngưỡng không phải cam kết phê duyệt của ngân hàng.",
+      "applicable_scope": "Không ấn định DTI bằng số; tránh mâu thuẫn với dữ liệu ngưỡng tham khảo đang xây dựng.",
+      "source_name": "CFPB – What is a debt-to-income ratio?",
+      "source_url": "https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-79",
+      "category": "LOI_KHUYEN",
+      "question": "Nên chọn trả gốc đều hay niên kim?",
+      "answer": "Với cùng số tiền, kỳ hạn và lãi suất cố định dương, gốc đều thường có khoản trả đầu kỳ cao hơn nhưng giảm dần; niên kim giữ tổng gốc và lãi tương đối đều theo giả định. Nên yêu cầu hai lịch mô phỏng để đối chiếu dòng tiền và tổng lãi; xác nhận phương thức được ngân hàng cung cấp.",
+      "applicable_scope": "Ngân hàng xác định cách trả theo hợp đồng; so sánh hai phương thức là phân tích công thức của nhóm, không phải khuyến nghị sản phẩm Techcombank.",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận, phần câu hỏi thường gặp",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-80",
+      "category": "LOI_KHUYEN",
+      "question": "Nên chọn thời hạn vay ngắn hay dài?",
+      "answer": "Với cùng khoản vay và lãi suất cố định dương, kỳ hạn dài thường giảm khoản trả định kỳ nhưng tăng tổng lãi. Nên so sánh hai phương án bằng công cụ, chọn mức trả còn phù hợp khi ngân sách bất lợi và xác nhận kỳ hạn được ngân hàng chấp nhận.",
+      "applicable_scope": "So sánh kỳ hạn theo cùng giả định; không áp dụng điều kiện vay Hoa Kỳ.",
+      "source_name": "CFPB – Shopping for a Mortgage",
+      "source_url": "https://www.consumerfinance.gov/consumer-tools/mortgages/shopping-for-a-mortgage/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-81",
+      "category": "LOI_KHUYEN",
+      "question": "Nên so sánh các gói vay dựa trên những yếu tố nào?",
+      "answer": "Nên dùng cùng số tiền, kỳ hạn, cách trả và thời điểm báo giá; đối chiếu lãi trong và sau ưu đãi, chi phí ban đầu, chi phí trong kỳ và điều kiện trả trước. Có thể yêu cầu lịch trả nợ để so sánh thay vì chỉ nhìn lãi quảng cáo.",
+      "applicable_scope": "Nguyên tắc so sánh chi phí; không yêu cầu biểu mẫu pháp lý Hoa Kỳ tại Việt Nam.",
+      "source_name": "CFPB – Compare and negotiate your loan offers",
+      "source_url": "https://www.consumerfinance.gov/owning-a-home/compare/compare-loan-estimates/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-82",
+      "category": "LOI_KHUYEN",
+      "question": "Trước khi ký hợp đồng tín dụng cần đọc kỹ nội dung nào?",
+      "answer": "Nên kiểm tra số tiền, thời hạn, cơ chế lãi, phí, lịch trả, trả trước hạn, bảo đảm và điều kiện giải ngân. Điểm chưa rõ nên được ngân hàng giải thích trước khi ký.",
+      "applicable_scope": "Khoản 1 Điều 23; danh mục kiểm tra tham khảo.",
+      "source_name": "Thông tư 39/2016/TT-NHNN, bản hợp nhất 86/VBHN-NHNN",
+      "source_url": "https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/7/86-vbhn-nhnn.pdf",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-83",
+      "category": "LOI_KHUYEN",
+      "question": "Khi nào nên cân nhắc trả trước một phần gốc?",
+      "answer": "Nên đối chiếu lãi dự kiến tiết kiệm với chi phí trả trước và nhu cầu dự phòng. Cần lấy lịch mới từ ngân hàng: trả bớt gốc không mặc nhiên rút ngắn kỳ hạn hoặc giảm đều mọi kỳ thanh toán.",
+      "applicable_scope": "Hỏi đáp về lịch trả sau trả trước; phân tích lợi ích cần dữ liệu hợp đồng.",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận, phần câu hỏi thường gặp",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-84",
+      "category": "LOI_KHUYEN",
+      "question": "Có tiền nhàn rỗi thì nên tất toán toàn bộ ngay không?",
+      "answer": "Chưa thể kết luận chỉ từ việc có tiền. Nên kiểm tra tổng nghĩa vụ tất toán, nhu cầu chi tiêu sắp tới và số tiền dự phòng còn lại; cân nhắc tất toán một phần nếu trả hết làm cạn dự phòng. Xác nhận chi phí và thủ tục với ngân hàng.",
+      "applicable_scope": "Nguyên tắc bảo toàn khả năng ứng phó; không phải khuyến nghị tất toán cho mọi hồ sơ.",
+      "source_name": "CFPB – An essential guide to building an emergency fund",
+      "source_url": "https://www.consumerfinance.gov/an-essential-guide-to-building-an-emergency-fund/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-85",
+      "category": "LOI_KHUYEN",
+      "question": "Có thể trao đổi những điều kiện nào với ngân hàng trước khi chọn khoản vay?",
+      "answer": "Có thể đề nghị báo giá và giải thích về cơ chế lãi, thời gian ưu đãi, kỳ hạn, phí và cách trả nợ. Báo giá tương đương từ nhiều nơi hỗ trợ trao đổi; khả năng điều chỉnh tùy hồ sơ và chính sách ngân hàng, không bảo đảm được giảm chi phí.",
+      "applicable_scope": "Nguyên tắc so sánh và thương lượng; điều kiện Việt Nam xác nhận với ngân hàng.",
+      "source_name": "CFPB – Compare and negotiate your loan offers",
+      "source_url": "https://www.consumerfinance.gov/owning-a-home/compare/compare-loan-estimates/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-86",
+      "category": "LOI_KHUYEN",
+      "question": "Chuẩn bị chứng minh thu nhập cho khoản vay lớn như thế nào?",
+      "answer": "Nên hỏi ngân hàng danh mục chứng từ theo nguồn thu thực tế. Người nhận lương có thể chuẩn bị tài liệu việc làm và thu nhập; nguồn kinh doanh, cho thuê cần chứng từ phù hợp. Chỉ khai nguồn thu có thể kiểm chứng và bổ sung theo yêu cầu thẩm định.",
+      "applicable_scope": "Mục hồ sơ chứng minh nguồn thu nhập; danh mục cụ thể tùy ngân hàng.",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận, phần câu hỏi thường gặp",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-87",
+      "category": "LOI_KHUYEN",
+      "question": "Dấu hiệu nào nên cân nhắc giảm khoản vay hoặc hoãn mua?",
+      "answer": "Nên xem lại kế hoạch khi khoản trả làm thiếu tiền sinh hoạt, không còn dự phòng hoặc nguồn thu chưa ổn định. Có thể xem nhà giá thấp hơn, tăng vốn tích lũy hoặc chờ điều kiện phù hợp; đây là lựa chọn cần cân nhắc theo hoàn cảnh.",
+      "applicable_scope": "Giáo dục tài chính về thời điểm mua; không dự báo giá nhà.",
+      "source_name": "CFPB – Consider whether it is the right time for you to buy",
+      "source_url": "https://www.consumerfinance.gov/owning-a-home/prepare/consider-whether-its-the-right-time-for-you-to-buy/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-88",
+      "category": "LOI_KHUYEN",
+      "question": "Nên xử lý thế nào khi dự kiến không đủ tiền trả kỳ sắp tới?",
+      "answer": "Nên liên hệ sớm ngân hàng, trình bày nguyên nhân, nguồn thu, chi tiêu và phương án khắc phục. Không tự ngừng trả hoặc mặc định được gia hạn; đề nghị xác nhận phương án hỗ trợ và nghĩa vụ còn lại bằng văn bản.",
+      "applicable_scope": "Nguyên tắc trao đổi sớm; cơ cấu nợ tại Việt Nam phụ thuộc quy định và ngân hàng.",
+      "source_name": "CFPB – If I cannot pay my mortgage loan, what are my options?",
+      "source_url": "https://www.consumerfinance.gov/ask-cfpb/if-i-cant-pay-my-mortgage-loan-what-are-my-options-en-268/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-89",
+      "category": "LOI_KHUYEN",
+      "question": "Trước khi vay chung nên thống nhất những gì?",
+      "answer": "Nên trao đổi mức đóng góp, người theo dõi ngày trả, nguồn dự phòng và phương án khi một người giảm thu nhập hoặc muốn rút khỏi kế hoạch. Trách nhiệm với ngân hàng cần đối chiếu hợp đồng; việc phân chia nội bộ không tự làm thay đổi nghĩa vụ khoản vay.",
+      "applicable_scope": "Nguyên tắc quản lý ngân sách chung; không áp dụng chế độ sở hữu hay trách nhiệm theo luật Hoa Kỳ.",
+      "source_name": "CFPB – Making the move to homeownership on your own or with someone else",
+      "source_url": "https://www.consumerfinance.gov/archive/blog/making-move-homeownership-your-own-or-someone-else/",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
+    },
+    {
+      "id": "FAQ-90",
+      "category": "LOI_KHUYEN",
+      "question": "Sau giải ngân nên theo dõi khoản vay như thế nào?",
+      "answer": "Nên kiểm tra lịch trả nợ, thông báo thay đổi lãi, ngày hết hỗ trợ và yêu cầu duy trì bảo hiểm tài sản nếu áp dụng. Khi trả trước một phần, nên lấy lịch cập nhật và kiểm tra số tiền được hạch toán vào gốc với ngân hàng.",
+      "applicable_scope": "Hỏi đáp về theo dõi khoản vay, trả trước và bảo hiểm; không suy rộng chính sách cho mọi ngân hàng.",
+      "source_name": "Techcombank – Vay mua bất động sản có Giấy chứng nhận, phần câu hỏi thường gặp",
+      "source_url": "https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o",
+      "additional_sources": [],
+      "last_updated": "2026-11-24"
     }
   ]
 }

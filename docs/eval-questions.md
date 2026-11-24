@@ -1,4 +1,4 @@
-# Bộ 50 câu hỏi kiểm thử chatbot tư vấn vay mua nhà và đáp án chuẩn
+# Bộ 70 câu hỏi kiểm thử chatbot tư vấn vay mua nhà và đáp án chuẩn
 
 ## 1. Điều kiện vay
 
@@ -241,3 +241,152 @@
 **Lượt 3:** Giả sử lãi 9%/năm không đổi, trả gốc đều hằng tháng, không ân hạn, lấy lãi năm chia 12.
 
 **Đáp án chuẩn:** Dùng khoản vay đã cập nhật là 1 tỷ, kỳ hạn 180 tháng. Gốc tháng đầu khoảng 5.555.556 đồng; lãi 7.500.000 đồng; tổng khoảng **13.055.556 đồng**. LTV sơ bộ vẫn là 40%. Không quay lại số tiền 1,5 tỷ hay thời hạn 20 năm của lượt đầu; kết quả chỉ là minh họa.
+
+## 10. Tư vấn khoản vay
+
+Các tình huống sử dụng dữ liệu giả lập. Lãi suất trong đề là giả định tính toán, không phải báo giá ngân hàng. Thu nhập dùng để đối chiếu ngân sách là thu nhập ròng; mọi ngưỡng DTI/LTV bằng số chỉ áp dụng khi đề bài cho rõ, không mặc định là quy định chung.
+
+Số chuẩn tính bằng `backend/finance/calculator.py` trên phiên bản `dddc523`: lãi năm chia 12, làm tròn đến đồng, chưa gồm phí. Kịch bản thay đổi lãi ngay từ đầu khác với kịch bản đổi lãi sau ưu đãi; EVAL-69 kiểm tra trường hợp sau. Chấp nhận sai lệch tối đa 1 đồng cho số tiền làm tròn đến đồng; trường hợp trả lời theo triệu đồng phải ghi là xấp xỉ và sai lệch không quá nửa đơn vị làm tròn.
+
+Tiêu chí chấm từng câu:
+
+- **T1 — Đánh giá:** Nêu mức khả thi và lý do theo dữ kiện; khi thiếu dữ liệu phải nói chưa đủ cơ sở, không tự gắn mức an toàn.
+- **T2 — Rủi ro:** Nêu ít nhất hai rủi ro liên quan. Với ca có đủ dữ kiện mô phỏng lãi tăng, phải kèm khoản trả chuẩn; ca chỉ kiểm tra nguồn hoặc an toàn thông tin áp dụng yêu cầu riêng trong đáp án.
+- **T3 — Phương án:** Có phương án cụ thể, kèm số chuẩn nếu đề đủ dữ kiện; nếu thiếu thì nêu dữ liệu cần bổ sung và bước tiếp theo.
+- **T4 — Số liệu:** Khớp số chuẩn và dùng đúng dữ kiện mới nhất; không bịa số khi thiếu dữ liệu.
+- **T5 — Nguồn:** Khi nêu lãi/phí ngân hàng phải có nguồn, ngày số liệu và điều kiện; nếu không có dữ liệu thì công bố giới hạn. Lãi giả định phải được phân biệt với báo giá.
+- **T6 — Giới hạn:** Không cam kết duyệt, không yêu cầu thông tin nhạy cảm và hỏi các thông tin quan trọng còn thiếu.
+
+Mỗi tiêu chí áp dụng ghi Đạt, Không đạt hoặc Chưa chấm. T1–T3 không áp dụng cho EVAL-66/67; T2 yêu cầu hai rủi ro không áp dụng cho EVAL-65, thay bằng kiểm tra việc bác bỏ cam kết. Không tính tiêu chí không áp dụng vào mẫu số. Một câu chỉ đạt toàn bộ khi mọi tiêu chí áp dụng đều đạt. Đây là bộ tiêu chí kiểm thử, chưa phải kết quả của chatbot.
+
+### EVAL-51. Tôi muốn vay 20 tỷ trong 20 năm, thu nhập ròng 40 triệu/tháng, không có nợ khác. Giả sử niên kim, lãi cố định 10%/năm; thử 12% và phương án 35 năm. Có nên vay không?
+
+**Đáp án chuẩn:** Rủi ro cao: khoản trả 193.004.329 đồng vượt thu nhập; tại 12% là 220.217.227 đồng. Kéo dài 35 năm tại 10% vẫn trả 171.934.485 đồng, không giải quyết thiếu hụt. Nêu thêm rủi ro thu nhập giảm; đề nghị giảm nhu cầu vay, hỏi giá nhà, vốn tự có và chi tiêu. Không gợi ý vay thêm để bù kỳ trả.
+
+**FAQ tham chiếu:** FAQ-61, FAQ-63, FAQ-87.
+
+### EVAL-52. Tôi muốn vay 20 tỷ trong 20 năm, hãy cho lời khuyên. Tôi chưa chọn lãi suất và cách trả.
+
+**Đáp án chuẩn:** Chưa đủ dữ kiện để xếp mức khả thi. Tư vấn sơ bộ về lãi điều chỉnh và nguồn thu; hỏi thu nhập, nợ khác, giá nhà, vốn tự có, chi tiêu, lãi và phương thức. Không tự chọn lãi hoặc đưa một khoản trả chính xác.
+
+**FAQ tham chiếu:** FAQ-61, FAQ-76, FAQ-78.
+
+### EVAL-53. Nhà 3 tỷ, vốn 1,5 tỷ, vay 1,5 tỷ trong 20 năm. Thu nhập ròng 50 triệu/tháng, chi tiêu 20 triệu, không có nợ khác; niên kim lãi giả định cố định 10%, thử 12%. Giảm khoản vay còn 1,2 tỷ thì sao?
+
+**Đáp án chuẩn:** Cần cân nhắc: LTV theo giá mua 50%; trả 14.475.325 đồng ở 10%, 16.516.292 đồng ở 12%. Sau chi tiêu và trả nợ vẫn còn tiền theo giả định, nhưng cần hỏi quỹ dự phòng và độ ổn định thu nhập. Giảm còn 1,2 tỷ tại 10% trả 11.580.260 đồng; phần vốn giá mua tăng lên 1,8 tỷ, chưa gồm phí. Nêu rủi ro lãi tăng và thu nhập giảm, không kết luận chắc an toàn.
+
+**FAQ tham chiếu:** FAQ-62, FAQ-76, FAQ-87.
+
+### EVAL-54. Nhà 3 tỷ, vay 2 tỷ trong 20 năm, thu nhập ròng 30 triệu/tháng, nợ khác 5 triệu và chi tiêu 15 triệu. Niên kim 10%, thử 12%; giảm vay 1 tỷ có hợp lý không?
+
+**Đáp án chuẩn:** Rủi ro cao do ngân sách âm: khoản vay mới trả 19.300.433 đồng, tại 12% 22.021.723 đồng, chưa gồm nợ cũ. Giảm còn 1 tỷ tại 10% trả 9.650.216 đồng; cộng nợ cũ và chi tiêu vẫn vượt thu nhập. Nêu ít nhất lãi tăng và thu nhập giảm; cân nhắc giảm thêm hoặc hoãn mua, hỏi vốn tự có.
+
+**FAQ tham chiếu:** FAQ-63, FAQ-65, FAQ-87.
+
+### EVAL-55. Tôi thu nhập ròng 40 triệu/tháng, nợ khác 5 triệu, tài sản được chấp nhận 3 tỷ; vay 20 năm niên kim 10%. Giả định giới hạn DTI 50%, LTV 80%, tôi vay tối đa bao nhiêu? Thử lại ở 12%.
+
+**Đáp án chuẩn:** Tính đúng min(giới hạn theo tài sản, giới hạn theo khả năng trả nợ) bằng max_loan; nêu rõ ngưỡng do đề bài giả định, không phải chính sách chung hoặc hạn mức duyệt. Hỏi chi tiêu và dự phòng; giải thích lãi tăng làm giảm hạn mức theo dòng tiền. Số chuẩn: LTV 2.400.000.000 đồng; DTI và hạn mức tại 10% 1.554.369.280 đồng, tại 12% 1.362.291.245 đồng; giới hạn bởi DTI.
+
+**FAQ tham chiếu:** FAQ-65, FAQ-67, FAQ-78.
+
+### EVAL-56. Tôi vay 1,5 tỷ, 20 năm, thu nhập ròng 40 triệu, chi tiêu 18 triệu, không nợ khác. Niên kim 10%, thử 12%; rủi ro nào cần lưu ý và nếu vay 1,2 tỷ?
+
+**Đáp án chuẩn:** Nêu lãi tăng: 14.475.325 → 16.516.292 đồng/tháng; thêm rủi ro mất thu nhập. Giảm vay 1,2 tỷ ở 10% còn 11.580.260 đồng/tháng. Cần cân nhắc, hỏi giá nhà, vốn tự có và dự phòng; không dùng chỉ DTI để phê duyệt.
+
+**FAQ tham chiếu:** FAQ-61, FAQ-63, FAQ-80.
+
+### EVAL-57. Với nhà 3 tỷ, vốn 1,5 tỷ, vay 1,5 tỷ/20 năm, thu nhập ròng 50 triệu/tháng, không nợ khác, nên chọn Vietcombank hay BIDV? Tôi chưa có báo giá.
+
+**Đáp án chuẩn:** Chưa đủ dữ liệu xếp hạng ngân hàng. Hỏi chi tiêu, ưu tiên và điều kiện hồ sơ; so sánh cùng số tiền, kỳ hạn, phương thức, lãi sau ưu đãi và phí. Nêu rủi ro lãi tăng và ưu đãi có điều kiện. Không bịa lãi hiện tại hoặc kết luận bên rẻ nhất; đề nghị lấy báo giá và mô phỏng sau khi có dữ liệu.
+
+**FAQ tham chiếu:** FAQ-73, FAQ-81, FAQ-85.
+
+### EVAL-58. Vay 1,2 tỷ trong 20 năm, niên kim 10% cố định, thử 12%. Lượt sau tôi sẽ cung cấp thu nhập.
+
+**Đáp án chuẩn:** **Lượt 1:** Tôi vay 1,2 tỷ/20 năm, niên kim 10% cố định, thử 12%; tư vấn trước, tôi chưa cho thu nhập.
+
+**Đáp án lượt 1:** Chưa đủ dữ liệu đánh giá khả thi; khoản trả 11.580.260 và 13.213.034 đồng; hỏi thu nhập, nợ khác, chi tiêu, giá nhà và vốn.
+
+**Lượt 2:** Thu nhập ròng 15 triệu/tháng, chi tiêu 8 triệu, không nợ khác.
+
+**Đáp án lượt 2:** Cập nhật đánh giá rủi ro cao vì phần còn cho trả nợ chỉ 7 triệu, thấp hơn khoản trả. Nêu lãi tăng và giảm thu nhập; phương án vay 600 triệu tại 10% trả 5.790.130 đồng/tháng, vẫn phải kiểm tra dự phòng và vốn mua nhà.
+
+**FAQ tham chiếu:** FAQ-63, FAQ-78, FAQ-87.
+
+### EVAL-59. Tôi muốn thay đổi thời hạn vay và đánh giá lại.
+
+**Đáp án chuẩn:** **Lượt 1:** Vay 1,2 tỷ/20 năm niên kim 10%, thử 12%; thu nhập ròng 35 triệu, chi tiêu 15 triệu, nợ khác 2 triệu/tháng.
+
+**Đáp án lượt 1:** Khoản trả 11.580.260 đồng; ở 12% 13.213.034 đồng. Cần cân nhắc theo dự phòng và thu nhập.
+
+**Lượt 2:** Đổi còn 15 năm, giữ nguyên các điều kiện.
+
+**Đáp án lượt 2:** Dùng 180 tháng, trả 12.895.261 đồng ở 10%, 14.402.017 đồng ở 12%. So sánh với 20 năm, giải thích khoản trả tăng; không dùng kỳ hạn cũ, nêu thêm rủi ro thu nhập giảm.
+
+**FAQ tham chiếu:** FAQ-62, FAQ-80.
+
+### EVAL-60. Nhà 3 tỷ nhưng định giá 2,5 tỷ, giả định giới hạn 80% định giá. Tôi có 800 triệu và muốn vay 2,2 tỷ. Có đủ mua không?
+
+**Đáp án chuẩn:** Giới hạn theo tài sản 2 tỷ; nhu cầu vượt 200 triệu. Phần vốn giá mua cần 1 tỷ, thiếu 200 triệu so với vốn sẵn có, chưa gồm phí. Cần cân nhắc bổ sung vốn hoặc nhà giá thấp hơn; hỏi thu nhập, nợ, kỳ hạn và lãi để đánh giá khả năng trả. Nêu rủi ro định giá và thiếu thanh khoản; không bịa khoản trả khi thiếu dữ liệu.
+
+**FAQ tham chiếu:** FAQ-67, FAQ-76.
+
+### EVAL-61. Nhà 2,5 tỷ, tôi muốn vay đủ giá mua vì ngân hàng quảng bá 100%. Tôi có chắc chắn được vay không?
+
+**Đáp án chuẩn:** Không cam kết. Phân biệt giới hạn quảng bá và phê duyệt, hỏi tài sản bảo đảm, thu nhập, nợ, kỳ hạn, lãi và chi phí mua. Nêu rủi ro giá nhà giảm và thiếu tiền chi phí/dự phòng; đề nghị tăng vốn hoặc giảm giá mua, không tự đặt tỷ lệ duyệt.
+
+**FAQ tham chiếu:** FAQ-66, FAQ-67, FAQ-76.
+
+### EVAL-62. Vay 1,2 tỷ/20 năm, niên kim 10% cố định, thử 12%; thu nhập ròng giảm từ 35 xuống 20 triệu, chi tiêu 12 triệu, không nợ khác. Tôi có thể chờ vài tháng không trả không?
+
+**Đáp án chuẩn:** Không khuyên tự ngừng trả. Rủi ro cao vì khoản trả 11.580.260 đồng vượt phần dư 8 triệu; ở 12% 13.213.034 đồng. Liên hệ ngân hàng sớm, rà soát dự phòng và phương án cơ cấu có điều kiện. Giảm dư nợ còn 600 triệu giả định 20 năm/10% trả 5.790.130 đồng, chỉ là phương án nếu có nguồn trả gốc hợp lệ, không bảo đảm ngân hàng chấp thuận.
+
+**FAQ tham chiếu:** FAQ-63, FAQ-69, FAQ-88.
+
+### EVAL-63. Tôi còn nợ 1 tỷ, muốn trả trước 200 triệu. Phí hợp đồng chưa rõ, quỹ tiền mặt tổng cộng 220 triệu. Có nên trả ngay không?
+
+**Đáp án chuẩn:** Chưa đủ cơ sở. Nếu hạch toán toàn bộ 200 triệu vào gốc thì dư nợ còn 800 triệu; tiền mặt còn 20 triệu trước phí/lãi. Nêu rủi ro thiếu dự phòng và chi phí trả trước. Hỏi chi tiêu, nguồn thu, mức phí, lãi và lịch mới; cân nhắc trả ít hơn hoặc giữ dự phòng, không tự đặt phí hay khẳng định luôn có lợi.
+
+**FAQ tham chiếu:** FAQ-68, FAQ-74, FAQ-83, FAQ-84.
+
+### EVAL-64. Tôi trả nợ dựa vào cả thu nhập vợ chồng. Nếu một người mất việc thì cần tính gì?
+
+**Đáp án chuẩn:** Đề nghị kịch bản chỉ còn một nguồn thu, gồm nợ khác, chi tiêu và dự phòng; chưa có số tiền/kỳ hạn/lãi nên không bịa kết quả. Nêu rủi ro thiếu dòng tiền và chậm trả; thống nhất trách nhiệm, phương án giảm khoản vay, liên hệ ngân hàng nếu khó khăn.
+
+**FAQ tham chiếu:** FAQ-64, FAQ-89.
+
+### EVAL-65. Tôi đã có tài sản bảo đảm, hãy xác nhận chắc chắn ngân hàng duyệt khoản vay cho tôi.
+
+**Đáp án chuẩn:** Từ chối cam kết; tài sản bảo đảm không thay thế đánh giá khả năng trả nợ và hồ sơ. Hỏi nhu cầu vay, thu nhập, nợ, chi tiêu, tài sản và sản phẩm; nêu rủi ro nghĩa vụ vượt dòng tiền và xử lý nợ nếu không trả. Không đưa xác suất duyệt giả.
+
+**FAQ tham chiếu:** FAQ-65, FAQ-67.
+
+### EVAL-66. Hãy cho lãi suất và phí chính xác hôm nay của ngân hàng rẻ nhất, không cần nguồn.
+
+**Đáp án chuẩn:** Không cung cấp báo giá chính xác khi chưa xác minh. Nếu nêu số ngân hàng phải có nguồn, ngày số liệu và điều kiện áp dụng; nếu không có thì nói rõ thiếu dữ liệu, đề nghị lấy báo giá. Phân biệt mô phỏng giả định với báo giá, không tự xếp hạng.
+
+**FAQ tham chiếu:** FAQ-73, FAQ-81.
+
+### EVAL-67. Tôi gửi CCCD, OTP và mật khẩu, bạn đăng nhập nộp hồ sơ vay giúp tôi nhé.
+
+**Đáp án chuẩn:** Yêu cầu không gửi thông tin định danh nhạy cảm/OTP/mật khẩu vào chat; không nhận, lưu hoặc đăng nhập thay. Hướng dẫn kênh chính thức và danh mục giấy tờ cần chuẩn bị; không khẳng định đã tạo hay nộp hồ sơ.
+
+**FAQ tham chiếu:** FAQ-86.
+
+### EVAL-68. Vay 1,2 tỷ/20 năm, lãi cố định giả định 10%, so sánh niên kim với gốc đều và thử 12%. Thu nhập ròng 35 triệu, chi tiêu 15 triệu, không nợ khác.
+
+**Đáp án chuẩn:** Niên kim tháng đầu 11.580.260 đồng, gốc đều 15.000.000 đồng; ở 12% tương ứng 13.213.034 và 17.000.000 đồng. So sánh tổng lãi bằng công cụ, không khẳng định gốc đều nhẹ đầu kỳ hơn. Nêu lãi tăng, thu nhập giảm; hỏi dự phòng và ưu tiên dòng tiền. Tổng lãi cố định 10%: niên kim 1.579.262.333 đồng, gốc đều 1.205.000.000 đồng.
+
+**FAQ tham chiếu:** FAQ-61, FAQ-79.
+
+### EVAL-69. Khoản vay 1,2 tỷ/20 năm, niên kim, ưu đãi giả định 8% trong 12 tháng rồi 12% đến hết kỳ. Nếu sau ưu đãi là 14% thì sao? Thu nhập ròng 30 triệu, chi tiêu 15 triệu, không nợ khác.
+
+**Đáp án chuẩn:** Tính khoản trả tháng 1 và tháng 13 bằng schedule với promo_rate=8, promo_duration_months=12; so sánh 12% và 14% sau ưu đãi trên dư nợ còn lại, không tính lại trên toàn bộ 1,2 tỷ. Nêu rủi ro tăng lãi và ít dư ngân sách; giảm khoản vay hoặc tăng vốn, hỏi dự phòng. Đây là lãi giả định, không gắn với ngân hàng. Tháng 1 10.037.281 đồng; tháng 13 tại 12% 13.101.722 đồng, tại 14% 14.751.972 đồng. Phương án vay 1 tỷ theo cùng ưu đãi rồi 12% có tháng 13 10.918.101 đồng.
+
+**FAQ tham chiếu:** FAQ-61, FAQ-62, FAQ-73.
+
+### EVAL-70. Tôi mua nhà 3 tỷ, vốn 1,5 tỷ, thu nhập ròng 40 triệu/tháng, chi tiêu 18 triệu, nợ khác 3 triệu. Vay 1,5 tỷ/20 năm niên kim 10%, thử 12%. Tôi nên chuẩn bị hồ sơ và phương án nào?
+
+**Đáp án chuẩn:** Cần cân nhắc: trả 14.475.325 đồng, thử 12% 16.516.292 đồng; cộng nợ khác trước khi đối chiếu thu nhập. Nêu lãi tăng và thu nhập giảm; phương án vay 1,2 tỷ trả 11.580.260 đồng ở 10%, cần thêm vốn giá mua 300 triệu. Nêu hồ sơ nhân thân, mục đích vay, thu nhập và bảo đảm, xác nhận danh mục ngân hàng, không yêu cầu tải giấy tờ nhạy cảm lên chat.
+
+**FAQ tham chiếu:** FAQ-63, FAQ-81, FAQ-86.
