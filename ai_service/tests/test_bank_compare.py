@@ -22,9 +22,11 @@ class Extractor:
     def __init__(self, *extractions):
         self.extractions = iter(extractions)
         self.calls = []
+        self.last_assistant_messages = []
 
-    async def extract(self, text, session):
+    async def extract(self, text, session, *, last_assistant_message=None):
         self.calls.append((text, session))
+        self.last_assistant_messages.append(last_assistant_message)
         return next(self.extractions)
 
 
@@ -344,7 +346,49 @@ async def test_extractor_sends_isolated_prompt_and_session_to_provider():
     body = __import__("json").loads(requests[0].content)
     assert "không tự chọn, tra cứu hay suy ra tỷ lệ này" in body["messages"][0]["content"]
     assert "không bắt buộc" not in body["messages"][0]["content"]
-    assert body["messages"][1]["content"].find('"message"') >= 0
+    user_payload = json.loads(body["messages"][1]["content"])
+    assert user_payload["message"] == "Vay 1,5 tỷ trong 20 năm, giả định lãi 10%"
+    assert user_payload["missing_fields"] == ["amount", "years", "assumed_floating_rate"]
+    assert "last_assistant_message" not in user_payload
     assert result.updates == {
         "amount": 1_500_000_000, "years": 20, "assumed_floating_rate": Decimal("10"),
     }
+
+
+@pytest.mark.asyncio
+async def test_extractor_sends_missing_fields_and_last_assistant_message_for_short_rate_reply():
+    requests = []
+
+    async def handler(request):
+        requests.append(request)
+        return httpx.Response(200, json=completion_response(
+            '{"action":"update","updates":{"assumed_floating_rate":5}}',
+        ))
+
+    session = BankCompareSession(amount=1_500_000_000, years=20, status="collecting")
+    prompt_question = (
+        "Các ngân hàng chưa công bố lãi sau ưu đãi. Bạn muốn giả định lãi sau ưu đãi "
+        "bao nhiêu %/năm để so sánh (ví dụ 10)?"
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        extractor = OpenAIBankCompareExtractor(
+            base_url="http://provider.test/v1", api_key="test", model="test",
+            prompts=get_prompt_catalog(),
+        )
+        with patch(
+            "app.infrastructure.llm.openai_bank_compare_extractor.AsyncOpenAI",
+            side_effect=lambda **kwargs: AsyncOpenAI(**kwargs, http_client=client),
+        ):
+            result = await extractor.extract("5%", session, last_assistant_message=prompt_question)
+
+    body = json.loads(requests[0].content)
+    system_prompt = body["messages"][0]["content"]
+    user_payload = json.loads(body["messages"][1]["content"])
+    assert "missing_fields" in system_prompt
+    assert "last_assistant_message" in system_prompt
+    assert "5%" in system_prompt
+    assert user_payload["missing_fields"] == ["assumed_floating_rate"]
+    assert user_payload["last_assistant_message"] == prompt_question
+    assert user_payload["message"] == "5%"
+    assert result == BankCompareExtraction("update", {"assumed_floating_rate": Decimal("5")})

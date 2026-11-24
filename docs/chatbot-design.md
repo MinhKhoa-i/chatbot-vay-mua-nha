@@ -242,7 +242,11 @@ Prompt gồm instruction cố định, nhiệm vụ hiện tại, lịch sử gi
 
 Trong implementation hiện tại của `ai_service`, prompt yêu cầu model thêm disclaimer trong cùng lượt trả lời, còn hệ thống quản lý nhãn citation và nối footer “Nguồn tham khảo” phía sau toàn bộ output model. Sự hiện diện của disclaimer hiện chưa được kiểm tra cấu trúc ở runtime nên đây là hướng dẫn prompt, không phải bảo đảm tuyệt đối. Không chỉ nối danh sách tất cả nguồn retrieval vào cuối rồi coi là đã kiểm chứng. Cần lưu document/chunk IDs thực sự hỗ trợ câu trả lời; chỉ hiển thị URL được lấy từ metadata đáng tin cậy. Kiểm tra citation ID tồn tại chưa đủ chứng minh entailment; phát biểu quan trọng cần đối chiếu nội dung và được đánh giá bằng bộ test/người review.
 
-Với nội dung số liệu sản phẩm hoặc pháp lý nhạy cảm, đề xuất **buffer toàn bộ câu trả lời để kiểm tra trước khi phát nội dung**. Streaming trực tiếp phù hợp hơn với nội dung rủi ro thấp; không thể thu hồi điều người dùng đã đọc chỉ bằng việc gửi lỗi sau đó. Kiểm tra nguồn lần nữa trước khi hoàn tất turn nếu document có thể bị thu hồi trong khi model đang trả lời.
+**Hiện tại, nhánh `bank_compare` đã buffer toàn bộ bản nháp LLM trước khi phát nội dung.** `CompareBanksUseCase` dựng sẵn câu trả lời từ kết quả backend bằng `_render_result()`. `StreamChatUseCase` vẫn cho LLM diễn đạt từ JSON `scenario` và `result`, nhưng chỉ phát một `delta` sau khi `bank_compare_numbers_match()` kiểm tra giá trị số. Nếu có số ngoài tập cho phép, hệ thống ghi log `BANK_COMPARE_NUMBER_MISMATCH`, bỏ toàn bộ bản nháp và dùng câu trả lời dựng sẵn; nội dung được chọn cũng là nội dung lưu vào lịch sử. Lỗi/timeout provider vẫn làm lượt chat thất bại, không dùng fallback này.
+
+**Giới hạn kiểm tra:** tập cho phép lấy từ kịch bản, kết quả backend, số thứ tự và số trong ngày/nhãn/lý do loại. Hàm chỉ kiểm tra các giá trị số trích được có thuộc tập này hay không, chưa kiểm tra quan hệ số–ngân hàng–chỉ tiêu–đơn vị. Ví dụ kịch bản vay 20 năm, lãi giả định 10% vẫn có thể cho qua câu sai “lãi giả định 20%/năm”. Chưa có bảo đảm cứng về ý nghĩa hoặc tính đầy đủ của các dữ kiện trong lời LLM; muốn có bảo đảm này cần backend render phần dữ kiện hoặc kiểm tra tham chiếu trường, hiện chưa triển khai.
+
+Các nhánh trả lời qua model khác vẫn streaming từng đoạn, chưa có cùng cơ chế kiểm tra số. Với nội dung số liệu sản phẩm hoặc pháp lý nhạy cảm ngoài nhánh so sánh, buffer và kiểm chứng trước khi phát vẫn là hướng mở rộng; không thể thu hồi điều người dùng đã đọc chỉ bằng việc gửi lỗi sau đó. Kiểm tra nguồn lần nữa trước khi hoàn tất turn nếu document có thể bị thu hồi trong khi model đang trả lời.
 
 ## 7. Danh sách thông tin cần hỏi khách hàng
 
@@ -340,3 +344,11 @@ Response hoàn tất được lưu cùng request ledger để replay trả lại
 4. Application gọi calculator qua port. Không dùng con số trong văn bản RAG chưa kiểm duyệt trực tiếp làm tham số. Khi mở rộng tích hợp, thống nhất với backend phiên bản công thức, đơn vị, quy tắc làm tròn, giả định, lịch trả nợ và các kết quả tổng hợp.
 5. Nếu calculator thiếu dữ liệu, timeout hoặc lỗi validation: hỏi bổ sung/báo chưa tính được; **không chuyển sang cho LLM tự tính**. Không ghi thành kết quả mô phỏng thành công.
 6. Hiển thị kết quả tham khảo, giả định và nguồn chính sách; phân biệt “khoản có thể trả theo ngân sách” với “hạn mức ngân hàng chấp thuận”. Không hứa đủ điều kiện vay.
+
+### 8.4. Luồng so sánh ngân hàng hiện tại
+
+`CompareBanksUseCase` thu thập số tiền vay, thời hạn nguyên năm và lãi sau ưu đãi giả định khi chưa có lãi cơ sở. Nếu đã có `base_rate`, luồng không bắt buộc hỏi `assumed_floating_rate`; ngân hàng vẫn có thể bị loại nếu backend thiếu dữ kiện để xác định lãi. Các trường tùy chọn gồm giá nhà, tháng tất toán, số tháng ân hạn gốc và phương thức trả nợ; mặc định phương thức là niên kim. Khác luồng estimate, so sánh gọi backend `POST /api/banks/rank` ngay khi đủ dữ kiện, không có bước xác nhận riêng. Luồng dùng phiên so sánh và bộ nhớ hội thoại để tiếp nối dữ kiện qua nhiều lượt.
+
+Backend lọc theo số tiền, thời hạn, phương thức, ân hạn và LTV khi có giá nhà. Lãi sau ưu đãi được chọn theo thứ tự: lãi có trong dữ liệu, lãi cơ sở cộng biên độ, rồi lãi giả định chung; thiếu dữ kiện thì loại ngân hàng cần mức lãi này. Tổng chi phí trong công cụ là tiền lãi cộng phí trả trước hạn, chưa gồm mọi chi phí khoản vay. Phí chưa rõ không được coi là 0; trường hợp đó `total_cost` là `null` và xếp sau nhóm rõ chi phí. Phí là mức trần phải được diễn đạt là tối đa. Backend chưa xét tuổi, thu nhập hay toàn bộ điều kiện phê duyệt.
+
+Kết quả được LLM diễn đạt qua cơ chế buffer/kiểm tra số/fallback ở mục 6.3, không qua retrieval. Lượt hoàn tất chỉ có nội dung so sánh trong `reply`, không có trường kết quả so sánh có cấu trúc riêng; `estimate` là `null`. Đây là so sánh tham khảo theo kịch bản, không xác nhận lãi suất chính thức, ngân hàng “tốt nhất” hay khả năng được duyệt vay.

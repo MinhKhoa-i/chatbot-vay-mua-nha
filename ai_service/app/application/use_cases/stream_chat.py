@@ -8,6 +8,7 @@ from dataclasses import asdict
 from app.application.services.chat_response_policy import ChatResponsePolicy
 from app.application.services.request_fingerprint import chat_request_fingerprint
 from app.application.services.retrieval_query import RetrievalQueryBuilder
+from app.application.use_cases.bank_compare_numbers import bank_compare_numbers_match
 from app.application.use_cases.compare_banks import CompareBanksUseCase
 from app.application.use_cases.estimate_loan import EstimateLoanUseCase
 from app.domain.ports.loan_calculator import LoanCalculationError
@@ -85,6 +86,10 @@ class StreamChatUseCase:
 
             snapshot = claim.snapshot
             memory_context = snapshot.conversation_memory.to_prompt_context()
+            last_assistant_message = next(
+                (content for role, content in reversed(snapshot.history) if role == "assistant"),
+                None,
+            )
             estimate_turn = None
             bank_compare_turn = None
             if snapshot.estimate_session.active and self._estimate is not None:
@@ -94,6 +99,7 @@ class StreamChatUseCase:
                 stage = "bank_compare"
                 bank_compare_turn = await self._bank_compare.execute(
                     request.text, snapshot.bank_compare_session,
+                    last_assistant_message=last_assistant_message,
                 )
             stage = "classification"
             try:
@@ -134,7 +140,9 @@ class StreamChatUseCase:
                     session = snapshot.bank_compare_session if snapshot.bank_compare_session.active else (
                         snapshot.conversation_memory.to_bank_compare_session()
                     )
-                    bank_compare_turn = await self._bank_compare.execute(request.text, session)
+                    bank_compare_turn = await self._bank_compare.execute(
+                        request.text, session, last_assistant_message=last_assistant_message,
+                    )
                 if not bank_compare_turn.handled:
                     intent = ChatIntent.RETRIEVAL
                 else:
@@ -184,10 +192,16 @@ class StreamChatUseCase:
                             knowledge_context=grounded.prompt_context,
                         ):
                             answer_parts.append(fragment)
-                            yield ChatEvent("delta", {"text": fragment})
+                            if intent != ChatIntent.BANK_COMPARE:
+                                yield ChatEvent("delta", {"text": fragment})
                 except TimeoutError as exc:
                     raise ChatProviderUnavailable(code="MODEL_TIMEOUT") from exc
             answer = "".join(answer_parts)
+            if intent == ChatIntent.BANK_COMPARE and deterministic is None:
+                if not bank_compare_numbers_match(answer, bank_compare_turn.session, bank_compare_turn.result):
+                    logger.warning("BANK_COMPARE_NUMBER_MISMATCH")
+                    answer = bank_compare_turn.answer
+                yield ChatEvent("delta", {"text": answer})
             cited_sources = _cited_sources(answer, grounded.citations)
             if cited_sources and deterministic is None:
                 citation_footer = "\n\nNguồn tham khảo: " + "; ".join(cited_sources)

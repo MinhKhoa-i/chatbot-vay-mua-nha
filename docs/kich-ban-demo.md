@@ -88,19 +88,23 @@ Kết quả tham chiếu: 12 tháng đầu trả lãi 9.000.000 đ/tháng; sau �
 
 ## 5. Hồ sơ kiểm thử dữ liệu ngân hàng (KT-01 đến KT-07)
 
-Các hồ sơ này kiểm tra chức năng so sánh ngân hàng (việc 8, 15, 18 tuần 3; issue #48). Dữ liệu ngân hàng hiện chưa có lãi suất thả nổi nên chưa xếp hạng tổng chi phí được; chỉ đưa vào demo khi chức năng so sánh đã chạy. Kỳ vọng chung: bot không tự suy ra lãi suất sau ưu đãi từ mức quảng bá, và nói rõ dữ liệu nào ngân hàng chưa công bố.
+Các hồ sơ này kiểm tra dữ liệu và chức năng so sánh ngân hàng (việc 8, 15, 18 tuần 3; issue #48). Luồng chat đã gọi backend xếp hạng theo kịch bản. Khi chưa có lãi cơ sở hoặc lãi sau ưu đãi giả định, bot hỏi mức lãi giả định; không tự lấy lãi quảng bá làm lãi cả kỳ. Khi đủ dữ kiện, luồng so sánh gọi backend ngay, không cần câu “Xác nhận tính” như luồng estimate. Kết quả phải phân biệt giả định với lãi chính thức, phí chưa rõ với phí bằng 0 và mức trần với phí chính xác.
+
+Các tỷ lệ và điều kiện dưới đây là dữ liệu tham chiếu để đối soát, không phải cam kết mọi nội dung đều được chat tính hoặc kiểm chứng tự động. Công cụ xếp hạng hiện lọc theo số tiền, thời hạn, phương thức, ân hạn và LTV khi có giá nhà; chưa xét tuổi, thu nhập hay toàn bộ điều kiện phê duyệt.
+
+**Kiểm tra lời trả kết quả:** nhánh so sánh giữ toàn bộ bản nháp LLM, kiểm tra số rồi mới gửi một đoạn kết quả; trong lúc model viết có thể chưa thấy chữ xuất hiện. Nếu có số ngoài tập cho phép từ kịch bản/kết quả, hệ thống ghi log `BANK_COMPARE_NUMBER_MISMATCH` và gửi câu trả lời dựng sẵn thay cho bản nháp. Kiểm tra bằng test giả lập trong `ai_service/tests/test_bank_compare_chat.py::test_comparison_validates_buffered_draft_before_emitting`, không dựa vào việc yêu cầu model thật cố tình viết sai. Bộ kiểm tra chỉ đối chiếu giá trị số: với thời hạn 20 năm và lãi giả định 10%, câu sai “lãi giả định 20%/năm” vẫn có thể qua. Khi demo phải đối chiếu cả ngân hàng, chỉ tiêu, đơn vị và nhãn giả định với kết quả backend; không tuyên bố đã chặn mọi lỗi số liệu.
 
 ### KT-01: Cặp vợ chồng mua căn hộ đầu tiên (tỷ lệ vay, thời hạn VPBank)
 
 - Khách hàng: 29 và 31 tuổi; thu nhập 55 triệu/tháng. Căn hộ 3,2 tỷ; vốn tự có 1,2 tỷ; vay 2 tỷ trong 20 năm, gốc đều.
 - Câu hỏi: "Với thu nhập 55 triệu/tháng, chúng tôi vay 2 tỷ trong 20 năm mua căn hộ 3,2 tỷ có phù hợp không? Nhờ bot so sánh khoản trả tháng đầu và giải thích ngân hàng nào đủ điều kiện."
-- Kỳ vọng: tỷ lệ vay 2,0 / 3,2 = 62,5%, trong mức tối đa 70–80% của các ngân hàng; VPBank chấp nhận 20 năm (gói ưu đãi tối đa 25 năm, không quy định thời hạn tối thiểu); khi thiếu lãi thả nổi, bot không xếp hạng tổng chi phí cả kỳ.
+- Kỳ vọng: tỷ lệ tham chiếu để đối soát là 2,0 / 3,2 = 62,5%; backend đối chiếu LTV và thời hạn với từng gói, không kết luận đủ điều kiện duyệt vay từ thu nhập. Khi thiếu lãi sau ưu đãi, bot hỏi giả định; sau câu trả lời như “Giả định 10%/năm sau ưu đãi”, xếp hạng theo kết quả backend và ghi rõ giả định. Không bắt buộc lời chat phải tự tính hoặc hiển thị tỷ lệ 62,5%.
 
 ### KT-02: Gia đình mua nhà phố, ưu tiên kỳ hạn dài và ân hạn gốc
 
 - Khách hàng: 38 tuổi; thu nhập 80 triệu/tháng. Nhà phố 5 tỷ; vốn tự có 1,5 tỷ; vay 3,5 tỷ trong 25 năm, niên kim; muốn ân hạn gốc 12 tháng.
 - Câu hỏi: "Tôi có nên vay 3,5 tỷ trong 25 năm nếu thu nhập 80 triệu/tháng không? Ngân hàng nào có ân hạn gốc 12 tháng và ngân hàng nào đủ dữ kiện để tính?"
-- Kỳ vọng: tỷ lệ vay 3,5 / 5,0 = 70%; ân hạn gốc từ 12 tháng trở lên: Vietcombank, Agribank, VPBank, ACB (12 tháng), Techcombank, MB (24 tháng); BIDV chỉ 6 tháng nên không đạt. Bot nêu rõ còn thiếu lãi thả nổi sau ưu đãi, không lấy lãi ưu đãi tính cho cả 25 năm.
+- Kỳ vọng: tỷ lệ tham chiếu là 3,5 / 5,0 = 70%; khi vào luồng so sánh phải có đủ số tiền, thời hạn và lãi giả định/lãi cơ sở. Gói không đáp ứng ân hạn 12 tháng bị backend loại kèm lý do; đối soát với dữ liệu hiện có: Vietcombank, Agribank, VPBank, ACB hỗ trợ 12 tháng, Techcombank và MB hỗ trợ 24 tháng, BIDV chỉ 6 tháng. Những điều kiện khác vẫn có thể loại gói. Không lấy lãi ưu đãi tính cho cả 25 năm hoặc kết luận khả năng chi trả từ thu nhập.
 
 ### KT-03: Mua nhà dự án đã có Giấy chứng nhận (Vietcombank)
 

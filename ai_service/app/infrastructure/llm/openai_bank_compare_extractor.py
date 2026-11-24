@@ -29,10 +29,23 @@ class OpenAIBankCompareExtractor:
         self._prompts = prompts
         self._timeout = timeout_seconds
 
-    async def extract(self, text: str, session: BankCompareSession) -> BankCompareExtraction:
+    async def extract(
+        self,
+        text: str,
+        session: BankCompareSession,
+        *,
+        last_assistant_message: str | None = None,
+    ) -> BankCompareExtraction:
         if not self._base_url or not self._api_key or not self._model:
             raise BankCompareExtractionError("BANK_COMPARE_EXTRACTION_NOT_CONFIGURED", retryable=False)
         instruction = self._prompts.get(PromptName.BANK_COMPARE_EXTRACTION)
+        input_payload: dict[str, object] = {
+            "session": asdict(session),
+            "missing_fields": list(session.missing_fields),
+            "message": text,
+        }
+        if last_assistant_message:
+            input_payload["last_assistant_message"] = last_assistant_message[:1_000]
         started_at = perf_counter()
         response = None
         try:
@@ -44,9 +57,9 @@ class OpenAIBankCompareExtractor:
                     model=self._model, stream=False, response_format={"type": "json_object"},
                     messages=[
                         {"role": "system", "content": instruction},
-                        {"role": "user", "content": json.dumps({
-                            "session": asdict(session), "message": text,
-                        }, default=str, ensure_ascii=False)},
+                        {"role": "user", "content": json.dumps(
+                            input_payload, default=str, ensure_ascii=False,
+                        )},
                     ],
                     max_tokens=BANK_COMPARE_MAX_TOKENS,
                 )

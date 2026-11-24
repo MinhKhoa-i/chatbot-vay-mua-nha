@@ -19,8 +19,10 @@ from test_chat_grounding import FakeCompletion, FakeRepository, FakeRetrieval
 class Extractor:
     def __init__(self, *extractions):
         self.extractions = iter(extractions)
+        self.last_assistant_messages = []
 
-    async def extract(self, text, session):
+    async def extract(self, text, session, *, last_assistant_message=None):
+        self.last_assistant_messages.append(last_assistant_message)
         return next(self.extractions)
 
 
@@ -34,15 +36,16 @@ class Ranker:
 
 
 class Repository(FakeRepository):
-    def __init__(self, session=BankCompareSession(), memory=None):
+    def __init__(self, session=BankCompareSession(), memory=None, history=()):
         super().__init__()
         self.bank_compare_session = session
+        self.history = tuple(history)
         if memory is not None:
             self.conversation_memory = memory
 
     async def claim(self, request, request_hash):
         return ChatClaim("claimed", ChatSnapshot(
-            0, (), uuid4(), uuid4(), bank_compare_session=self.bank_compare_session,
+            0, self.history, uuid4(), uuid4(), bank_compare_session=self.bank_compare_session,
             conversation_memory=self.conversation_memory,
         ))
 
@@ -66,7 +69,7 @@ async def test_bank_compare_session_asks_for_assumed_rate_before_ranking():
         BankCompareExtraction("update", {"assumed_floating_rate": Decimal("9")}),
     ), ranker, get_prompt_catalog())
     retrieval = FakeRetrieval(error=AssertionError("must not retrieve"))
-    completion = FakeCompletion()
+    completion = FakeCompletion("Hiện chưa có gói vay phù hợp để xếp hạng.")
     case = StreamChatUseCase(
         completion, repository, prompts=get_prompt_catalog(), classifier=classifier,
         retrieval=retrieval, bank_compare=compare,
@@ -112,6 +115,58 @@ async def test_bank_compare_session_asks_for_assumed_rate_before_ranking():
     assert context["result"]["updated_at"] == "2026-11-16"
     assert "Không tự tính toán" in completion.guidance
     assert repository.state_update.bank_compare_session == repository.bank_compare_session
+
+
+@pytest.mark.asyncio
+async def test_two_turn_comparison_preserves_llm_reply_with_five_percent_assumption():
+    import json
+    from dataclasses import replace
+
+    from test_bank_compare import Ranker as ResultRanker, ranked_bank
+
+    repository = Repository()
+    classifier = StubIntentClassifier(ChatIntent.BANK_COMPARE)
+    result = BankRankResult(
+        (replace(ranked_bank(), floating_rate=Decimal("5")),), (),
+        {"floating_rate": Decimal("5")}, "2026-11-16", True,
+    )
+    ranker = ResultRanker(result)
+    completion = FakeCompletion(
+        "Với khoản vay 1,5 tỷ trong 20 năm, lãi sau ưu đãi giả định là 5.0%/năm. "
+        "Khoản trả tháng đầu là 14,475,325 VND. Các số liệu chỉ mang tính minh họa."
+    )
+    compare = CompareBanksUseCase(Extractor(
+        BankCompareExtraction("update", {"amount": 1_500_000_000, "years": 20}),
+        BankCompareExtraction("update", {"assumed_floating_rate": Decimal("5")}),
+    ), ranker, get_prompt_catalog())
+    case = StreamChatUseCase(
+        completion, repository, prompts=get_prompt_catalog(), classifier=classifier,
+        bank_compare=compare,
+    )
+    conversation_id = uuid4()
+
+    first = [event async for event in case.execute(ChatRequest(
+        conversation_id, uuid4(),
+        "Mình cần vay 1,5 tỷ trong 20 năm, ngân hàng nào có lợi nhất?", None,
+    ))]
+    assert first[-1].event == "done"
+    assert "lãi sau ưu đãi" in first[0].data["text"]
+    assert completion.calls == 0 and ranker.calls == []
+
+    second = [event async for event in case.execute(ChatRequest(
+        conversation_id, uuid4(), "giả sử lãi là 5%", 1,
+    ))]
+
+    assert len(ranker.calls) == completion.calls == len(classifier.calls) == 1
+    assert ranker.calls[0].amount == 1_500_000_000
+    assert ranker.calls[0].years == 20
+    assert ranker.calls[0].assumed_floating_rate == Decimal("5")
+    assert [event.event for event in second] == ["delta", "done"]
+    assert second[0].data["text"] == second[-1].data["reply"] == completion.answer
+    assert repository.committed_answer == completion.answer
+    assert repository.bank_compare_session.status == "completed"
+    assert repository.conversation_memory.assumed_floating_rate == Decimal("5")
+    assert json.loads(completion.knowledge_context)["scenario"]["assumed_floating_rate"] == "5"
 
 
 @pytest.mark.asyncio
@@ -243,6 +298,95 @@ async def test_ranked_result_and_updated_scenario_are_passed_to_completion():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("draft,valid", [
+    ("Vay 1.500.000.000 VND trong 20 năm, lãi giả định 10%. "
+     "Khoản trả đầu 14.475.325 VND. Cập nhật 16/11/2026.", True),
+    ("Lãi cơ sở 7,5%/năm; giá nhà 2.000.000.000 VND; trả trước 60 tháng, ân hạn 6 tháng.", True),
+    ("Tổng chi phí 466.928.374 VND, tiền lãi 438.579.027 VND, phí 28.349.347 VND.", True),
+    ("Hiện có phương án để bạn tham khảo.", True),
+    ("Khoản trả đầu 1.955.009.765 VND.", False),
+    ("Lãi suất 10,5%/năm.", False),
+    ("Lãi suất -10%/năm.", False),
+    ("Lãi suất 2​0%/năm.", True),
+    ("Lãi suất 1​0​0%/năm.", False),
+    ("Lãi suất −10%/năm.", False),
+    ("1. Agribank; cập nhật 2026-11-16.", True),
+    ("Lãi cơ sở 7.5%/năm.", True),
+    ("Khoản vay 1500000000 VND.", True),
+    ("Khoản vay 1,5 tỷ trong 20 năm, lãi giả định 10.0%/năm.", True),
+    ("Khoản vay 1.5 tỷ; khoản trả đầu 14,475,325 VND.", True),
+    ("Khoản vay 1,6 tỷ VND.", False),
+    ("Khoản trả đầu 14,475,326 VND.", False),
+    ("Lãi suất 10.5%/năm.", False),
+])
+async def test_comparison_validates_buffered_draft_before_emitting(draft, valid, caplog):
+    from dataclasses import replace
+
+    from test_bank_compare import Ranker as ResultRanker, ranked_bank
+
+    session = BankCompareSession(
+        amount=1_500_000_000, years=20, assumed_floating_rate=Decimal("10"),
+        base_rate=Decimal("7.5"), property_value=2_000_000_000,
+        prepay_month=60, grace_period_months=6, status="collecting",
+    )
+    result = BankRankResult(
+        (ranked_bank(),), (), {"floating_rate": Decimal("10")}, "2026-11-16", True,
+    )
+    repository = Repository(session)
+    compare = CompareBanksUseCase(Extractor(BankCompareExtraction("update", {})),
+                                  ResultRanker(result), get_prompt_catalog())
+    fallback = compare._render_result(session, result)
+    completed = False
+
+    class FragmentedCompletion:
+        async def stream_reply(self, text, **kwargs):
+            nonlocal completed
+            midpoint = len(draft) // 2
+            yield draft[:midpoint]
+            yield draft[midpoint:]
+            completed = True
+
+    case = StreamChatUseCase(
+        FragmentedCompletion(), repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.BANK_COMPARE), bank_compare=compare,
+    )
+    events = []
+    async for event in case.execute(ChatRequest(uuid4(), uuid4(), "So sánh", None)):
+        assert completed, "Do not emit unvalidated completion fragments"
+        events.append(event)
+
+    expected = draft if valid else fallback
+    assert [event.event for event in events] == ["delta", "done"]
+    assert events[0].data["text"] == expected
+    assert events[-1].data["reply"] == repository.committed_answer == expected
+    assert repository.bank_compare_session == replace(session, status="completed")
+    assert ("BANK_COMPARE_NUMBER_MISMATCH" in caplog.text) is not valid
+    assert draft not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_general_chat_keeps_incremental_streaming():
+    repository = Repository()
+
+    class FragmentedCompletion:
+        async def stream_reply(self, text, **kwargs):
+            yield "Xin chào "
+            assert repository.committed_answer is None
+            yield "123456789"
+
+    case = StreamChatUseCase(
+        FragmentedCompletion(), repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.GENERAL),
+    )
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "Chào", None))]
+
+    assert [event.data["text"] for event in events if event.event == "delta"] == [
+        "Xin chào ", "123456789",
+    ]
+    assert repository.committed_answer == "Xin chào 123456789"
+
+
+@pytest.mark.asyncio
 async def test_cancel_comparison_does_not_call_completion_or_ranker():
     state = BankCompareSession(amount=1_000_000_000, status="collecting")
     repository = Repository(state)
@@ -302,8 +446,92 @@ async def test_comparison_provider_failure_does_not_commit_completed_state(parti
             events.append(event)
 
     assert caught.value is error
-    assert [event.event for event in events] == (["delta"] if partial else [])
+    assert events == []
     assert repository.failure["error_code"] == "MODEL_UNAVAILABLE"
     assert repository.committed_answer is None and repository.state_update is None
     assert repository.bank_compare_session == state
     assert len(ranker.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_active_bank_compare_passes_last_assistant_question_to_extractor():
+    assistant_question = (
+        "Các ngân hàng chưa công bố lãi sau ưu đãi. Bạn muốn giả định lãi sau ưu đãi "
+        "bao nhiêu %/năm để so sánh (ví dụ 10)?"
+    )
+    state = BankCompareSession(amount=1_500_000_000, years=20, status="collecting")
+    repository = Repository(
+        state,
+        history=(
+            ("user", "Với khoản vay 1,5 tỷ đồng trong 20 năm, ngân hàng nào là tốt nhất?"),
+            ("assistant", assistant_question),
+        ),
+    )
+    extractor = Extractor(BankCompareExtraction("update", {"assumed_floating_rate": Decimal("5")}))
+    ranker = Ranker()
+    case = StreamChatUseCase(
+        FakeCompletion("Hiện chưa có gói vay phù hợp để xếp hạng."),
+        repository,
+        prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.RETRIEVAL),
+        retrieval=FakeRetrieval(error=AssertionError("must not retrieve")),
+        bank_compare=CompareBanksUseCase(extractor, ranker, get_prompt_catalog()),
+    )
+
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "5%", 1))]
+
+    assert events[-1].event == "done"
+    assert extractor.last_assistant_messages == [assistant_question]
+    assert len(ranker.calls) == 1
+    assert ranker.calls[0].assumed_floating_rate == Decimal("5")
+
+
+@pytest.mark.asyncio
+async def test_active_bank_compare_unrelated_still_falls_back_to_classification_and_retrieval():
+    state = BankCompareSession(amount=1_500_000_000, years=20, status="collecting")
+    repository = Repository(state)
+    ranker = Ranker()
+    retrieval = FakeRetrieval()
+    case = StreamChatUseCase(
+        FakeCompletion(),
+        repository,
+        prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.BANK_COMPARE),
+        retrieval=retrieval,
+        bank_compare=CompareBanksUseCase(
+            Extractor(BankCompareExtraction("unrelated", {})), ranker, get_prompt_catalog(),
+        ),
+    )
+
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "không rõ", 1))]
+
+    assert events[-1].event == "done"
+    assert retrieval.queries == ["không rõ"]
+    assert ranker.calls == []
+    assert repository.bank_compare_session == state
+    assert repository.state_update.bank_compare_session is None
+
+
+@pytest.mark.asyncio
+async def test_idle_bank_compare_unrelated_still_falls_back_to_retrieval():
+    repository = Repository()
+    ranker = Ranker()
+    retrieval = FakeRetrieval()
+    question = "BIDV quảng cáo lãi suất 5%, có đúng không?"
+    case = StreamChatUseCase(
+        FakeCompletion(),
+        repository,
+        prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.BANK_COMPARE),
+        retrieval=retrieval,
+        bank_compare=CompareBanksUseCase(
+            Extractor(BankCompareExtraction("unrelated", {})), ranker, get_prompt_catalog(),
+        ),
+    )
+
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), question, None))]
+
+    assert events[-1].event == "done"
+    assert retrieval.queries == [question]
+    assert ranker.calls == []
+    assert repository.bank_compare_session == BankCompareSession()

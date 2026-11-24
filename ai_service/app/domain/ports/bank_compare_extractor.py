@@ -10,4 +10,10 @@ class BankCompareExtractionError(ChatError):
 
 
 class BankCompareExtractor(Protocol):
-    async def extract(self, text: str, session: BankCompareSession) -> BankCompareExtraction: ...
+    async def extract(
+        self,
+        text: str,
+        session: BankCompareSession,
+        *,
+        last_assistant_message: str | None = None,
+    ) -> BankCompareExtraction: ...

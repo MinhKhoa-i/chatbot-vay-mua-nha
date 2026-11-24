@@ -30,8 +30,16 @@ class CompareBanksUseCase:
         self._ranker = ranker
         self._prompts = prompts
 
-    async def execute(self, text: str, session: BankCompareSession) -> BankCompareTurn:
-        extraction = await self._extractor.extract(text, session)
+    async def execute(
+        self,
+        text: str,
+        session: BankCompareSession,
+        *,
+        last_assistant_message: str | None = None,
+    ) -> BankCompareTurn:
+        extraction = await self._extractor.extract(
+            text, session, last_assistant_message=last_assistant_message,
+        )
         if extraction.action == "unrelated":
             return BankCompareTurn("", session, handled=False)
         if extraction.action == "cancel":
