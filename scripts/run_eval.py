@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Chạy 40 câu hỏi kiểm thử (docs/eval-questions.md) qua backend POST /api/chat (STT 23 tuần 2).
+"""Chạy các kịch bản kiểm thử (docs/eval-questions.md) qua backend POST /api/chat (STT 23 tuần 2).
 
 Cần: backend chạy với AI_SERVICE_URL trỏ tới ai_service đã nạp tri thức (xem docs/api.md mục 5).
 Chạy từ thư mục gốc repo, chỉ dùng thư viện chuẩn của Python:
     python scripts/run_eval.py
-    python scripts/run_eval.py --only EVAL-01,EVAL-31
-Kết quả ghi vào docs/eval-results.md; cột "Kết quả" để "Chưa chấm" cho người chấm điền.
+    python scripts/run_eval.py --only EVAL-01,EVAL-31 --out docs/eval-rerun.md
+Mặc định ghi vào docs/eval-rerun.md (không ghi đè mốc docs/eval-results.md trừ khi truyền --overwrite);
+cột "Kết quả" để "Chưa chấm" cho người chấm điền.
 """
 
 import argparse
@@ -21,6 +22,8 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_OUT = ROOT / "docs" / "eval-rerun.md"
+BASELINE_RESULTS = ROOT / "docs" / "eval-results.md"
 SAMPLE_MARK = "(dữ liệu mẫu)"  # câu mẫu của backend khi chưa đặt AI_SERVICE_URL
 
 
@@ -151,11 +154,27 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Chạy câu hỏi kiểm thử qua backend /api/chat")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--questions", type=Path, default=ROOT / "docs" / "eval-questions.md")
-    parser.add_argument("--out", type=Path, default=ROOT / "docs" / "eval-results.md")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=DEFAULT_OUT,
+        help="File markdown đầu ra (mặc định: docs/eval-rerun.md)",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Cho phép ghi đè file mốc docs/eval-results.md nếu đã tồn tại",
+    )
     parser.add_argument("--only", help="Chỉ chạy các ID, ví dụ EVAL-01,EVAL-31")
     parser.add_argument("--timeout", type=float, default=240.0, help="Số giây chờ mỗi câu (backend có thể thử lại)")
     args = parser.parse_args(argv)
     base_url = args.base_url.rstrip("/")
+
+    if args.out.resolve() == BASELINE_RESULTS.resolve() and args.out.exists() and not args.overwrite:
+        raise SystemExit(
+            f"Từ chối ghi đè file mốc {args.out}. Hãy chọn file khác qua --out "
+            "(ví dụ docs/eval-rerun.md) hoặc truyền --overwrite nếu thật sự muốn ghi đè."
+        )
 
     items = load_questions(args.questions)
     if args.only:
@@ -178,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         last = result["turns"][-1]
         print(f"[{n}/{len(items)}] {item['id']} {len(result['turns'])}/{len(item['turns'])} "
               f"{last.get('status')} {result['seconds']:.1f}s {last.get('error', '')}")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(render(items, base_url, started), encoding="utf-8")
     print(f"Đã ghi {args.out}")
     return 0

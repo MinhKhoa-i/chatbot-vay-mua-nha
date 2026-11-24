@@ -1,6 +1,6 @@
 # Kết quả chạy 5 kịch bản kiểm thử chatbot
 
-- Lần chạy: 22/11/2026 00:00, commit `5b5df86`, backend `http://127.0.0.1:8000`.
+- Lần chạy: 24/11/2026 09:20, commit `f45e236`, backend `http://127.0.0.1:8000`.
 - Có đầy đủ câu trả lời: 5/5 kịch bản. Câu hỏi và đáp án chuẩn: `docs/eval-questions.md`.
 - Người chấm: (điền tên). Mô hình: (điền `LLM_MODEL` của ai_service).
 
@@ -16,11 +16,11 @@
 
 | ID | Nhóm | Lượt chạy | Thời gian (giây) | Kết quả | Ghi chú |
 |---|---|---:|---:|---|---|
-| EVAL-39 | Ngoài phạm vi và chống bịa số liệu | 1/1 | 8.9 | Chưa chấm |  |
-| EVAL-40 | Ngoài phạm vi và chống bịa số liệu | 1/1 | 4.3 | Chưa chấm |  |
-| EVAL-48 | Hội thoại nhiều lượt | 2/2 | 11.4 | Chưa chấm |  |
-| EVAL-49 | Hội thoại nhiều lượt | 2/2 | 8.3 | Chưa chấm |  |
-| EVAL-50 | Hội thoại nhiều lượt | 3/3 | 34.8 | Chưa chấm |  |
+| EVAL-39 | Ngoài phạm vi và chống bịa số liệu | 1/1 | 4.3 | Chưa chấm |  |
+| EVAL-40 | Ngoài phạm vi và chống bịa số liệu | 1/1 | 5.0 | Chưa chấm |  |
+| EVAL-48 | Hội thoại nhiều lượt | 2/2 | 8.3 | Chưa chấm |  |
+| EVAL-49 | Hội thoại nhiều lượt | 2/2 | 5.8 | Chưa chấm |  |
+| EVAL-50 | Hội thoại nhiều lượt | 3/3 | 28.1 | Chưa chấm |  |
 
 ## Chi tiết
 
@@ -32,7 +32,9 @@
 
 **Bot trả lời:**
 
-> Mình không thể dự đoán chính xác giá Bitcoin ngày mai hoặc đưa khuyến nghị đầu tư. Mình chỉ hỗ trợ thông tin về vay mua nhà tại Việt Nam, như điều kiện vay, hồ sơ, lãi suất, phí và tài sản bảo đảm.
+> Mình không thể dự đoán chính xác giá Bitcoin ngày mai hoặc đưa ra khuyến nghị đầu tư. Nội dung này cũng nằm ngoài phạm vi hỗ trợ của mình, vì mình chỉ hỗ trợ thông tin về vay mua nhà tại Việt Nam.
+> 
+> Mình có thể giúp bạn tìm hiểu điều kiện, hồ sơ, lãi suất, phí hoặc cách trả nợ khi vay mua nhà.
 
 **Kết quả:** Chưa chấm. **Lý do:** 
 
@@ -44,7 +46,7 @@
 
 **Bot trả lời:**
 
-> Mình không thể viết bài văn nghị luận văn học vì nội dung này ngoài phạm vi hỗ trợ. Mình có thể giúp bạn giải thích điều kiện, hồ sơ, lãi suất hoặc quy trình vay mua nhà tại Việt Nam.
+> Mình không thể hỗ trợ viết bài văn nghị luận văn học vì nội dung này ngoài phạm vi hỗ trợ. Mình có thể giúp bạn giải thích điều kiện, hồ sơ, lãi suất hoặc quy trình vay mua nhà tại Việt Nam.
 
 **Kết quả:** Chưa chấm. **Lý do:** 
 
@@ -124,13 +126,13 @@
 
 **Bot trả lời:**
 
-> LTV sơ bộ = 1,5 tỷ / 2,5 tỷ = **60%**.
+> LTV sơ bộ = **1,5 tỷ / 2,5 tỷ × 100% = 60%**. [1]
 > 
-> Tuy nhiên, đây chỉ là tỷ lệ tạm tính theo giá nhà bạn cung cấp. Khi xét duyệt, ngân hàng có thể sử dụng giá trị tài sản bảo đảm sau thẩm định và áp dụng các giới hạn tài trợ riêng, nên LTV hoặc hạn mức thực tế có thể khác. [1]
+> Thời hạn vay 20 năm và việc chưa chọn ngân hàng, lãi suất **không ảnh hưởng đến phép tính LTV sơ bộ này**. Tuy nhiên, ngân hàng có thể tính trên giá trị tài sản bảo đảm sau thẩm định thay vì giá mua, nên LTV thực tế có thể khác và không đồng nghĩa khoản vay chắc chắn được phê duyệt. [1][2]
 > 
-> Lưu ý: Thông tin chỉ mang tính tham khảo; bạn nên xác nhận giá trị tài sản được ngân hàng chấp nhận trước khi quyết định vay.
+> Lưu ý: Thông tin chỉ mang tính tham khảo; bạn nên xác nhận giá trị tài sản bảo đảm và điều kiện tài trợ trực tiếp với ngân hàng khi chọn sản phẩm.
 > 
-> Nguồn tham khảo: [1] Techcombank & Vietcombank — https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o
+> Nguồn tham khảo: [1] Techcombank – trang sản phẩm vay mua bất động sản có Giấy chứng nhận và vay mua nhà dự án (tỷ lệ tài trợ trên giá trị tài sản bảo đảm); ví dụ tính LTV do nhóm xây dựng — https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o; [2] Techcombank & Vietcombank — https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o
 
 **Kết quả:** Chưa chấm. **Lý do:** 
 
@@ -140,18 +142,15 @@
 
 **Bot trả lời:**
 
-> LTV sơ bộ = 1 tỷ / 2,5 tỷ = **40%**. [1]
+> LTV sơ bộ = **1 tỷ / 2,5 tỷ × 100% = 40%**. [1]
 > 
-> Mình chưa thể tính tiền trả tháng đầu vì bạn chưa chọn **lãi suất** và **phương thức trả nợ**:
+> Mình chưa thể tính **tiền trả tháng đầu** vì bạn chưa cung cấp **lãi suất** và **phương thức trả nợ** (ví dụ: trả gốc đều theo dư nợ giảm dần hoặc trả góp đều). Ngoài ra, ngân hàng có thể dùng giá trị tài sản bảo đảm sau thẩm định làm cơ sở, nên LTV thực tế có thể khác. [1][2]
 > 
-> - **Gốc đều:** tiền gốc mỗi tháng cố định, tiền lãi tính trên dư nợ thực tế nên tháng đầu thường cao hơn các tháng sau.
-> - **Khoản thanh toán cố định:** tiền trả hằng tháng được tính theo công thức của ngân hàng; vẫn cần lãi suất áp dụng.
+> Bạn cần xác định lãi suất và phương thức trả nợ trước khi tính khoản thanh toán tháng đầu.
 > 
-> Với sản phẩm Techcombank được tài liệu nêu, tiền lãi theo kỳ được tính trên dư nợ thực tế, lãi suất năm và số ngày thực tế trong kỳ; số ngày mỗi tháng có thể khác nhau nên tiền lãi tháng đầu không thể xác định nếu chưa có lãi suất. [2]
+> Lưu ý: Thông tin chỉ mang tính tham khảo; LTV, lãi suất và số tiền trả thực tế cần được xác nhận với ngân hàng.
 > 
-> Lưu ý: Thông tin chỉ mang tính tham khảo; bạn nên xác nhận lãi suất, phương thức trả nợ và giá trị tài sản được ngân hàng chấp nhận trước khi quyết định vay.
-> 
-> Nguồn tham khảo: [1] Techcombank & Vietcombank — https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o; [2] Techcombank - Công thức tính gốc và lãi vay mua nhà — https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o
+> Nguồn tham khảo: [1] Techcombank – trang sản phẩm vay mua bất động sản có Giấy chứng nhận và vay mua nhà dự án (tỷ lệ tài trợ trên giá trị tài sản bảo đảm); ví dụ tính LTV do nhóm xây dựng — https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o; [2] Techcombank & Vietcombank — https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o
 
 **Kết quả:** Chưa chấm. **Lý do:** 
 
@@ -161,15 +160,7 @@
 
 **Bot trả lời:**
 
-> Với khoản vay **1 tỷ đồng trong 15 năm (180 tháng)**, lãi suất **9%/năm không đổi**, trả **gốc đều hằng tháng**, không ân hạn:
-> 
-> - **LTV sơ bộ:** 1 tỷ / 2,5 tỷ = **40%**
-> - **Gốc trả mỗi tháng:** 1 tỷ / 180 = **5,56 triệu đồng**
-> - **Lãi tháng đầu:** 1 tỷ × 9% / 12 = **7,5 triệu đồng**
-> - **Tổng tiền trả tháng đầu:** **khoảng 13,06 triệu đồng**
-> 
-> Các tháng sau, tiền lãi sẽ giảm dần theo dư nợ; nếu lãi suất giữ nguyên, tiền trả mỗi tháng cũng giảm dần. Đây là phép tính theo giả định lãi năm chia 12 và chưa bao gồm phí, bảo hiểm hoặc các khoản khác.
-> 
-> Lưu ý: Thông tin chỉ mang tính tham khảo; lịch trả nợ thực tế cần xác nhận với ngân hàng.
+> Để mô phỏng khoản trả nợ (chưa gồm phí), mình còn cần: số tiền muốn vay (VND), thời hạn vay (nguyên năm, 1–35).
+> Bạn cung cấp các thông tin còn thiếu giúp mình nhé. Mình không tự chọn lãi suất hay phương thức trả nợ thay bạn.
 
 **Kết quả:** Chưa chấm. **Lý do:** 
