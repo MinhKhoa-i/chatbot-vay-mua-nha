@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.chat_request import ChatRequest, ChatSnapshotUpdate
+from app.domain.entities.conversation_memory import ConversationMemory
 from app.domain.entities.estimate_session import EstimateSession
 from app.infrastructure.db.conversation_repository import PostgresConversationRepository
 from app.infrastructure.db.estimate_state_codec import decode_estimate_session
@@ -16,6 +17,59 @@ from test_chat_checkpoint_commit import FakeSession
 class ClaimSession(FakeSession):
     async def scalars(self, statement):
         return SimpleNamespace(all=lambda: [])
+
+
+async def test_memory_commit_encrypts_profile_and_next_claim_restores_state():
+    cipher = PayloadCipher(base64.b64encode(b"k" * 32).decode("ascii"))
+    conversation_id, request_id, token = uuid4(), uuid4(), uuid4()
+    now = datetime.now(UTC)
+    checkpoint, profile = PostgresConversationRepository._initial_state()
+    profile_row = SimpleNamespace(
+        revision=0,
+        slots_ciphertext=cipher.encrypt_json(
+            profile, table="conversation_profiles", column="slots_ciphertext", resource_id=conversation_id,
+        ),
+    )
+    conversation = SimpleNamespace(
+        id=conversation_id, status="active", version=0, active_request_id=request_id,
+        expires_at=now + timedelta(days=1),
+        checkpoint_ciphertext=cipher.encrypt_json(
+            checkpoint, table="conversations", column="checkpoint_ciphertext", resource_id=conversation_id,
+        ),
+    )
+    ledger = SimpleNamespace(
+        id=request_id, status="processing", lease_token=token, snapshot_version=0,
+        lease_expires_at=now + timedelta(seconds=90),
+    )
+    memory = ConversationMemory(
+        amount=1_000_000_000, years=20, user_provided_rate=Decimal("8.5"), source_seq=1,
+    )
+    session = FakeSession([conversation, now, ledger, now, 0, profile_row])
+    repository = PostgresConversationRepository(lambda: session, cipher)
+    await repository.commit(
+        ChatRequest(conversation_id, uuid4(), "Vay 1 tỷ, 20 năm, lãi suất 8,5%", 0),
+        request_id=request_id, lease_token=token, snapshot_version=0, answer="Đã lưu thông tin.",
+        state_update=ChatSnapshotUpdate(ChatIntent.RETRIEVAL, conversation_memory=memory),
+    )
+
+    saved_profile = cipher.decrypt_json(
+        profile_row.slots_ciphertext, table="conversation_profiles", column="slots_ciphertext",
+        resource_id=conversation_id,
+    )
+    saved_checkpoint = cipher.decrypt_json(
+        conversation.checkpoint_ciphertext, table="conversations", column="checkpoint_ciphertext",
+        resource_id=conversation_id,
+    )
+    assert saved_profile["conversation_memory"]["user_provided_rate"] == "8.5"
+    assert profile_row.revision == saved_profile["profile_revision"] == saved_checkpoint["profile_revision"] == 1
+
+    conversation.expires_at = now + timedelta(days=30)
+    claim_session = ClaimSession([conversation, now, None, profile_row])
+    claim = await PostgresConversationRepository(lambda: claim_session, cipher).claim(
+        ChatRequest(conversation_id, uuid4(), "Còn lãi suất thì sao?", 1), "next-hash",
+    )
+    assert claim.kind == "claimed"
+    assert claim.snapshot.conversation_memory == memory
 
 
 async def test_estimate_commit_encrypts_profile_and_next_claim_restores_state():

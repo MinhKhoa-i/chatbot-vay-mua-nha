@@ -7,3 +7,4 @@ class ChatIntent(StrEnum):
     GENERAL = "general"
     RETRIEVAL = "retrieval"
     ESTIMATE = "estimate"
+    BANK_COMPARE = "bank_compare"

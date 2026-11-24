@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Chạy 40 câu hỏi kiểm thử (docs/eval-questions.md) qua backend POST /api/chat (STT 23 tuần 2).
+"""Chạy các kịch bản kiểm thử (docs/eval-questions.md) qua backend POST /api/chat (STT 23 tuần 2).
 
 Cần: backend chạy với AI_SERVICE_URL trỏ tới ai_service đã nạp tri thức (xem docs/api.md mục 5).
 Chạy từ thư mục gốc repo, chỉ dùng thư viện chuẩn của Python:
     python scripts/run_eval.py
-    python scripts/run_eval.py --only EVAL-01,EVAL-31
-Kết quả ghi vào docs/eval-results.md; cột "Kết quả" để "Chưa chấm" cho người chấm điền.
+    python scripts/run_eval.py --only EVAL-01,EVAL-31 --out docs/eval-rerun.md
+Mặc định ghi vào docs/eval-rerun.md (không ghi đè mốc docs/eval-results.md trừ khi truyền --overwrite);
+cột "Kết quả" để "Chưa chấm" cho người chấm điền.
 """
 
 import argparse
@@ -21,22 +22,42 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_OUT = ROOT / "docs" / "eval-rerun.md"
+BASELINE_RESULTS = ROOT / "docs" / "eval-results.md"
 SAMPLE_MARK = "(dữ liệu mẫu)"  # câu mẫu của backend khi chưa đặt AI_SERVICE_URL
 
 
 def load_questions(path: Path) -> list[dict]:
-    group, items, current = "", [], None
+    group, items, current, turn = "", [], None, None
     for line in path.read_text(encoding="utf-8").splitlines():
         if m := re.match(r"^## \d+\. (.+)$", line):
             group = m.group(1).strip()
         elif m := re.match(r"^### (EVAL-\d+)\. (.+)$", line):
-            current = {"id": m.group(1), "group": group, "question": m.group(2).strip(), "answer": ""}
+            current = {"id": m.group(1), "group": group, "turns": []}
             items.append(current)
-        elif current and line.startswith("**Đáp án chuẩn:**"):
-            current["answer"] = line.removeprefix("**Đáp án chuẩn:**").strip()
-    if not items or any(not item["answer"] for item in items):
+            turn = {"question": m.group(2).strip(), "answer": ""}
+            current["turns"].append(turn)
+        elif current and (m := re.match(r"^\*\*Lượt \d+:\*\* (.+)$", line)):
+            if len(current["turns"]) == 1 and not current["turns"][0]["answer"]:
+                current["turns"].clear()  # The heading names the scenario; actual turns follow it.
+            turn = {"question": m.group(1).strip(), "answer": ""}
+            current["turns"].append(turn)
+        elif turn and line.startswith("**Đáp án chuẩn:**"):
+            turn["answer"] = line.removeprefix("**Đáp án chuẩn:**").strip()
+    if not items or any(not turn["answer"] for item in items for turn in item["turns"]):
         raise SystemExit(f"{path}: không đọc được câu hỏi hoặc đáp án chuẩn.")
     return items
+
+
+def run_item(base_url: str, item: dict, timeout: float) -> dict:
+    session_id = str(uuid.uuid4())
+    results = []
+    for turn in item["turns"]:
+        result = ask(base_url, turn["question"], timeout, session_id)
+        results.append(result)
+        if result.get("status") != 200:
+            break
+    return {"turns": results, "seconds": sum(result["seconds"] for result in results)}
 
 
 def post_json(url: str, payload: dict, timeout: float) -> tuple[int, dict]:
@@ -53,11 +74,12 @@ def post_json(url: str, payload: dict, timeout: float) -> tuple[int, dict]:
         return exc.code, body
 
 
-def ask(base_url: str, question: str, timeout: float) -> dict:
+def ask(base_url: str, question: str, timeout: float, session_id: str | None = None) -> dict:
     started = time.monotonic()
     try:
-        status, body = post_json(f"{base_url}/api/chat", {"message": question, "session_id": str(uuid.uuid4())},
-                                 timeout)
+        status, body = post_json(f"{base_url}/api/chat", {
+            "message": question, "session_id": session_id or str(uuid.uuid4()),
+        }, timeout)
     except (urllib.error.URLError, TimeoutError) as exc:
         return {"status": None, "error": f"Không gọi được backend: {exc}", "seconds": time.monotonic() - started}
     result = {"status": status, "seconds": time.monotonic() - started}
@@ -77,12 +99,16 @@ def git_commit() -> str:
 
 
 def render(items: list[dict], base_url: str, started: datetime) -> str:
-    ok = sum(1 for i in items if i["result"].get("status") == 200)
+    completed = sum(
+        1 for item in items
+        if len(item["result"]["turns"]) == len(item["turns"])
+        and all(turn.get("status") == 200 for turn in item["result"]["turns"])
+    )
     lines = [
-        "# Kết quả chạy 40 câu hỏi kiểm thử chatbot",
+        f"# Kết quả chạy {len(items)} kịch bản kiểm thử chatbot",
         "",
         f"- Lần chạy: {started:%d/%m/%Y %H:%M}, commit `{git_commit()}`, backend `{base_url}`.",
-        f"- Có câu trả lời: {ok}/{len(items)} câu. Câu hỏi và đáp án chuẩn: `docs/eval-questions.md`.",
+        f"- Có đầy đủ câu trả lời: {completed}/{len(items)} kịch bản. Câu hỏi và đáp án chuẩn: `docs/eval-questions.md`.",
         "- Người chấm: (điền tên). Mô hình: (điền `LLM_MODEL` của ai_service).",
         "",
         "## Cách chấm",
@@ -97,25 +123,29 @@ def render(items: list[dict], base_url: str, started: datetime) -> str:
         "",
         "## Tổng hợp",
         "",
-        "| ID | Nhóm | Thời gian (giây) | Kết quả | Ghi chú |",
-        "|---|---|---|---|---|",
+        "| ID | Nhóm | Lượt chạy | Thời gian (giây) | Kết quả | Ghi chú |",
+        "|---|---|---:|---:|---|---|",
     ]
     for item in items:
-        r = item["result"]
-        note = r.get("error", "")
-        lines.append(f"| {item['id']} | {item['group']} | {r['seconds']:.1f} | Chưa chấm | {note} |")
+        result = item["result"]
+        note = next((turn.get("error", "") for turn in result["turns"] if turn.get("error")), "")
+        lines.append(
+            f"| {item['id']} | {item['group']} | {len(result['turns'])}/{len(item['turns'])} "
+            f"| {result['seconds']:.1f} | Chưa chấm | {note} |"
+        )
     lines += ["", "## Chi tiết", ""]
     for item in items:
-        r = item["result"]
-        lines += [f"### {item['id']}. {item['question']}", "", f"**Đáp án chuẩn:** {item['answer']}", ""]
-        if r.get("status") == 200:
-            reply = r["reply"].strip().replace("\n", "\n> ")
-            lines += ["**Bot trả lời:**", "", f"> {reply}", ""]
-            if r.get("estimate"):
-                lines += [f"**estimate:** `{json.dumps(r['estimate'], ensure_ascii=False)}`", ""]
-        else:
-            lines += [f"**Lỗi:** {r.get('error')}", ""]
-        lines += ["**Kết quả:** Chưa chấm. **Lý do:** ", ""]
+        lines += [f"### {item['id']}", ""]
+        for index, (turn, result) in enumerate(zip(item["turns"], item["result"]["turns"]), 1):
+            lines += [f"#### Lượt {index}: {turn['question']}", "", f"**Đáp án chuẩn:** {turn['answer']}", ""]
+            if result.get("status") == 200:
+                reply = result["reply"].strip().replace("\n", "\n> ")
+                lines += ["**Bot trả lời:**", "", f"> {reply}", ""]
+                if result.get("estimate"):
+                    lines += [f"**estimate:** `{json.dumps(result['estimate'], ensure_ascii=False)}`", ""]
+            else:
+                lines += [f"**Lỗi:** {result.get('error')}", ""]
+            lines += ["**Kết quả:** Chưa chấm. **Lý do:** ", ""]
     return "\n".join(lines)
 
 
@@ -124,17 +154,35 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Chạy câu hỏi kiểm thử qua backend /api/chat")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--questions", type=Path, default=ROOT / "docs" / "eval-questions.md")
-    parser.add_argument("--out", type=Path, default=ROOT / "docs" / "eval-results.md")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=DEFAULT_OUT,
+        help="File markdown đầu ra (mặc định: docs/eval-rerun.md)",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Cho phép ghi đè file mốc docs/eval-results.md nếu đã tồn tại",
+    )
     parser.add_argument("--only", help="Chỉ chạy các ID, ví dụ EVAL-01,EVAL-31")
     parser.add_argument("--timeout", type=float, default=240.0, help="Số giây chờ mỗi câu (backend có thể thử lại)")
     args = parser.parse_args(argv)
     base_url = args.base_url.rstrip("/")
 
+    if args.out.resolve() == BASELINE_RESULTS.resolve() and args.out.exists() and not args.overwrite:
+        raise SystemExit(
+            f"Từ chối ghi đè file mốc {args.out}. Hãy chọn file khác qua --out "
+            "(ví dụ docs/eval-rerun.md) hoặc truyền --overwrite nếu thật sự muốn ghi đè."
+        )
+
     items = load_questions(args.questions)
     if args.only:
         wanted = {x.strip() for x in args.only.split(",")}
         items = [i for i in items if i["id"] in wanted]
-    print(f"{len(items)} câu từ {args.questions}")
+    if not items:
+        raise SystemExit("Không tìm thấy EVAL nào khớp với --only.")
+    print(f"{len(items)} kịch bản từ {args.questions}")
 
     probe = ask(base_url, "Xin chào", args.timeout)
     if probe.get("status") != 200:
@@ -144,9 +192,12 @@ def main(argv: list[str] | None = None) -> int:
 
     started = datetime.now()
     for n, item in enumerate(items, 1):
-        item["result"] = ask(base_url, item["question"], args.timeout)
-        r = item["result"]
-        print(f"[{n}/{len(items)}] {item['id']} {r.get('status')} {r['seconds']:.1f}s {r.get('error', '')}")
+        item["result"] = run_item(base_url, item, args.timeout)
+        result = item["result"]
+        last = result["turns"][-1]
+        print(f"[{n}/{len(items)}] {item['id']} {len(result['turns'])}/{len(item['turns'])} "
+              f"{last.get('status')} {result['seconds']:.1f}s {last.get('error', '')}")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(render(items, base_url, started), encoding="utf-8")
     print(f"Đã ghi {args.out}")
     return 0

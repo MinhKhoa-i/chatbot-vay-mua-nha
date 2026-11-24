@@ -15,7 +15,7 @@ class IntentClassificationError(ChatError):
 
 class ChatIntentClassifier(Protocol):
     async def classify(
-        self, text: str, *, history: tuple[tuple[str, str], ...] = (),
+        self, text: str, *, history: tuple[tuple[str, str], ...] = (), memory_context: str = "",
     ) -> ChatIntent:
         """Classify the current message using committed conversational context."""
         ...

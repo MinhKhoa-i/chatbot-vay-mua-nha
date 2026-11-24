@@ -13,6 +13,7 @@ from app.application.use_cases.estimate_loan import EstimateLoanUseCase
 from app.application.use_cases.stream_chat import StreamChatUseCase
 from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.chat_request import ChatClaim, ChatRequest, ChatSnapshot
+from app.domain.entities.conversation_memory import ConversationMemory
 from app.domain.entities.estimate_session import EstimateExtraction, EstimateSession
 from app.domain.entities.loan_estimate import LoanEstimateInput, LoanEstimateResult
 from app.domain.ports.estimate_extractor import EstimateExtractionError
@@ -135,18 +136,24 @@ async def test_backend_error_is_not_rendered_as_success():
 
 
 class EstimateRepository(FakeRepository):
-    def __init__(self, state=EstimateSession()):
+    def __init__(self, state=EstimateSession(), memory=None):
         super().__init__()
         self.estimate_session = state
+        if memory is not None:
+            self.conversation_memory = memory
 
     async def claim(self, request, fingerprint):
-        return ChatClaim("claimed", ChatSnapshot(0, (), uuid4(), uuid4(), self.estimate_session))
+        return ChatClaim("claimed", ChatSnapshot(
+            0, (), uuid4(), uuid4(), self.estimate_session, conversation_memory=self.conversation_memory,
+        ))
 
     async def commit(self, *args, **kwargs):
         self.committed_estimate = kwargs.get("estimate")
         result = await super().commit(*args, **kwargs)
         if self.state_update.estimate_session is not None:
             self.estimate_session = self.state_update.estimate_session
+        if self.state_update.conversation_memory is not None:
+            self.conversation_memory = self.state_update.conversation_memory
         return result
 
 
@@ -179,6 +186,32 @@ async def test_stream_estimate_multiturn_bypasses_rag_and_generation_and_classif
     assert events[-1].data["estimate"] is repository.committed_estimate
 
 
+async def test_estimate_inherits_saved_facts_and_updates_memory_after_completion():
+    memory = ConversationMemory(amount=1_000_000_000, years=20, repayment_method="annuity")
+    repository = EstimateRepository(memory=memory)
+    extractor = Extractor(EstimateExtraction("update", {
+        "rate": Decimal("9"), "promo_duration_months": 0,
+    }))
+    calculator = Calculator()
+    case = StreamChatUseCase(
+        FakeCompletion(), repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.ESTIMATE), retrieval=FakeRetrieval(),
+        estimate=EstimateLoanUseCase(extractor, calculator, get_prompt_catalog()),
+    )
+
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), "Lãi suất 9%, không ưu đãi", None))]
+
+    assert events[-1].event == "done"
+    assert len(calculator.calls) == 0
+    assert extractor.calls[0][1].amount == 1_000_000_000
+    assert extractor.calls[0][1].years == 20
+    assert extractor.calls[0][1].method == "annuity"
+    assert extractor.calls[0][1].rate is None
+    assert repository.conversation_memory.amount == 1_000_000_000
+    assert repository.conversation_memory.years == 20
+    assert repository.conversation_memory.user_provided_rate == Decimal("9")
+
+
 async def test_side_question_keeps_pending_estimate_without_running_calculator():
     state = EstimateSession(
         1_000_000_000, 20, Decimal("9"), "awaiting_confirmation", method="annuity", promo_duration_months=0,
@@ -201,6 +234,34 @@ async def test_side_question_keeps_pending_estimate_without_running_calculator()
     assert repository.state_update.estimate_session is None
     assert repository.committed_estimate is None
     assert events[-1].data["estimate"] is None
+
+
+async def test_general_message_during_pending_estimate_keeps_general_intent():
+    state = EstimateSession(
+        1_000_000_000, 20, Decimal("9"), "awaiting_confirmation", method="annuity", promo_duration_months=0,
+    )
+    repository = EstimateRepository(state)
+    calculator = Calculator()
+    completion = FakeCompletion()
+    retrieval = FakeRetrieval(error=AssertionError("general must not retrieve"))
+    question = "Cảm ơn"
+    case = StreamChatUseCase(
+        completion, repository, prompts=get_prompt_catalog(),
+        classifier=StubIntentClassifier(ChatIntent.GENERAL), retrieval=retrieval,
+        estimate=EstimateLoanUseCase(
+            Extractor(EstimateExtraction("unrelated", {})), calculator, get_prompt_catalog(),
+        ),
+    )
+
+    events = [event async for event in case.execute(ChatRequest(uuid4(), uuid4(), question, None))]
+
+    assert events[-1].event == "done"
+    assert completion.calls == 1
+    assert retrieval.queries == []
+    assert calculator.calls == []
+    assert repository.estimate_session == state
+    assert repository.state_update.intent == "general"
+    assert repository.state_update.estimate_session is None
 
 
 async def test_prepayment_knowledge_question_does_not_reset_pending_estimate():

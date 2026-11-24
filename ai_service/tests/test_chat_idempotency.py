@@ -20,7 +20,7 @@ class FakeCompletion(ChatCompletionPort):
         self.calls = 0
         self.received_history = ()
 
-    async def stream_reply(self, text: str, *, history=(), guidance="", knowledge_context="") -> AsyncIterator[str]:
+    async def stream_reply(self, text: str, *, history=(), memory_context="", guidance="", knowledge_context="") -> AsyncIterator[str]:
         self.calls += 1
         self.received_history = history
         yield "answer"

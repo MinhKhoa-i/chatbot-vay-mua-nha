@@ -22,14 +22,14 @@ def test_all_packaged_prompts_load_as_nonempty_markdown(name):
 
 
 def test_loading_is_utf8_cached_and_independent_of_working_directory(tmp_path, monkeypatch):
-    path = tmp_path / "greeting.md"
+    path = tmp_path / "no_evidence.md"
     path.write_text("﻿Xin chào từ Markdown!\n", encoding="utf-8")
     catalog = MarkdownPromptCatalog(tmp_path)
     monkeypatch.chdir(tmp_path.parent)
-    assert catalog.get(PromptName.GREETING) == "Xin chào từ Markdown!"
+    assert catalog.get(PromptName.NO_EVIDENCE) == "Xin chào từ Markdown!"
     path.write_text("Đã đổi", encoding="utf-8")
-    assert catalog.get(PromptName.GREETING) == "Xin chào từ Markdown!"
-    assert MarkdownPromptCatalog(tmp_path).get(PromptName.GREETING) == "Đã đổi"
+    assert catalog.get(PromptName.NO_EVIDENCE) == "Xin chào từ Markdown!"
+    assert MarkdownPromptCatalog(tmp_path).get(PromptName.NO_EVIDENCE) == "Đã đổi"
 
 
 def test_default_catalog_is_independent_of_working_directory(tmp_path, monkeypatch):
@@ -40,13 +40,13 @@ def test_default_catalog_is_independent_of_working_directory(tmp_path, monkeypat
 @pytest.mark.parametrize("content", [None, "  \n", b"\xff\xfe\xff"])
 def test_missing_empty_or_invalid_utf8_prompt_fails_clearly(tmp_path, content):
     if content is not None:
-        path = tmp_path / "greeting.md"
+        path = tmp_path / "no_evidence.md"
         if isinstance(content, bytes):
             path.write_bytes(content)
         else:
             path.write_text(content, encoding="utf-8")
-    with pytest.raises(PromptLoadError, match="greeting"):
-        MarkdownPromptCatalog(tmp_path).get(PromptName.GREETING)
+    with pytest.raises(PromptLoadError, match="no_evidence"):
+        MarkdownPromptCatalog(tmp_path).get(PromptName.NO_EVIDENCE)
 
 
 def test_unknown_resource_name_cannot_read_arbitrary_files(tmp_path):
@@ -58,21 +58,20 @@ def test_application_uses_injected_text_not_infrastructure_imports():
     class InMemoryPrompts:
         def get(self, name):
             return {
-                PromptName.GREETING: "CUSTOM HELLO",
-                PromptName.THANKS: "CUSTOM THANKS",
-                PromptName.FAREWELL: "CUSTOM BYE",
                 PromptName.NO_EVIDENCE: "CUSTOM FALLBACK",
                 PromptName.RETRIEVAL_GUIDANCE: "CUSTOM GUIDANCE",
+                PromptName.GENERAL_GUIDANCE: "CUSTOM GENERAL GUIDANCE",
                 PromptName.RETRIEVAL_QUERY: "{previous_questions}\nCURRENT={text}",
             }[name]
 
     prompts = InMemoryPrompts()
     policy = ChatResponsePolicy(prompts)
     empty = GroundedContext((), "", ())
-    for text, expected in [("Xin chào", "CUSTOM HELLO"), ("Cảm ơn", "CUSTOM THANKS"), ("Tạm biệt", "CUSTOM BYE")]:
-        assert policy.deterministic_reply(ChatIntent.GENERAL, text, empty) == expected
+    for text in ("Xin chào", "Cảm ơn", "Tạm biệt", "Sao bạn biết?"):
+        assert policy.deterministic_reply(ChatIntent.GENERAL, text, empty) is None
     assert policy.deterministic_reply(ChatIntent.RETRIEVAL, "Hồ sơ?", empty) == "CUSTOM FALLBACK"
     assert policy.retrieval_guidance == "CUSTOM GUIDANCE"
+    assert policy.general_guidance == "CUSTOM GENERAL GUIDANCE"
     query = RetrievalQueryBuilder(prompts).build(
         "Còn bên đó?", (("user", "Ngân hàng A?"),),
     )

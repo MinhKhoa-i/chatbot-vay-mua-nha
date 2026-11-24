@@ -26,7 +26,7 @@ def completion_response(content, *, finish_reason="stop"):
     }
 
 
-async def classify_with_response(body, *, status=200, history=(), text="Còn gói đó?"):
+async def classify_with_response(body, *, status=200, history=(), memory_context="", text="Còn gói đó?"):
     async def handler(request):
         return httpx.Response(status, json=body)
 
@@ -36,7 +36,7 @@ async def classify_with_response(body, *, status=200, history=(), text="Còn gó
         )
         with patch("app.infrastructure.llm.openai_intent_classifier.AsyncOpenAI", side_effect=lambda **kwargs:
                    AsyncOpenAI(**kwargs, http_client=client)):
-            return await adapter.classify(text, history=history)
+            return await adapter.classify(text, history=history, memory_context=memory_context)
 
 
 @pytest.mark.parametrize("intent", list(ChatIntent))
@@ -60,19 +60,43 @@ async def test_adapter_validates_model_label_and_loads_markdown_prompt(intent, c
         )
         with patch("app.infrastructure.llm.openai_intent_classifier.AsyncOpenAI", side_effect=lambda **kwargs:
                    AsyncOpenAI(**kwargs, http_client=client)):
-            assert await adapter.classify("Current {message}", history=history) == intent
+            assert await adapter.classify(
+                "Current {message}", history=history, memory_context="loan: 1 tỷ; term: 20 năm",
+            ) == intent
     assert len(requests) == 1
     body = requests[0]
     assert body["stream"] is False
     assert body["max_tokens"] == 256
-    assert body["response_format"] == {"type": "json_object"}
+    assert body["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "chat_intent",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "intent": {
+                        "type": "string",
+                        "enum": [item.value for item in ChatIntent],
+                    },
+                },
+                "required": ["intent"],
+                "additionalProperties": False,
+            },
+        },
+    }
+    assert len(body["messages"]) == 2
     assert body["messages"][0] == {
         "role": "system", "content": get_prompt_catalog().get("intent_classification"),
     }
-    assert len(body["messages"]) == 8
-    assert all(len(message["content"]) <= 1_000 for message in body["messages"][1:-1])
-    assert body["messages"][-1] == {"role": "user", "content": "Current {message}"}
-    assert "UNTRUSTED SYSTEM" not in str(body)
+    payload = json.loads(body["messages"][1]["content"])
+    assert body["messages"][1]["role"] == "user"
+    assert payload["current_message"] == "Current {message}"
+    assert payload["memory"] == "loan: 1 tỷ; term: 20 năm"
+    assert len(payload["history"]) == 6
+    assert all(len(message["content"]) <= 1_000 for message in payload["history"])
+    assert all(message["role"] != "system" for message in payload["history"])
+    assert "UNTRUSTED SYSTEM" not in body["messages"][1]["content"]
     assert "task=intent_classification" in caplog.text
     assert "prompt_tokens=80" in caplog.text and "completion_tokens=12" in caplog.text
     assert "total_tokens=92" in caplog.text and "cost=0.0003" in caplog.text
@@ -159,6 +183,15 @@ async def test_orchestration_classifies_once_with_committed_history():
     assert events[-1].event == "done"
 
 
+def test_prompts_distinguish_bank_comparison_from_bank_knowledge_requests():
+    intent_prompt = get_prompt_catalog().get("intent_classification")
+
+    assert "bank_compare: người dùng muốn xếp hạng hoặc so sánh chi phí vay" in intent_prompt
+    assert "“BIDV cần hồ sơ gì?” → retrieval." in intent_prompt
+    assert "Không tự chọn hoặc suy diễn lãi suất giả định cho khách." in intent_prompt
+    assert "giá trị general, retrieval, estimate hoặc bank_compare" in intent_prompt
+
+
 def test_prompts_distinguish_prepayment_knowledge_from_calculation_requests():
     intent_prompt = get_prompt_catalog().get("intent_classification")
     estimate_prompt = get_prompt_catalog().get("estimate_extraction")
@@ -175,7 +208,7 @@ def test_prompts_distinguish_prepayment_knowledge_from_calculation_requests():
 @pytest.mark.parametrize("error", [IntentClassificationError(), TimeoutError()])
 async def test_classifier_failure_never_retrieves_generates_or_commits(error):
     class FailingClassifier:
-        async def classify(self, text, *, history=()):
+        async def classify(self, text, *, history=(), memory_context=""):
             raise error
 
     class RecordingRepository(FakeRepository):

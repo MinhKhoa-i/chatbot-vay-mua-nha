@@ -1,6 +1,5 @@
 import logging
 from time import perf_counter
-from typing import Any
 
 from openai.types.completion_usage import CompletionUsage
 

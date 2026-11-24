@@ -1,7 +1,8 @@
+import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
 
+from fastapi import Header, HTTPException, status
 
 from app.application.services.knowledge_chunker import KnowledgeChunker
 from app.application.use_cases.process_knowledge_document import ProcessKnowledgeDocument
@@ -10,13 +11,24 @@ from app.application.use_cases.upload_knowledge_document import (
     SetKnowledgeDocumentActive,
     UploadKnowledgeDocument,
 )
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.infrastructure.db.session import get_async_session_factory
 from app.infrastructure.knowledge.document_extractor import LocalDocumentExtractor
 from app.infrastructure.knowledge.local_snapshot_store import LocalSnapshotStore
 from app.infrastructure.knowledge.postgres_knowledge_repository import PostgresKnowledgeRepository
 from app.infrastructure.knowledge.qwen_embedding_adapter import QwenEmbeddingAdapter
 from app.infrastructure.knowledge.tiktoken_tokenizer import TiktokenTokenizer
+
+
+async def require_admin_api_key(x_admin_key: str | None = Header(default=None, alias="X-Admin-Key")) -> None:
+    configured_key = get_settings().admin_api_key
+    if not configured_key.strip():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ADMIN_API_KEY_NOT_CONFIGURED",
+        )
+    if not x_admin_key or not secrets.compare_digest(x_admin_key, configured_key):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ADMIN_AUTHENTICATION_REQUIRED")
 
 
 @lru_cache

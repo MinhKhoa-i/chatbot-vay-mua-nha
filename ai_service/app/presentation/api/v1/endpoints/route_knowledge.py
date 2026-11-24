@@ -23,10 +23,15 @@ from app.presentation.api.knowledge_dependencies import (
     get_document_activation_updater,
     get_document_reader,
     get_upload_use_case,
+    require_admin_api_key,
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/knowledge/documents", tags=["knowledge"])
+router = APIRouter(
+    prefix="/knowledge/documents",
+    tags=["knowledge"],
+    dependencies=[Depends(require_admin_api_key)],
+)
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=KnowledgeDocumentResponse)

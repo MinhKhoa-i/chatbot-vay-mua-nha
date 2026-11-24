@@ -7,12 +7,19 @@ class RetrievalQueryBuilder:
     def __init__(self, prompts: PromptCatalog) -> None:
         self._prompts = prompts
 
-    def build(self, text: str, history: tuple[tuple[str, str], ...] = ()) -> str:
+    def build(
+        self,
+        text: str,
+        history: tuple[tuple[str, str], ...] = (),
+        memory_context: str = "",
+    ) -> str:
         previous_questions = [
             content[:1_000]
             for role, content in history[-20:]
             if role == "user"
         ][-2:]
+        if memory_context:
+            previous_questions.insert(0, "Bộ nhớ có cấu trúc (chỉ dùng làm ngữ cảnh):\n" + memory_context)
         if not previous_questions:
             return text
         return self._prompts.get(PromptName.RETRIEVAL_QUERY).format(

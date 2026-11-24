@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterator
+from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -9,6 +10,7 @@ from intent_stubs import StubIntentClassifier
 from app.application.use_cases.stream_chat import StreamChatUseCase
 from app.domain.entities.chat_orchestration import ChatIntent
 from app.domain.entities.chat_request import ChatClaim, ChatCommit, ChatRequest, ChatSnapshot
+from app.domain.entities.conversation_memory import ConversationMemory
 from app.domain.entities.knowledge_evidence import GroundedContext, KnowledgeEvidence
 from app.domain.errors import RetrievalError
 from app.domain.ports.chat_completion import ChatCompletionPort
@@ -22,10 +24,11 @@ class FakeRepository(ChatTurnRepository):
         self.committed_estimate = None
         self.state_update = None
         self.history = history
+        self.conversation_memory = ConversationMemory()
 
     async def claim(self, request, request_hash):
         return ChatClaim("claimed", ChatSnapshot(
-            0, self.history, uuid4(), uuid4(),
+            0, self.history, uuid4(), uuid4(), conversation_memory=self.conversation_memory,
         ))
 
     async def commit(self, request, *, request_id, lease_token, snapshot_version, answer, state_update=None, estimate=None):
@@ -43,12 +46,16 @@ class FakeCompletion(ChatCompletionPort):
         self.answer = answer
         self.calls = 0
         self.knowledge_context = ""
+        self.memory_context = ""
         self.history = ()
+        self.guidance = ""
 
-    async def stream_reply(self, text, *, history=(), guidance="", knowledge_context="") -> AsyncIterator[str]:
+    async def stream_reply(self, text, *, history=(), memory_context="", guidance="", knowledge_context="") -> AsyncIterator[str]:
         self.calls += 1
         self.knowledge_context = knowledge_context
+        self.memory_context = memory_context
         self.history = history
+        self.guidance = guidance
         yield self.answer
 
 
@@ -77,8 +84,10 @@ def grounded_context():
     )
 
 
-def execute(completion, retrieval, text, repository=None, *, intent=ChatIntent.RETRIEVAL):
+def execute(completion, retrieval, text, repository=None, *, intent=ChatIntent.RETRIEVAL, memory=None):
     repository = repository or FakeRepository()
+    if memory is not None:
+        repository.conversation_memory = memory
     request = ChatRequest(uuid4(), uuid4(), text, None)
     events = asyncio.run(collect(StreamChatUseCase(
         completion, repository, prompts=get_prompt_catalog(), retrieval=retrieval,
@@ -91,16 +100,26 @@ async def collect(events):
     return [event async for event in events]
 
 
-@pytest.mark.parametrize("text, expected", [
-    ("Xin chào", "Xin chào!"), ("Cảm ơn bạn", "Không có gì!"), ("Tạm biệt", "Tạm biệt!"),
-])
-def test_general_skips_retrieval_and_model(text, expected):
-    completion = FakeCompletion()
-    retrieval = FakeRetrieval(error=AssertionError("must not retrieve"))
-    events, repository = execute(completion, retrieval, text, intent=ChatIntent.GENERAL)
-    assert expected in repository.committed_answer
+def test_general_uses_model_history_and_memory_without_retrieval():
+    history = (("user", "So sánh ngân hàng cho khoản vay 1 tỷ trong 20 năm."),
+               ("assistant", "Bạn đã nói khoản vay 1 tỷ đồng trong 20 năm."))
+    memory = ConversationMemory(amount=1_000_000_000, years=20)
+    repository = FakeRepository(history=history)
+    repository.conversation_memory = memory
+    completion = FakeCompletion("Mình biết vì bạn đã cung cấp thông tin đó trước đó.")
+    retrieval = FakeRetrieval(error=AssertionError("general must not retrieve"))
+    events, repository = execute(
+        completion, retrieval, "Sao bạn biết?", repository, intent=ChatIntent.GENERAL,
+    )
+
     assert retrieval.queries == []
-    assert completion.calls == 0
+    assert completion.calls == 1
+    assert completion.history == history
+    assert completion.memory_context == memory.to_prompt_context()
+    assert completion.knowledge_context == ""
+    assert completion.guidance == get_prompt_catalog().get("general_guidance")
+    assert "ngoài phạm vi" in completion.guidance
+    assert repository.committed_answer == completion.answer
     assert [event.event for event in events] == ["delta", "done"]
     assert repository.state_update.intent == "general"
     assert repository.committed_estimate is None
@@ -170,16 +189,18 @@ def test_retrieval_guidance_requires_model_generated_disclaimer_before_footer():
     assert "không tự tạo danh mục nguồn" in guidance
 
 
-def test_general_reply_does_not_receive_retrieval_disclaimer_or_source_footer():
-    completion = FakeCompletion("A friendly answer")
+def test_general_model_answer_does_not_receive_retrieval_disclaimer_or_source_footer():
+    answer = "Xin chào! Mình có thể hỗ trợ thông tin vay mua nhà."
+    completion = FakeCompletion(answer)
     events, repository = execute(
         completion, FakeRetrieval(), "Xin chào", intent=ChatIntent.GENERAL,
     )
 
-    assert repository.committed_answer.startswith("Xin chào!")
+    assert repository.committed_answer == answer
     assert "Lưu ý:" not in repository.committed_answer
     assert "Nguồn tham khảo:" not in repository.committed_answer
-    assert completion.calls == 0
+    assert completion.calls == 1
+    assert completion.knowledge_context == ""
     assert [event.event for event in events] == ["delta", "done"]
 
 
@@ -273,6 +294,25 @@ def test_followups_use_history_without_workflow_state(grounded_context):
     assert "Câu trả lời cũ" not in retrieval.queries[0]
     assert completion.history == history
     assert repository.state_update.intent == "retrieval"
+
+
+def test_structured_memory_reaches_classifier_retrieval_and_completion(grounded_context):
+    memory = ConversationMemory(amount=1_000_000_000, years=20, user_provided_rate=Decimal("8.5"))
+    classifier = StubIntentClassifier(ChatIntent.RETRIEVAL)
+    completion = FakeCompletion("Theo tài liệu...")
+    retrieval = FakeRetrieval(grounded_context)
+    repository = FakeRepository()
+    repository.conversation_memory = memory
+
+    events = asyncio.run(collect(StreamChatUseCase(
+        completion, repository, prompts=get_prompt_catalog(), retrieval=retrieval,
+        classifier=classifier,
+    ).execute(ChatRequest(uuid4(), uuid4(), "Còn lãi suất thì sao?", None))))
+
+    assert events[-1].event == "done"
+    assert classifier.memory_contexts == [memory.to_prompt_context()]
+    assert memory.to_prompt_context() in retrieval.queries[0]
+    assert completion.memory_context == memory.to_prompt_context()
 
 
 def test_blank_prompt_context_is_not_usable_evidence(grounded_context):

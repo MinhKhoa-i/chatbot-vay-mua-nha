@@ -33,6 +33,7 @@ class OpenAIChatAdapter:
         text: str,
         *,
         history: tuple[tuple[str, str], ...] = (),
+        memory_context: str = "",
         guidance: str = "",
         knowledge_context: str = "",
     ) -> AsyncIterator[str]:
@@ -40,6 +41,8 @@ class OpenAIChatAdapter:
             raise ChatProviderUnavailable(code="MODEL_NOT_CONFIGURED", retryable=False)
 
         system_parts = [self._prompts.get(PromptName.CHAT_SYSTEM)]
+        if memory_context:
+            system_parts.append("## Bộ nhớ có cấu trúc của cuộc hội thoại\n" + memory_context)
         if guidance:
             system_parts.append(self._prompts.get(PromptName.TURN_GUIDANCE).format(guidance=guidance))
         if knowledge_context:

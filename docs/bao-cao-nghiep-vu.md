@@ -91,7 +91,9 @@ Kết quả tư vấn của chatbot có tính chất cung cấp thông tin và h
 
 Kết quả mô phỏng phụ thuộc vào dữ liệu đầu vào, phương thức trả nợ và giả định tính toán. Số tiền thực tế có thể khác do phương pháp tính lãi theo ngày, biến động lãi suất, phí và các điều khoản của hợp đồng. Các tỷ lệ hoặc mức lãi suất giả định trong tình huống minh họa không được xem là chính sách chung của ngân hàng.
 
-Phạm vi trình diễn được giới hạn theo chức năng hiện có. Hàm tính của backend đã hỗ trợ ân hạn nợ gốc, nhưng API ước tính và luồng tính trong chat chưa nhận tham số này, nên hồ sơ có ân hạn chỉ dùng để đối chiếu nghiệp vụ. Chức năng so sánh tổng chi phí giữa các ngân hàng chưa dùng được vì ngân hàng chưa công bố lãi suất sau ưu đãi. Kịch bản trình diễn và hồ sơ mẫu được trình bày tại [Kịch bản demo](kich-ban-demo.md).
+Phạm vi trình diễn được giới hạn theo chức năng hiện có. Hàm tính của backend đã hỗ trợ ân hạn nợ gốc, nhưng API ước tính `/api/estimate` và nhánh ước tính trong chat chưa nhận tham số này. Riêng nhánh so sánh ngân hàng đã nhận số tháng ân hạn và gọi công cụ xếp hạng backend. Khi thiếu lãi sau ưu đãi, bot hỏi người dùng mức lãi giả định để so sánh; nếu đã có lãi cơ sở thì backend có thể kết hợp với biên độ công bố. Không tự thay dữ liệu ngân hàng để trống bằng lãi suất được xem là chính thức. Tổng chi phí so sánh gồm tiền lãi và phí trả trước hạn, chưa gồm mọi chi phí; công cụ chưa đánh giá tuổi, thu nhập hoặc khả năng được duyệt vay.
+
+Lời so sánh do LLM diễn đạt từ kịch bản và kết quả backend, được giữ lại để kiểm tra số trước khi gửi. Số ngoài tập cho phép làm hệ thống chuyển về câu trả lời dựng sẵn. Cơ chế này chưa phát hiện được mọi trường hợp dùng số có thật nhưng sai ngân hàng, chỉ tiêu hoặc đơn vị; không được xem là bảo đảm tuyệt đối về nội dung định lượng. Kịch bản trình diễn và hồ sơ mẫu được trình bày tại [Kịch bản demo](kich-ban-demo.md); chi tiết kỹ thuật và giới hạn xem [Thiết kế chatbot](chatbot-design.md).
 
 ## 6. Kiểm thử chất lượng câu trả lời
 

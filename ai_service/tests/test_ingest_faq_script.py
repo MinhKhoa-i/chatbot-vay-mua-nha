@@ -47,6 +47,7 @@ def test_upload_then_wait_until_published():
     polls = Counter()
 
     def handler(request):
+        assert request.headers["X-Admin-Key"] == "test-admin-key"
         if request.method == "POST":
             assert request.url.path == "/api/v1/knowledge/documents"
             assert b'"logical_document_id"' in request.content
@@ -56,13 +57,24 @@ def test_upload_then_wait_until_published():
         return httpx.Response(200, json={"document_id": "d1", "ingestion_status": status})
 
     data, items = ingest_faq.load_faqs(ingest_faq.DEFAULT_SOURCE)
-    with httpx.Client(base_url="http://ai.test", transport=httpx.MockTransport(handler)) as client:
+    with httpx.Client(
+        base_url="http://ai.test",
+        transport=httpx.MockTransport(handler),
+        headers={"X-Admin-Key": "test-admin-key"},
+    ) as client:
         result = ingest_faq.upload(
             client, items[0], data["disclaimer"], "Minh Khoa", "2026-11-13T20:00:00+07:00",
         )
         assert result["ingestion_status"] == "queued"
         final = ingest_faq.wait_until_done(client, {items[0]["id"]: "d1"}, timeout=5, sleep=lambda _: None)
     assert final == {items[0]["id"]: "published"}
+
+
+def test_non_dry_run_requires_admin_api_key(monkeypatch):
+    monkeypatch.setattr(ingest_faq, "get_settings", lambda: type("Settings", (), {"admin_api_key": ""})())
+
+    with pytest.raises(SystemExit, match="Thiếu ADMIN_API_KEY"):
+        ingest_faq.main(["--reviewed-by", "Minh Khoa"])
 
 
 def test_upload_error_stops_with_faq_id():
@@ -83,6 +95,7 @@ def test_dry_run_sends_nothing(capsys):
     ([], "--reviewed-by"),
     (["--reviewed-by", "Minh Khoa", "--reviewed-at", "2026-11-13T20:00:00"], "múi giờ"),
 ])
-def test_real_run_requires_reviewer_and_timezone(argv, message):
+def test_real_run_requires_reviewer_and_timezone(monkeypatch, argv, message):
+    monkeypatch.setattr(ingest_faq, "get_settings", lambda: type("Settings", (), {"admin_api_key": "test-admin-key"})())
     with pytest.raises(SystemExit, match=message):
         ingest_faq.main(argv)

@@ -20,6 +20,8 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 
 import httpx
 
+from app.core.config import get_settings
+
 AI_SERVICE_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = AI_SERVICE_DIR.parent / "data" / "faq.json"
 MANIFEST_DIR = AI_SERVICE_DIR / "data" / "snapshots"
@@ -152,9 +154,16 @@ def main(argv: list[str] | None = None) -> int:
     parsed = datetime.fromisoformat(reviewed_at)
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise SystemExit("--reviewed-at phải có múi giờ, ví dụ 2026-11-13T20:00:00+07:00.")
+    admin_api_key = get_settings().admin_api_key
+    if not admin_api_key.strip():
+        raise SystemExit("Thiếu ADMIN_API_KEY. Hãy đặt khóa quản trị trước khi gọi API.")
 
     results: dict[str, dict] = {}
-    with httpx.Client(base_url=args.base_url, timeout=60.0) as client:
+    with httpx.Client(
+        base_url=args.base_url,
+        timeout=60.0,
+        headers={"X-Admin-Key": admin_api_key},
+    ) as client:
         for item in items:
             results[item["id"]] = upload(client, item, disclaimer, reviewed_by, reviewed_at)
             print(f"{item['id']}: document_id={results[item['id']]['document_id']} "

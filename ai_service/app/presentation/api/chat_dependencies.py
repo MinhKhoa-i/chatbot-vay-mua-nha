@@ -4,9 +4,12 @@ from functools import lru_cache
 from fastapi import HTTPException
 
 from app.application.services.knowledge_retrieval import KnowledgeRetrievalService
-from app.application.use_cases.stream_chat import StreamChatUseCase
+from app.application.use_cases.compare_banks import CompareBanksUseCase
 from app.application.use_cases.estimate_loan import EstimateLoanUseCase
+from app.application.use_cases.stream_chat import StreamChatUseCase
+from app.infrastructure.finance.http_bank_ranker import HttpBankRanker
 from app.infrastructure.finance.http_loan_calculator import HttpLoanCalculator
+from app.infrastructure.llm.openai_bank_compare_extractor import OpenAIBankCompareExtractor
 from app.infrastructure.llm.openai_estimate_extractor import OpenAIEstimateExtractor
 from app.core.config import get_settings
 from app.domain.errors import ChatConfigurationError, ChatError
@@ -76,5 +79,13 @@ def _build_stream_chat_use_case() -> StreamChatUseCase:
                 timeout_seconds=min(settings.llm_timeout_seconds, 10.0),
             ),
             HttpLoanCalculator(settings.loan_backend_base_url), prompts,
+        ),
+        bank_compare=CompareBanksUseCase(
+            OpenAIBankCompareExtractor(
+                base_url=settings.llm_base_url, api_key=settings.llm_api_key,
+                model=settings.llm_model, prompts=prompts,
+                timeout_seconds=min(settings.llm_timeout_seconds, 10.0),
+            ),
+            HttpBankRanker(settings.loan_backend_base_url), prompts,
         ),
     )
