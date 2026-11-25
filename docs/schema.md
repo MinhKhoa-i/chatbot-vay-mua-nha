@@ -64,11 +64,13 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
 | `special_offers` | `array[string]`| Không | Các quà tặng, giảm phí dịch vụ hoặc chương trình kết nối đối tác. | `["Tặng tài khoản số đẹp", "Miễn phí thẩm định giá"]` |
 
 #### 2.3.1. Cấu trúc `early_repayment_penalty`:
-* `description` (`string`): Diễn giải tổng quan phí phạt.
-* `tiers` (`array[object]`): Chi tiết mức phí theo từng năm vay:
+* `fee_published` (`boolean`): Bắt buộc. `true` nếu nguồn ngân hàng công bố biểu phí theo năm, đủ để điền `tiers`; `false` nếu chưa công bố (khi đó `tiers` phải là danh sách rỗng `[]`, người dùng hoặc consumer hiểu là "chưa rõ phí", không đồng nghĩa với miễn phí).
+* `rate_is_upper_bound` (`boolean`): Bắt buộc. `true` nếu các mức `rate_percent` trong `tiers` là mức trần của khoảng phí công bố (kết quả tính phí phải ghi nhận là "tối đa"); `false` nếu là mức thu cố định. Lưu ý: trường này chỉ được mang giá trị `true` khi `fee_published` là `true`.
+* `description` (`string`): Diễn giải tổng quan phí phạt và nguồn đối soát.
+* `tiers` (`array[object]`): Chi tiết mức phí theo từng năm vay (bắt buộc rỗng nếu `fee_published` là `false`):
   * `from_year` (`integer`): Từ năm thứ.
   * `to_year` (`integer`): Đến năm thứ.
-  * `rate_percent` (`number`): Tỷ lệ phí tính trên số tiền nợ gốc trả trước (%): `1.5`, `1.0`, `0.5`, hoặc `0.0` (miễn phí). Nếu nguồn chỉ công bố khoảng phí, lưu mức trần trong trường này và ghi rõ mức đó là trần trong `description`; kết quả ranking phải đánh dấu phí là mức trần.
+  * `rate_percent` (`number`): Tỷ lệ phí tính trên số tiền nợ gốc trả trước (%): `1.5`, `1.0`, `0.5`, hoặc `0.0` (miễn phí). Nếu nguồn chỉ công bố khoảng phí, lưu mức trần trong trường này và ghi rõ mức đó là trần trong `description`; kết quả ranking phải đánh dấu phí là mức trần (`rate_is_upper_bound: true`).
 
 ---
 
@@ -186,8 +188,10 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
               "grace_period_months": { "type": "integer", "minimum": 0 },
               "early_repayment_penalty": {
                 "type": "object",
-                "required": ["description", "tiers"],
+                "required": ["fee_published", "rate_is_upper_bound", "description", "tiers"],
                 "properties": {
+                  "fee_published": { "type": "boolean" },
+                  "rate_is_upper_bound": { "type": "boolean" },
                   "description": { "type": "string" },
                   "tiers": {
                     "type": "array",
@@ -288,6 +292,8 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
     "summary": "Lãi suất chỉ từ 5.2%/năm, thời hạn vay đến 30 năm, hạn mức 50 tỷ đồng",
     "grace_period_months": 12,
     "early_repayment_penalty": {
+      "fee_published": true,
+      "rate_is_upper_bound": false,
       "description": "Phí phạt giảm dần từ năm 1 đến năm 5, miễn phí từ năm thứ 6",
       "tiers": [
         { "from_year": 1, "to_year": 1, "rate_percent": 1.5 },

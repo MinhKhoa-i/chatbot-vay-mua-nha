@@ -2,8 +2,8 @@
 
 > **Tài liệu phục vụ Dự án:** Chatbot Tư vấn Vay Mua Nhà  
 > **Người thực hiện:** Vương (Nhóm Dữ liệu)  
-> **Ngày rà soát & cập nhật:** 16/11/2026  
-> **Trạng thái:** Đang thực hiện (chờ duyệt PR #44 cho issue #39 và thống nhất phương án xử lý lãi thả nổi)
+> **Ngày rà soát & cập nhật:** 18/11/2026  
+> **Trạng thái:** Hoàn thành nhiệm vụ rà soát dữ liệu ngân hàng tuần 3 (Việc 12)
 
 ---
 
@@ -41,7 +41,7 @@ Tất cả thông số đã được đối chiếu trực tiếp từ website c
 
 | STT | Mã NH | Tên thương mại | Tên đầy đủ | Tên sản phẩm / Gói vay | Nguồn website chính thức (Trang sản phẩm) | Lãi suất ưu đãi tham khảo* | LTV tối đa | Thời hạn tối đa |
 |:---:|:---:|:---|:---|:---|:---|:---:|:---:|:---:|
-| 1 | **VCB** | Vietcombank | Ngân hàng TMCP Ngoại thương Việt Nam | Nhà Mới An Cư (nhà tại dự án đã có Giấy chứng nhận) | [vietcombank.com.vn](https://www.vietcombank.com.vn/vi-VN/KHCN/Truy-cap-nhanh/Tin-noi-bat/Articles/2026/10/15/Nha-moi-an-cu) | 9,0%/năm (12 tháng đầu, điều kiện chương trình) | Tới 100% căn nhà (70% TSBĐ chính) | 35 năm |
+| 1 | **VCB** | Vietcombank | Ngân hàng TMCP Ngoại thương Việt Nam | Nhà Mới An Cư (nhà tại dự án đã có Giấy chứng nhận) | [vietcombank.com.vn](https://www.vietcombank.com.vn/vi-VN/KHCN/Truy-cap-nhanh/Tin-noi-bat/Articles/2026/10/15/Nha-moi-an-cu) | 9,0%/năm (12 tháng đầu, điều kiện chương trình) | 70% TSBĐ chính (tới 100% nếu có TSBĐ độc lập bổ sung) | 35 năm |
 | 2 | **BIDV** | BIDV | Ngân hàng TMCP Đầu tư và Phát triển Việt Nam | Vay nhu cầu nhà ở (Gói Ngôi nhà đầu tiên) | [bidv.com.vn](https://bidv.com.vn/bidv/ca-nhan/khuyen-mai/san-pham-vay/bidv-trien-khai-goi-vay-uu-dai-ngoi-nha-dau-tien-danh-cho-khach-hang-ca-nhan) | 9,0%/12T; 9,5%/18T; 10,0%/24T (kèm điều kiện kỳ hạn tối thiểu) | 80% TSBĐ (100% nếu có TSBĐ bổ sung) | 30 năm |
 | 3 | **TCB** | Techcombank | Ngân hàng TMCP Kỹ Thương Việt Nam | Vay mua bất động sản có Giấy chứng nhận | [techcombank.com](https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o) | Nêu "từ 3,99%/năm", không công bố lãi suất chuẩn theo kỳ | 80% TSBĐ | 35 năm |
 | 4 | **CTG** | VietinBank | Ngân hàng TMCP Công Thương Việt Nam | Cho vay nhận quyền sử dụng đất, mua, xây dựng, sửa chữa nhà | [vietinbank.vn](https://www.vietinbank.vn/ca-nhan/san-pham-dich-vu/cho-vay/cho-vay-nhan-quyen-su-dung-dat-mua-xay-dung-sua-chua-nha-va-hoac-cong-trinh-xay-dung-30-html) | Chưa công bố lãi suất cụ thể trên web | 70% TSBĐ (100% nếu có TSBĐ bổ sung) | 35 năm |

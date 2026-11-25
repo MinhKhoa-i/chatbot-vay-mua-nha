@@ -103,8 +103,10 @@ BANK_SCHEMA: Dict[str, Any] = {
                             "grace_period_months": {"type": "integer", "minimum": 0},
                             "early_repayment_penalty": {
                                 "type": "object",
-                                "required": ["description", "tiers"],
+                                "required": ["fee_published", "rate_is_upper_bound", "description", "tiers"],
                                 "properties": {
+                                    "fee_published": {"type": "boolean"},
+                                    "rate_is_upper_bound": {"type": "boolean"},
                                     "description": {"type": "string"},
                                     "tiers": {
                                         "type": "array",
@@ -343,10 +345,36 @@ def validate_business_rules(data: Dict[str, Any]) -> Tuple[List[str], List[str]]
         if isinstance(promotions, dict):
             penalty = promotions.get("early_repayment_penalty", {})
             if isinstance(penalty, dict):
+                # Kiểm tra fee_published và rate_is_upper_bound
+                if "fee_published" not in penalty:
+                    errors.append(f"{prefix} 'early_repayment_penalty' thiếu trường bắt buộc 'fee_published'")
+                elif not isinstance(penalty["fee_published"], bool):
+                    errors.append(f"{prefix} 'early_repayment_penalty.fee_published' phải là kiểu boolean (true/false)")
+
+                if "rate_is_upper_bound" not in penalty:
+                    errors.append(f"{prefix} 'early_repayment_penalty' thiếu trường bắt buộc 'rate_is_upper_bound'")
+                elif not isinstance(penalty["rate_is_upper_bound"], bool):
+                    errors.append(f"{prefix} 'early_repayment_penalty.rate_is_upper_bound' phải là kiểu boolean (true/false)")
+
+                fee_pub = penalty.get("fee_published")
+                rate_upper = penalty.get("rate_is_upper_bound")
+
                 tiers = penalty.get("tiers")
                 if not isinstance(tiers, list):
                     errors.append(f"{prefix} 'early_repayment_penalty.tiers' phải là danh sách (array)")
                 else:
+                    # fee_published phải bằng true khi và chỉ khi tiers khác rỗng
+                    if isinstance(fee_pub, bool):
+                        if fee_pub and len(tiers) == 0:
+                            errors.append(f"{prefix} 'fee_published' là true nhưng 'tiers' lại rỗng")
+                        elif not fee_pub and len(tiers) > 0:
+                            errors.append(f"{prefix} 'fee_published' là false nhưng 'tiers' không rỗng (chưa công bố biểu phí thì tiers phải là [])")
+
+                    # rate_is_upper_bound = true chỉ hợp lệ khi fee_published = true
+                    if isinstance(fee_pub, bool) and isinstance(rate_upper, bool):
+                        if rate_upper and not fee_pub:
+                            errors.append(f"{prefix} 'rate_is_upper_bound' = true không hợp lệ khi 'fee_published' = false")
+
                     for t_idx, tier in enumerate(tiers):
                         if not isinstance(tier, dict):
                             errors.append(f"{prefix} Bậc phí #{t_idx + 1} phải là object")
