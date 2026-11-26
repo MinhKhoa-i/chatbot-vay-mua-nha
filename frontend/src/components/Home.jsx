@@ -133,7 +133,7 @@ export default function Home({ onChat, onForm }) {
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden sm:contents"><SecondaryButton onClick={onForm} className="!py-2.5">Nhập thông tin vay</SecondaryButton></span>
-            <PrimaryButton onClick={onChat} className="whitespace-nowrap !px-4 !py-2.5">Hỏi trợ lý AI</PrimaryButton>
+            <PrimaryButton onClick={onChat} className="whitespace-nowrap !px-4 !py-2.5 max-sm:min-h-11">Hỏi trợ lý AI</PrimaryButton>
           </div>
         </div>
       </header>

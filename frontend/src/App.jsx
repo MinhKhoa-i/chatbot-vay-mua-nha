@@ -19,7 +19,9 @@ const ROUTES = { home: "#/", chat: "#/tro-chuyen" };
 const viewFromHash = () => Object.keys(ROUTES).find((k) => ROUTES[k] === window.location.hash) ?? "home";
 // Form mới (hoặc sau khi xóa dữ liệu) lấy phương thức và lãi suất mặc định từ Cài đặt
 const emptyForm = (s) => ({ ...EMPTY_LOAN_FORM, method: s.method, rate: String(s.rate).replace(".", ",") });
-const clock = () => new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+// Nhãn trên header khi tin cuối là thẻ lỗi; mã khác (HTTP_<mã>) hiện "Máy chủ đang lỗi"
+const FAILING_LABEL = { NETWORK_ERROR: "Mất kết nối máy chủ", TIMEOUT: "Máy chủ trả lời quá lâu" };
+const clock = () =>new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
 export default function App() {
   const [convos, setConvos] = useState([]);   // { id, title, updatedAt, messages[] }, chỉ lưu trong bộ nhớ, không lưu trình duyệt
@@ -146,21 +148,22 @@ export default function App() {
         <main className="dots flex min-w-0 flex-1 flex-col rounded-[22px] bg-white">
           <header className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6">
             <div className="flex items-center gap-2.5">
-              <button onClick={() => setMenu(true)} aria-label="Mở thanh bên" className="-ml-1 rounded-lg p-1.5 text-muted focus-visible:outline-2 focus-visible:outline-brand lg:hidden">
+              <button onClick={() => setMenu(true)} aria-label="Mở thanh bên" className="-ml-2.5 grid size-11 place-items-center rounded-lg text-muted focus-visible:outline-2 focus-visible:outline-brand lg:hidden">
                 <Icon name="menu" size={20} />
               </button>
-              <button onClick={() => setView("home")} title="Về trang chủ" aria-label="Trợ lý vay mua nhà, về trang chủ" className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              <button onClick={() => setView("home")} title="Về trang chủ" aria-label="Trợ lý vay mua nhà, về trang chủ" className="flex items-center justify-center gap-2.5 rounded-lg max-sm:min-h-11 max-sm:min-w-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 <Orb size={28} />
-                <span className="text-[15px] font-medium">Trợ lý vay mua nhà</span>
+                {/* Dưới 400px ẩn chữ (vẫn có aria-label) để nhãn trạng thái bên phải không bị xuống dòng */}
+                <span className="whitespace-nowrap text-[15px] font-medium max-[399px]:sr-only">Trợ lý vay mua nhà</span>
               </button>
             </div>
             {failing ? (
-              <p className="flex items-center gap-2 rounded-full border border-[#f1c9c6] bg-[#fdf1f0] px-3.5 py-2 text-[13px] text-[#c0443f]">
+              <p className="flex items-center gap-2 whitespace-nowrap rounded-full border border-[#f1c9c6] bg-[#fdf1f0] px-3.5 py-2 text-[13px] text-[#c0443f]">
                 <span className="size-1.5 rounded-full bg-[#c0443f]" aria-hidden="true" />
-                {failing === "NETWORK_ERROR" ? "Mất kết nối máy chủ" : "Máy chủ đang lỗi"}
+                {FAILING_LABEL[failing] ?? "Máy chủ đang lỗi"}
               </p>
             ) : (
-              <p className="flex items-center gap-2 rounded-full border border-line bg-white px-3.5 py-2 text-[13px] text-muted">
+              <p className="flex items-center gap-2 whitespace-nowrap rounded-full border border-line bg-white px-3.5 py-2 text-[13px] text-muted">
                 <span className="size-1.5 rounded-full bg-[#4fc47a]" aria-hidden="true" />
                 <span><span className="hidden sm:inline">Dữ liệu </span>cập nhật {fmtDate(lastBot?.updatedAt ?? DATA_UPDATED)}</span>
               </p>

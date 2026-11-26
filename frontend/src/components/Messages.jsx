@@ -82,7 +82,7 @@ function EstimateCard({ estimate, onCompare, onAdjust }) {
         <button onClick={onCompare} className="rounded-xl bg-ink px-5 py-3 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
           So sánh ngân hàng phù hợp
         </button>
-        <button onClick={onAdjust} className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
+        <button onClick={onAdjust} className="text-sm font-medium underline max-sm:min-h-11 underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
           Điều chỉnh thông tin
         </button>
       </div>
@@ -95,7 +95,7 @@ function Tools({ text, rating, onRate, onRegenerate }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* trình duyệt chặn clipboard */ }
   };
-  const btn = "grid size-9 place-items-center rounded-lg text-muted hover:bg-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-brand";
+  const btn = "grid size-11 place-items-center sm:size-9 rounded-lg text-muted hover:bg-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-brand";
   return (
     <div className="-ml-2 flex items-center gap-1">
       <button onClick={copy} aria-label={copied ? "Đã sao chép" : "Sao chép câu trả lời"} title="Sao chép" className={btn}>
@@ -158,6 +158,7 @@ function BotText({ text }) {
 // V3 - 9. Lỗi kết nối: câu hỏi chưa được trả lời, cho thử lại hoặc sao chép câu hỏi
 const ERROR_INFO = {
   NETWORK_ERROR: ["Không kết nối được máy chủ", "Câu hỏi của bạn chưa được xử lý. Hãy kiểm tra kết nối mạng và máy chủ đang chạy rồi thử lại."],
+  TIMEOUT: ["Trợ lý trả lời quá lâu", "Câu hỏi của bạn chưa được trả lời trong thời gian cho phép. Bạn thử lại sau ít phút nhé."],
   server: ["Máy chủ chưa trả lời được", "Dịch vụ trợ lý đang lỗi hoặc quá tải nên câu hỏi chưa được trả lời. Bạn thử lại sau ít phút nhé."],
 };
 export const errorInfo = (code) => ERROR_INFO[code] ?? ERROR_INFO.server;
@@ -177,12 +178,12 @@ function ErrorCard({ m, canRetry, onRetry }) {
         <p className="mt-1.5 text-xs text-muted">Mã lỗi: {m.code ?? "UNKNOWN"}{m.time ? ` · ${m.time}` : ""}</p>
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
           {canRetry && (
-            <button onClick={onRetry} className="flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+            <button onClick={onRetry} className="flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 max-sm:min-h-11 text-sm font-medium text-white hover:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
               <Icon name="redo" size={15} /> Thử lại
             </button>
           )}
           {m.question && (
-            <button onClick={copy} className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
+            <button onClick={copy} className="text-sm font-medium underline max-sm:min-h-11 underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
               {copied ? "Đã sao chép" : "Sao chép câu hỏi"}
             </button>
           )}

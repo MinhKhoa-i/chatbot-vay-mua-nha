@@ -3,7 +3,8 @@ import { Icon, Orb } from "./icons.jsx";
 
 export default function Welcome({ onPick, onForm, children }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-6 sm:px-8">
+    // justify-center-safe: màn thấp (điện thoại) nội dung cao hơn khung thì bám mép trên để cuộn được, không bị cắt phần đầu
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center-safe overflow-y-auto px-4 py-6 sm:px-8">
       <div className="flex w-full max-w-[740px] flex-col gap-9">
         <div className="flex flex-col gap-5">
           <Orb size={64} glow />

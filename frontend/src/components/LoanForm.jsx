@@ -440,7 +440,7 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
             Kết quả tính bằng công thức, không do AI suy đoán. Chỉ cần số tiền vay và thời hạn, các mục khác có thể bỏ trống.
           </p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Đóng công cụ tính khoản vay" className="grid size-9 shrink-0 place-items-center rounded-full border border-line text-muted hover:bg-soft focus-visible:outline-2 focus-visible:outline-brand">
+        <button type="button" onClick={onClose} aria-label="Đóng công cụ tính khoản vay" className="grid size-11 shrink-0 sm:size-9 place-items-center rounded-full border border-line text-muted hover:bg-soft focus-visible:outline-2 focus-visible:outline-brand">
           <Icon name="close" size={16} />
         </button>
       </div>
@@ -460,7 +460,7 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
               </Field>
             </div>
 
-            <div role="radiogroup" aria-label="Phương thức trả nợ" className="grid grid-cols-2 gap-2.5">
+            <div role="radiogroup" aria-label="Phương thức trả nợ" className="grid gap-2.5 min-[420px]:grid-cols-2">
               {METHODS.map(([val, title, desc]) => (
                 <label key={val} className={`flex cursor-pointer gap-3 rounded-xl border p-3.5 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand ${v.method === val ? "border-brand bg-mint" : "border-line"}`}>
                   <input type="radio" name="method" value={val} checked={v.method === val} onChange={() => set("method")(val)} className="mt-0.5 accent-[#1e6b58]" />
@@ -544,7 +544,7 @@ export default function LoanForm({ values: v, onChange, onClose, onAsk, askLabel
         <button type="submit" form="loan-form" disabled={busy} className="rounded-xl bg-ink px-6 py-3 text-sm font-medium text-white hover:bg-brand disabled:bg-[#9a9c98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
           {busy ? "Đang tính..." : "Tính khoản vay"}
         </button>
-        <button type="button" onClick={reset} className="text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
+        <button type="button" onClick={reset} className="text-sm font-medium underline max-sm:min-h-11 underline-offset-4 focus-visible:outline-2 focus-visible:outline-brand">
           Nhập lại
         </button>
         <p className="text-xs text-muted sm:ml-auto">Thông tin không được lưu lại.</p>

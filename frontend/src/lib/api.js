@@ -1,9 +1,10 @@
-import { API_URL, DATA_UPDATED, USE_MOCK } from "../config.js";
+import { API_URL, CHAT_TIMEOUT_MS, DATA_UPDATED, USE_MOCK } from "../config.js";
 import { ltv, maxLoan, prepayFee, schedule } from "./loan.js";
 
 // Lỗi có câu tiếng Việt để hiện thẳng cho người dùng (422 từ backend hoặc kiểm tra ở mock)
 export class ApiError extends Error {}
-// Lỗi khi hỏi /api/chat, `code` hiện trên thẻ lỗi: NETWORK_ERROR (không tới được backend) hoặc HTTP_<mã>
+// Lỗi khi hỏi /api/chat, `code` hiện trên thẻ lỗi: NETWORK_ERROR (không tới được backend),
+// TIMEOUT (quá CHAT_TIMEOUT_MS chưa có trả lời) hoặc HTTP_<mã>
 export class ChatError extends Error {
   constructor(code) { super(code); this.code = code; }
 }
@@ -26,18 +27,28 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
    Thiếu monthly_payment thì EstimateCard gọi estimateLoan() để backend tính. */
 export async function getReply({ message, sessionId }) {
   if (!USE_MOCK) {
-    let res;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
     try {
-      res = await fetch(`${API_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, session_id: sessionId }),
+      let res;
+      try {
+        res = await fetch(`${API_URL}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, session_id: sessionId }),
+          signal: controller.signal,
+        });
+      } catch {
+        throw new ChatError(controller.signal.aborted ? "TIMEOUT" : "NETWORK_ERROR");
+      }
+      if (!res.ok) throw new ChatError("HTTP_" + res.status);
+      // Đọc body cũng nằm trong thời gian chờ: bị hủy giữa chừng vẫn là TIMEOUT
+      return await res.json().catch(() => {
+        throw new ChatError(controller.signal.aborted ? "TIMEOUT" : "HTTP_" + res.status);
       });
-    } catch {
-      throw new ChatError("NETWORK_ERROR");
+    } finally {
+      clearTimeout(timer);
     }
-    if (!res.ok) throw new ChatError("HTTP_" + res.status);
-    return res.json();
   }
   await new Promise((r) => setTimeout(r, 1400));
   return mockReply(message);

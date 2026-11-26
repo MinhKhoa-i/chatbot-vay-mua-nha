@@ -3,6 +3,8 @@
 export const USE_MOCK = import.meta.env.MODE !== "backend" && import.meta.env.VITE_USE_MOCK !== "false";
 export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 export const DATA_UPDATED = "2026-10-31"; // ngày cập nhật dữ liệu mặc định
+// Hủy /api/chat sau 120 giây: backend thử lại dịch vụ AI tối đa 3 lần × 60 giây nên có thể chờ gần 3 phút
+export const CHAT_TIMEOUT_MS = 120_000;
 export const FEATURES = { attach: false }; // bật khi backend hỗ trợ tải tài liệu
 
 export const SUGGESTIONS = [
