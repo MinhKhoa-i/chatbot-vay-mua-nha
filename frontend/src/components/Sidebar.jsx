@@ -1,7 +1,7 @@
 import { Icon, Orb } from "./icons.jsx";
 
 const focus = "focus-visible:outline-2 focus-visible:outline-brand";
-const itemCls = `flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left text-sm ${focus}`;
+const itemCls = `flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left text-sm max-lg:min-h-11 ${focus}`;
 
 // Nút tròn của thanh bên thu gọn (V3 - 14), chú thích hiện khi rê chuột hoặc dùng bàn phím
 function RailButton({ icon, label, onClick, danger, active }) {
@@ -42,14 +42,14 @@ export default function Sidebar({
 
         <div className={`h-full min-h-0 flex-col gap-5 p-5 ${collapsed ? "flex lg:hidden" : "flex"}`}>
           <div className="flex items-center justify-between">
-            <button onClick={onClose} aria-label="Đóng thanh bên" className={`rounded-lg p-1 text-muted lg:hidden ${focus}`}>
+            <button onClick={onClose} aria-label="Đóng thanh bên" className={`-ml-2.5 grid size-11 place-items-center rounded-lg text-muted lg:hidden ${focus}`}>
               <Icon name="close" size={18} />
             </button>
             <button onClick={onToggleCollapse} aria-label="Thu gọn thanh bên" title="Thu gọn thanh bên" className={`hidden rounded-lg p-1 text-muted hover:text-ink lg:block ${focus}`}>
               <Icon name="collapse" size={18} strokeWidth={1.6} />
             </button>
             <button onClick={onNew} aria-label="Cuộc trò chuyện mới" title="Cuộc trò chuyện mới"
-              className={`grid size-10 place-items-center rounded-full border border-line text-muted hover:bg-soft ${focus}`}>
+              className={`grid size-11 place-items-center rounded-full border border-line text-muted hover:bg-soft lg:size-10 ${focus}`}>
               <Icon name="edit" size={17} strokeWidth={1.5} />
             </button>
           </div>
@@ -76,7 +76,7 @@ export default function Sidebar({
                     <button
                       onClick={() => onSelect(c.id)}
                       aria-current={c.id === activeId ? "true" : undefined}
-                      className={`w-full rounded-[10px] px-2.5 py-2.5 text-left text-[13px] leading-snug ${focus} ${
+                      className={`w-full rounded-[10px] px-2.5 py-2.5 text-left max-lg:min-h-11 text-[13px] leading-snug ${focus} ${
                         c.id === activeId ? "bg-soft font-medium text-ink" : "text-muted hover:bg-soft"
                       }`}
                     >
