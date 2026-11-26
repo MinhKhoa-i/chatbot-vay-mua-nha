@@ -2,8 +2,8 @@
 
 > **Tài liệu phục vụ Dự án:** Chatbot Tư vấn Vay Mua Nhà  
 > **Người thực hiện:** Vương (Nhóm Dữ liệu)  
-> **Ngày rà soát & cập nhật:** 18/11/2026  
-> **Trạng thái:** Hoàn thành nhiệm vụ rà soát dữ liệu ngân hàng tuần 3 (Việc 12)
+> **Ngày rà soát & cập nhật:** 16/11/2026 (cập nhật phiên bản 1.3.0 ngày 25/11/2026)  
+> **Trạng thái:** Hoàn thành Phần A (Việc 12 tuần 3: thêm fee_published, rate_is_upper_bound và chuẩn hóa LTV VCB 70%)
 
 ---
 

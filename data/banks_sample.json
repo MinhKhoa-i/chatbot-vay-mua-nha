@@ -1,7 +1,7 @@
 {
   "version": "1.3.0",
   "updated_at": "2026-11-16",
-  "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB). Rà soát nguồn chính thức ngày 2026-11-16; cập nhật bổ sung ngày 2026-11-18. Phiên bản 1.3.0: thêm 2 trường bắt buộc fee_published và rate_is_upper_bound vào promotions.early_repayment_penalty để phân biệt rõ ngân hàng chưa công bố biểu phí (chưa rõ phí, không coi là miễn phí) và phí mức trần ('tối đa'); chuẩn hóa max_ltv_percent của Vietcombank về 70% theo tài sản bảo đảm là chính căn nhà mua.",
+  "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB). Rà soát nguồn chính thức ngày 2026-11-16; cập nhật phiên bản 1.3.0 ngày 25/11/2026. Thêm 2 trường bắt buộc fee_published và rate_is_upper_bound vào promotions.early_repayment_penalty để phân biệt rõ ngân hàng chưa công bố biểu phí (chưa rõ phí, không coi là miễn phí) và phí mức trần ('tối đa'); chuẩn hóa max_ltv_percent của Vietcombank về 70% theo tài sản bảo đảm là chính căn nhà mua.",
   "banks": [
     {
       "id": "vietcombank",
