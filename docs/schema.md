@@ -47,11 +47,21 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
 | `reference_rate_type` | `string` | **Có** | Tên loại lãi suất tham chiếu dùng để tính lãi suất thả nổi. | `"LSTK 12T trả sau"`, `"Lãi suất cơ sở Techcombank"` |
 | `adjustment_frequency_months` | `integer` | **Có** | Chu kỳ điều chỉnh lãi suất thả nổi (thường 3 hoặc 6 tháng). | `3`, `6` |
 | `rate_options` | `array[object]`| Không | Danh sách các phương án lựa chọn lãi suất ưu đãi khác nhau của gói vay. | Xem mục 2.2.1 |
+| `floating_reference` | `object` | Không | Thông tin lãi suất tham chiếu và biên độ phục vụ tính lãi sau ưu đãi. | Xem mục 2.2.2 |
 
 #### 2.2.1. Cấu trúc một phần tử trong `rate_options`:
 * `duration_months` (`integer`): Số tháng ưu đãi (ví dụ: `6`, `12`, `24`, `36`).
 * `rate` (`number`): Lãi suất tương ứng (%/năm, ví dụ: `5.5`, `6.5`, `7.5`).
 * `conditions` (`string`): Điều kiện đi kèm (ví dụ: *"Yêu cầu thời gian vay tối thiểu bằng 2 lần thời gian ưu đãi"*).
+
+#### 2.2.2. Cấu trúc `floating_reference` (Phần B):
+* `reference_name` (`string`): Tên nguồn/loại lãi suất tham chiếu (ví dụ: LSTK 12T hoặc Lãi suất cơ sở).
+* `reference_rate_percent` (`number` hoặc `null`): Mức lãi suất tham chiếu hiện tại (%/năm).
+* `margin_min_percent` (`number` hoặc `null`): Biên độ cộng tối thiểu (%/năm).
+* `margin_max_percent` (`number` hoặc `null`): Biên độ cộng tối đa (%/năm).
+* `formula_description` (`string`): Diễn giải công thức tính lãi thả nổi.
+* `as_of` (`string`): Ngày hiệu lực của lãi suất tham chiếu (`YYYY-MM-DD`).
+* `source_url` (`string`): Đường dẫn tra cứu biểu lãi suất tham chiếu chính thức.
 
 ---
 
@@ -176,6 +186,27 @@ Một bản ghi gói vay ngân hàng (`BankLoanPackage`) bao gồm 6 nhóm trư�
                     "rate": { "type": "number" },
                     "conditions": { "type": "string" }
                   }
+                }
+              },
+              "floating_reference": {
+                "type": "object",
+                "required": [
+                  "reference_name",
+                  "reference_rate_percent",
+                  "margin_min_percent",
+                  "margin_max_percent",
+                  "formula_description",
+                  "as_of",
+                  "source_url"
+                ],
+                "properties": {
+                  "reference_name": { "type": "string" },
+                  "reference_rate_percent": { "type": ["number", "null"], "minimum": 0 },
+                  "margin_min_percent": { "type": ["number", "null"], "minimum": 0 },
+                  "margin_max_percent": { "type": ["number", "null"], "minimum": 0 },
+                  "formula_description": { "type": "string" },
+                  "as_of": { "type": "string" },
+                  "source_url": { "type": "string" }
                 }
               }
             }
