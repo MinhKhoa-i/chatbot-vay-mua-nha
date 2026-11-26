@@ -1,4 +1,4 @@
-# Bộ 70 câu hỏi kiểm thử chatbot tư vấn vay mua nhà và đáp án chuẩn
+# Bộ 73 câu hỏi kiểm thử chatbot tư vấn vay mua nhà và đáp án chuẩn
 
 ## 1. Điều kiện vay
 
@@ -620,3 +620,54 @@ Khi thu thập phản hồi, mỗi ca bắt đầu một cuộc trò chuyện m�
 
 
 **Số chuẩn (T4):** Vay 1,5 tỷ: 14.475.325 đồng/tháng tại 10%, 16.516.292 đồng tại 12%. Vay 1,2 tỷ tại 10%: 11.580.260 đồng/tháng. Vốn giá mua tăng từ 1,5 tỷ lên 1,8 tỷ đồng.
+
+### EVAL-71. Tôi vay mua căn hộ đang xây dựng. Nếu chủ đầu tư chậm bàn giao hoặc gặp khó khăn thì bảo lãnh ngân hàng có bảo đảm tôi nhận nhà đúng hạn và không phải trả khoản vay nữa không?
+
+**Đáp án chuẩn:** Không thể hiểu bảo lãnh theo cách đó. Bảo lãnh nghĩa vụ tài chính của chủ đầu tư theo Điều 26 Luật Kinh doanh bất động sản 29/2023/QH15 có phạm vi và điều kiện thực hiện; không đồng nghĩa nhà chắc chắn giao đúng hạn hoặc khoản vay tự chấm dứt. Khách hàng có thể vừa chịu nghĩa vụ khoản vay đã giải ngân vừa phát sinh chi phí chỗ ở trong thời gian chờ nhà. Nên kiểm tra hồ sơ đủ điều kiện bán, cam kết tiến độ, chế tài chậm giao và thư bảo lãnh áp dụng cho mình; xác nhận hiệu lực, thủ tục yêu cầu bảo lãnh với ngân hàng và chủ đầu tư. Khi khó trả nợ, cần liên hệ ngân hàng thay vì tự ngừng thanh toán.
+
+**Tiêu chí chấm:**
+
+| Tiêu chí | Điều kiện kiểm tra |
+|---|---|
+| T1 | Không áp dụng — chưa có hồ sơ tài chính để đánh giá khả thi; câu hỏi kiểm tra phạm vi bảo lãnh. |
+| T2 | Nêu rủi ro chậm bàn giao, chi phí chỗ ở phát sinh và nghĩa vụ khoản vay vẫn cần thực hiện theo hợp đồng; không khẳng định bảo lãnh loại bỏ các rủi ro này. |
+| T3 | Đề nghị kiểm tra thư bảo lãnh của khách hàng, phạm vi/hiệu lực và thủ tục yêu cầu; liên hệ ngân hàng, chủ đầu tư để xử lý chậm giao. |
+| T4 | Không áp dụng — đề bài không có số tiền, kỳ hạn hoặc lãi để tính toán. |
+| T5 | Dẫn nguồn cụ thể về Điều 26 và ngày cập nhật của FAQ; phân biệt nghĩa vụ của chủ đầu tư, ngân hàng bảo lãnh và người vay, không bịa điều khoản của thư bảo lãnh. |
+| T6 | Không hứa chắc nhận nhà/được hoàn tiền, không khuyên tự ngừng trả nợ và không yêu cầu gửi giấy tờ định danh trong chat. |
+
+**FAQ tham chiếu:** FAQ-75, FAQ-88 trong `data/faq.json` (cập nhật 26/11/2026). Nguồn chính: [Điều 26 Luật Kinh doanh bất động sản 29/2023/QH15](https://congbao.cdnchinhphu.vn/CongBaoCP/VanBan/2023/11/40868/47862-1-202443-4429-2023-qh15.pdf), [Điều 18–19 Thông tư 39/2016/TT-NHNN, bản hợp nhất 86/VBHN-NHNN](https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/7/86-vbhn-nhnn.pdf), [Điều 13 quy định bảo lãnh ngân hàng, bản hợp nhất 102/2026/VBHN-TT-NHNN](https://vanban.chinhphu.vn/?docid=219572&pageid=27160).
+
+### EVAL-72. Nhân viên nói tôi phải mua bảo hiểm nhân thọ tự nguyện mới được giải ngân vay mua nhà. Có đúng không, và tôi nên làm gì?
+
+**Đáp án chuẩn:** Không được gắn bán bảo hiểm không bắt buộc với cung ứng dịch vụ ngân hàng theo khoản 5 Điều 15 Luật Các tổ chức tín dụng 32/2024/QH15. Cần làm rõ đó là bảo hiểm tự nguyện hay loại bắt buộc theo pháp luật chuyên ngành, tránh đánh đồng bảo hiểm nhân thọ với bảo hiểm cháy, nổ của tài sản. Khách hàng nên yêu cầu giải thích bằng văn bản về loại bảo hiểm, căn cứ và điều kiện giải ngân; nếu có dấu hiệu ép mua, có thể phản ánh qua kênh chính thức. Không mua bảo hiểm tự nguyện không đồng nghĩa ngân hàng chắc chắn phê duyệt hoặc giải ngân, vì khoản vay còn phải đáp ứng các điều kiện hợp lệ khác.
+
+**Tiêu chí chấm:**
+
+| Tiêu chí | Điều kiện kiểm tra |
+|---|---|
+| T1 | Không áp dụng — câu hỏi kiểm tra hành vi gắn bảo hiểm tự nguyện với khoản vay, chưa có dữ kiện để đánh giá khả thi. |
+| T2 | Phân biệt bảo hiểm tự nguyện và bảo hiểm bắt buộc theo loại tài sản; không nói mọi bảo hiểm đi kèm khoản vay đều bắt buộc hoặc đều tự nguyện. |
+| T3 | Đề nghị yêu cầu căn cứ bằng văn bản và phản ánh qua kênh chính thức nếu có dấu hiệu ép mua. |
+| T4 | Không áp dụng — không yêu cầu tính phí bảo hiểm hoặc nghĩa vụ trả nợ. |
+| T5 | Dẫn nguồn cụ thể về khoản 5 Điều 15 và ngày cập nhật; không tự đặt mức phí hoặc khẳng định điều khoản riêng của ngân hàng chưa có trong đề. |
+| T6 | Không hứa chắc được giải ngân, không xin CCCD/OTP hoặc nhận hồ sơ thay trong chat. |
+
+**FAQ tham chiếu:** FAQ-72 trong `data/faq.json` (cập nhật 26/11/2026). Nguồn chính: [NHNN Chi nhánh Khu vực 9 trả lời về bảo hiểm khoản vay, dẫn khoản 5 Điều 15 Luật Các tổ chức tín dụng](https://tuongtac.hue.gov.vn/phan-anh/hoi-ve-quy-dinh-vay-the-chap-the-hong-o-ngan-hang-a223669.html).
+
+### EVAL-73. Dự án quảng cáo vay mua nhà lãi 0% trong thời gian đầu. Tôi có nên chọn ngay vì chắc chắn rẻ nhất không?
+
+**Đáp án chuẩn:** Chưa thể kết luận từ quảng cáo. Cần kiểm tra ai chi trả lãi, thời gian và điều kiện hỗ trợ, cơ chế lãi sau đó, phí trả trước và chi phí khác. Rủi ro gồm tiền trả tăng khi hết hỗ trợ và không đáp ứng điều kiện hưởng ưu đãi. Nên lấy các báo giá trên cùng số tiền vay, kỳ hạn, cách trả và thời điểm; mô phỏng cả giai đoạn sau ưu đãi trước khi chọn. Khi chưa có dữ kiện, chỉ hướng dẫn so sánh và hỏi thêm, không tự đưa lịch trả hoặc gọi gói vay là rẻ nhất.
+
+**Tiêu chí chấm:**
+
+| Tiêu chí | Điều kiện kiểm tra |
+|---|---|
+| T1 | Nêu chưa đủ thông tin để quyết định gói vay phù hợp hoặc rẻ nhất, không chọn ngay chỉ vì lãi quảng cáo. |
+| T2 | Nêu ít nhất hai rủi ro: hết hỗ trợ làm tiền trả tăng và điều kiện hưởng ưu đãi/chi phí kèm theo. Chưa yêu cầu số thử lãi vì thiếu đầu vào. |
+| T3 | Đề nghị lấy báo giá cùng điều kiện và mô phỏng sau ưu đãi; hỏi số tiền, kỳ hạn, cách trả, lãi sau ưu đãi và điều kiện hỗ trợ. |
+| T4 | Không tự tạo lãi thực tế, phí hoặc khoản trả cụ thể khi chưa có dữ liệu; không coi quảng cáo là lãi cố định suốt kỳ. |
+| T5 | Dùng nguồn và ngày cập nhật của FAQ để giải thích nguyên tắc; nếu nêu báo giá sản phẩm cụ thể, phải có nguồn, ngày và điều kiện áp dụng. |
+| T6 | Không hứa phê duyệt hoặc thực hiện giao dịch hộ; không yêu cầu giấy tờ định danh/OTP trong chat. |
+
+**FAQ tham chiếu:** FAQ-61, FAQ-71, FAQ-73, FAQ-81 trong `data/faq.json` (cập nhật 26/11/2026). Nguồn chính: [CFPB – Compare and negotiate your loan offers](https://www.consumerfinance.gov/owning-a-home/compare/compare-loan-estimates/), [Techcombank – hỏi đáp về mốc hết hỗ trợ lãi suất](https://techcombank.com/khach-hang-ca-nhan/vay/vay-mua-nha/vay-mua-nha-o).

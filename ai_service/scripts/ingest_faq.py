@@ -5,6 +5,8 @@ Chạy từ thư mục ai_service/ (cần API và đúng một worker đang ch�
     uv run python scripts/ingest_faq.py --reviewed-by "Minh Khoa" --wait
 
 Cùng FAQ ID luôn có cùng logical_document_id; nội dung đổi thì API tạo phiên bản mới.
+FAQ đã có cùng nội dung (HTTP 200 hoặc 409 DOCUMENT_METADATA_CONFLICT) được ghi là
+đã có sẵn, không nạp lại và không đợi worker. Các lỗi API khác vẫn dừng chương trình.
 Retrieval chỉ dùng phiên bản mới nhất còn hợp lệ của mỗi tài liệu; SQL in ra ở cuối chỉ để dọn
 các phiên bản cũ (không bắt buộc).
 """
@@ -20,12 +22,19 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 
 import httpx
 
+# Cho phép chạy trực tiếp từ ai_service/ mà không cần đặt PYTHONPATH.
+AI_SERVICE_DIR = Path(__file__).resolve().parents[1]
+if str(AI_SERVICE_DIR) not in sys.path:
+    sys.path.insert(0, str(AI_SERVICE_DIR))
+
 from app.core.config import get_settings
 
-AI_SERVICE_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = AI_SERVICE_DIR.parent / "data" / "faq.json"
 MANIFEST_DIR = AI_SERVICE_DIR / "data" / "snapshots"
-REQUIRED_FIELDS = ("id", "category", "question", "answer", "source_name")
+REQUIRED_FIELDS = (
+    "id", "category", "question", "answer", "applicable_scope", "source_name",
+    "source_url", "last_updated",
+)
 DEACTIVATE_OLD_SQL = """UPDATE knowledge_documents d SET is_active = false
 WHERE d.is_active AND EXISTS (
     SELECT 1 FROM knowledge_documents n
@@ -51,6 +60,8 @@ def load_faqs(source: Path) -> tuple[dict, list[dict]]:
         missing = [name for name in REQUIRED_FIELDS if not str(item.get(name) or "").strip()]
         if missing:
             raise SystemExit(f"{item.get('id', '?')}: thiếu trường {', '.join(missing)}.")
+        if not isinstance(item.get("additional_sources"), list):
+            raise SystemExit(f"{item['id']}: additional_sources phải là danh sách (có thể rỗng).")
         if not 1 <= len(item["source_name"].strip()) <= 500:
             raise SystemExit(f"{item['id']}: source_name phải có từ 1 đến 500 ký tự.")
     return data, items
@@ -93,9 +104,25 @@ def upload(client: httpx.Client, item: dict, disclaimer: str, reviewed_by: str, 
         data={"metadata": json.dumps(build_metadata(item, reviewed_by, reviewed_at), ensure_ascii=False)},
         files={"file": (f"{item['id']}.md", build_markdown(item, disclaimer), "text/markdown")},
     )
+    if response.status_code == 409:
+        try:
+            error = response.json()
+        except ValueError:
+            error = None
+        if isinstance(error, dict) and error.get("detail") == "DOCUMENT_METADATA_CONFLICT":
+            return {
+                "skipped": True,
+                "skip_reason": "DOCUMENT_METADATA_CONFLICT",
+                "ingestion_status": "already_exists",
+            }
     if response.is_error:
         raise SystemExit(f"{item['id']}: HTTP {response.status_code}\n{response.text}")
-    return response.json()
+    result = response.json()
+    # API trả HTTP 200 khi nội dung và metadata đều trùng, không tạo tài liệu mới.
+    result["skipped"] = response.status_code == 200
+    if result["skipped"]:
+        result["skip_reason"] = "DOCUMENT_ALREADY_EXISTS"
+    return result
 
 
 def wait_until_done(client: httpx.Client, document_ids: dict[str, str], timeout: float,
@@ -166,24 +193,34 @@ def main(argv: list[str] | None = None) -> int:
     ) as client:
         for item in items:
             results[item["id"]] = upload(client, item, disclaimer, reviewed_by, reviewed_at)
-            print(f"{item['id']}: document_id={results[item['id']]['document_id']} "
-                  f"status={results[item['id']]['ingestion_status']}")
-        final = {faq_id: r["ingestion_status"] for faq_id, r in results.items()}
-        if args.wait:
+            result = results[item["id"]]
+            if result["skipped"]:
+                print(f"{item['id']}: đã có sẵn ({result['skip_reason']})")
+            else:
+                print(f"{item['id']}: document_id={result['document_id']} "
+                      f"status={result['ingestion_status']}")
+        uploaded = {faq_id: r for faq_id, r in results.items() if not r["skipped"]}
+        final = {faq_id: r["ingestion_status"] for faq_id, r in uploaded.items()}
+        if args.wait and uploaded:
             print("Đang đợi worker xử lý...")
-            final = wait_until_done(client, {k: r["document_id"] for k, r in results.items()},
+            final = wait_until_done(client, {k: r["document_id"] for k, r in uploaded.items()},
                                     args.wait_timeout)
 
     MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
     manifest = MANIFEST_DIR / f"faq_ingest_{datetime.now():%Y%m%d_%H%M%S}.json"
     manifest.write_text(json.dumps({
         "reviewed_by": reviewed_by, "reviewed_at": reviewed_at, "source": str(args.source),
-        "documents": {k: {**r, "final_status": final[k]} for k, r in results.items()},
+        "documents": {
+            k: {**r, "final_status": "already_exists" if r["skipped"] else final[k]}
+            for k, r in results.items()
+        },
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
     counts = Counter(final.values())
     summary = ", ".join(f"{k}: {v}" for k, v in sorted(counts.items()))
-    print(f"Kết quả: {summary} | Danh sách: {manifest}")
+    skipped_count = len(results) - len(uploaded)
+    status_summary = f" | {summary}" if summary else ""
+    print(f"Đã có sẵn: {skipped_count} | Nạp mới: {len(uploaded)}{status_summary} | Danh sách: {manifest}")
     print("FAQ đổi nội dung đã có phiên bản mới; retrieval chỉ dùng phiên bản mới nhất còn hợp lệ.\n"
           "Không bắt buộc: muốn dọn các phiên bản cũ, tắt chúng bằng SQL "
           "(ví dụ: docker compose exec db psql -U <user> -d <db>):\n" + DEACTIVATE_OLD_SQL)
