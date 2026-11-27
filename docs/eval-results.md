@@ -1,12 +1,60 @@
-# Kết quả chạy 40 câu hỏi kiểm thử chatbot
+# Kết quả chạy câu hỏi kiểm thử chatbot
+
+File này giữ kết quả các lần chạy `docs/eval-questions.md` qua backend `POST /api/chat`, lần mới nhất ở trên. Chi tiết từng câu của lần 3 (câu trả lời của bot, đáp án chuẩn, lý do chấm): `docs/eval-results-lan3.md`.
+
+## Lần 3 (27/11/2026, việc 21 tuần 3)
+
+- **Lần chạy:** 27/11/2026 18:07, `dev` ở commit `fef01a0` (sau PR #85). Cả hệ thống bật bằng `bash scripts/chay-demo.sh`; chạy `python scripts/run_eval.py` cho EVAL-01 đến EVAL-50.
+- **Mô hình:** chat `cx/gpt-5.6-luna` qua cổng LLM của nhóm; embedding `qwen3-embedding-8b`. **Kho tri thức:** 90 FAQ (thêm nhóm RUI_RO, LOI_KHUYEN ở PR #85, nạp ngày 27/11) và `docs/quy-trinh-vay.md`.
+- **Có câu trả lời:** 50/50, không lỗi, không quá thời gian. Thời gian trả lời trung bình **14,8 giây** (trung vị 11,2 giây; lâu nhất 70,1 giây là EVAL-50 có 3 lượt). Lần 1 trung bình 48,4 giây do chạy mô hình 7B trên máy.
+- **Người chấm:** Minh Khoa chấm theo đáp án chuẩn và cách chấm ở mục "Cách chấm" của lần 1, **Sang xem lại và chốt**.
+- **Kết quả 50 câu: Đúng 45, Một phần 5, Sai 0, Lỗi 0.**
+- **So với lần 1 (cùng 40 câu EVAL-01 đến 40): Đúng 39/40, lần 1 là 24/40.** Lần 1: Đúng 24, Một phần 7, Sai 8, Lỗi 1.
+
+### So sánh theo nhóm câu (số câu Đúng)
+
+| Nhóm | Câu | Lần 1 (15/11) | Lần 3 (27/11) |
+|---|---|---|---|
+| Điều kiện vay | 01–06 | 3/6 | 6/6 |
+| Hồ sơ pháp lý và quy trình | 07–12 | 4/6 | 6/6 |
+| Lãi suất và ước tính trả nợ | 13–18 | 4/6 | 6/6 |
+| Phí trả nợ trước hạn và tất toán | 19–24 | 3/6 | 6/6 |
+| Bảo hiểm khoản vay | 25–30 | 4/6 | 6/6 |
+| Ngoài phạm vi và chống bịa số liệu | 31–40 | 6/10 | 9/10 |
+| So sánh ngân hàng và hạn mức vay | 41–45 | chưa có câu | 5/5 |
+| Ân hạn nợ gốc | 46–47 | chưa có câu | 1/2 |
+| Hội thoại nhiều lượt | 48–50 | chưa có câu | 0/3 |
+| **Tổng 40 câu cũ** | 01–40 | **24/40** | **39/40** |
+| **Tổng 50 câu** | 01–50 | | **45/50** |
+
+Lần 2 (chạy sau khi chuyển sang mô hình trực tuyến và nạp 60 FAQ, chưa chấm chính thức) không ghi vào file này.
+
+### Lỗi của lần 1 đã hết
+- Câu kiến thức bị đưa nhầm vào luồng tính khoản vay (EVAL-04, 06, 16, 19, 22, 23, 33, 34, 35): cả 9 câu giờ trả lời từ tài liệu.
+- Trả lời lẫn tiếng Trung, tiếng Anh (EVAL-11, 13, 27) và quá thời gian (EVAL-07): không còn, nhờ đổi sang mô hình trực tuyến.
+- Bịa thêm chi tiết (EVAL-01, 13) và chưa nhắc không gửi số định danh (EVAL-37): đã đúng.
+
+### Câu còn Một phần: nguyên nhân và hướng sửa
+
+| Câu | Nguyên nhân | Hướng sửa | Issue |
+|---|---|---|---|
+| EVAL-35 | **LLM tự tính số trong câu trả lời tra cứu và tính sai** ("12 triệu là 1,8 tỷ chia 150 tháng", đúng ra 25 năm là 300 tháng). Cùng kiểu tự tính, ra đúng: EVAL-16, 22, 43, 45. Bước kiểm tra số mới chỉ có ở nhánh so sánh ngân hàng. | Prompt tra cứu cấm tự tính tiền trả, kỳ hạn; phép tính đơn giản (LTV, phí %, hạn mức theo tỷ lệ) gọi backend; mở rộng `bank_compare_numbers_match()` cho nhánh tra cứu, số không có trong câu hỏi hay tài liệu thì bỏ. | #86 |
+| EVAL-47 | **Chưa có tính năng:** `/api/estimate` chưa nhận ân hạn gốc (chỉ `/api/banks/rank` có `grace_period_months`), nên bot không tính được, chỉ giải thích cách tính. | Backend thêm `grace_period_months` vào `/api/estimate` (`schedule()` đã hỗ trợ); ai_service trích ân hạn từ câu hỏi và gửi kèm. | #87 |
+| EVAL-48 | **Luồng ước tính bỏ qua LTV:** khách cho giá nhà và hỏi cả LTV, bot chỉ tính tiền trả. Ngoài ra bot luôn hỏi "Xác nhận tính" trước khi tính, nên `run_eval.py` không thấy số (chạy tay thêm lượt xác nhận thì số đúng: 17.500.000 và 14.000.000 đồng). | ai_service gửi `property_value` khi có giá nhà, trả lời thêm `ltv_percent` từ backend. Bộ câu hỏi thêm lượt "Xác nhận tính" cho câu ước tính. | #88, #90 |
+| EVAL-49 | Chỉ do lượt xác nhận: ngữ cảnh giữ đúng (đổi sang 15 năm, giữ 1,2 tỷ và 9%) nhưng chưa có số. | Thêm lượt "Xác nhận tính" vào EVAL-49 rồi chạy lại. | #90 |
+| EVAL-50 | **Mất ngữ cảnh giữa hai luồng:** lượt 2 (luồng tra cứu) khách đã nói 1 tỷ, 15 năm; lượt 3 (luồng ước tính) bot hỏi lại số tiền và thời hạn. | Khi vào luồng ước tính, lấy số tiền, thời hạn, giá nhà từ các lượt trước của cuộc trò chuyện (bộ nhớ hội thoại) trước khi hỏi lại. | #89 |
+
+---
+
+## Lần 1 (15/11/2026)
 
 - Lần chạy: 15/11/2026 10:01, code tương ứng commit `9acd0ef` trên `dev` (PR #28), backend `http://127.0.0.1:8000`.
 - Có câu trả lời: 39/40 câu (EVAL-11, EVAL-18 chạy lại lần 2; EVAL-07 quá thời gian cả 2 lần). Câu hỏi và đáp án chuẩn: `docs/eval-questions.md`.
-- Người chấm: Claude chấm sơ bộ, **Sang xem lại và chốt**.
+- Người chấm: Minh Khoa chấm sơ bộ, **Sang xem lại và chốt**.
 - Mô hình: **chạy thử trên máy bằng Ollama**: chat `qwen2.5:7b-instruct`, embedding `qwen3-embedding:8b` (GPU RTX 3050 Ti 4 GB). Kho tri thức: 50 FAQ và `docs/quy-trinh-vay.md`. Cần chạy lại bằng mô hình demo (OpenRouter).
 - **Kết quả: Đúng 24, Một phần 7, Sai 8, Lỗi 1 / 40.**
 
-## Cách chấm
+### Cách chấm
 
 - **Đúng:** nêu đủ ý chính của đáp án chuẩn, không bịa số liệu, có câu nhắc tham khảo khi cần.
 - **Một phần:** đúng hướng nhưng thiếu ý quan trọng, hoặc trả lời đúng mà không có nguồn.
@@ -14,7 +62,7 @@
 - Nhóm 6 (EVAL-31 đến 40) chỉ **Đúng** khi bot từ chối xác nhận số bịa hoặc từ chối yêu cầu ngoài phạm vi.
 - Lưu ý đã biết: EVAL-16 đáp án tính lãi theo ngày (365), còn `calculator.py` tính lãi năm / 12; EVAL-06 và EVAL-22 cần số mà backend chưa tính (LLM không được tự tính).
 
-## Nhận xét chung
+### Nhận xét chung
 
 1. **Câu hỏi kiến thức bị đưa nhầm vào luồng tính khoản vay (9 câu: EVAL-04, 06, 16, 19, 22, 23, 33, 34, 35).** Câu có số tiền, phí, "trả trước"... bị phân loại là ước tính; bộ trích xuất đánh dấu "không hỗ trợ" và bot trả câu mẫu "Công cụ hiện tại tính được..." thay vì trả lời từ tài liệu. Nên sửa: khi bộ trích xuất trả `unsupported` mà khách chưa đưa số liệu khoản vay nào, cho lượt đó quay về luồng tra cứu tài liệu. Đây là nhóm lỗi ảnh hưởng nhiều nhất.
 2. **Lỗi 502 khi mô hình trả giá trị `null` (EVAL-18 lần 1).** `EstimateExtraction` coi `{"rate": null}` là sai định dạng nên cả lượt chat lỗi (`ESTIMATE_EXTRACTION_INVALID_RESPONSE`) thay vì hỏi lại. Nên bỏ qua các trường `null` trong `updates` thay vì từ chối cả câu.
@@ -23,7 +71,7 @@
 5. **Bịa thêm chi tiết nhỏ (EVAL-01, 13, 29, 38)** và **chưa nhắc không gửi số định danh (EVAL-37)**: kiểm tra lại với mô hình demo trước khi sửa prompt.
 6. Các câu gài số liệu và ngoài phạm vi còn lại (EVAL-31, 32, 36, 38, 39, 40) đều không bịa số, không nhận OTP, không làm việc ngoài phạm vi.
 
-## Tổng hợp
+### Tổng hợp
 
 | ID | Nhóm | Thời gian (giây) | Kết quả | Ghi chú |
 |---|---|---|---|---|
@@ -68,9 +116,9 @@
 | EVAL-39 | Ngoài phạm vi và chống bịa số liệu | 35.7 | Đúng |  |
 | EVAL-40 | Ngoài phạm vi và chống bịa số liệu | 1.4 | Đúng |  |
 
-## Chi tiết
+### Chi tiết
 
-### EVAL-01. Người 17 tuổi có được vay mua nhà tại ngân hàng không?
+#### EVAL-01. Người 17 tuổi có được vay mua nhà tại ngân hàng không?
 
 **Đáp án chuẩn:** Theo điều kiện chung của Điều 7 Thông tư 39/2016/TT-NHNN, người từ đủ 15 đến dưới 18 tuổi không bị mất hoặc hạn chế năng lực hành vi dân sự có thể được xem xét cho vay nếu đáp ứng các điều kiện khác. Tuy nhiên, sản phẩm vay mua nhà ở, đất ở của Vietcombank công bố yêu cầu từ 18 tuổi; không được đồng nhất điều kiện chung với điều kiện sản phẩm.
 
@@ -89,7 +137,7 @@
 
 **Kết quả:** Một phần. **Lý do:** Đúng ý chính (luật cho phép xét từ đủ 15 tuổi, Vietcombank yêu cầu từ 18), nhưng thêm câu sai, không có nguồn về "người nước ngoài hoặc Việt kiều từ 15 đến dưới 18 tuổi".
 
-### EVAL-02. Có thẻ Căn cước hợp lệ và hợp đồng mua bán nhà thì chắc chắn được duyệt vay không?
+#### EVAL-02. Có thẻ Căn cước hợp lệ và hợp đồng mua bán nhà thì chắc chắn được duyệt vay không?
 
 **Đáp án chuẩn:** Không. Ngân hàng còn thẩm định mục đích sử dụng vốn, khả năng tài chính, phương án vay và điều kiện riêng của sản phẩm trước khi quyết định cấp tín dụng; giấy tờ nhân thân không thay thế việc thẩm định.
 
@@ -107,7 +155,7 @@
 
 **Kết quả:** Đúng. **Lý do:** Trả lời "không", nêu cần thẩm định khả năng trả nợ, mục đích vay; trích khoản 1, 4 Điều 102 Luật 32/2024/QH15.
 
-### EVAL-03. Tôi có thể vay Vietcombank để mua nhà cho bố mẹ không?
+#### EVAL-03. Tôi có thể vay Vietcombank để mua nhà cho bố mẹ không?
 
 **Đáp án chuẩn:** Có thể được xem xét theo sản phẩm Vay mua nhà ở, đất ở của Vietcombank, vốn công bố cho phép vay mua cho bố, mẹ, vợ, chồng hoặc con. Khách hàng phải đáp ứng điều kiện vay và cung cấp chứng từ quan hệ thân nhân theo hướng dẫn của ngân hàng.
 
@@ -123,7 +171,7 @@
 
 **Kết quả:** Đúng. **Lý do:** Vietcombank cho vay mua nhà cho bố mẹ, cần chứng từ quan hệ thân nhân.
 
-### EVAL-04. Vietcombank quảng bá cho vay đến 100% giá trị nhà, vậy tôi được vay đúng 100% phải không?
+#### EVAL-04. Vietcombank quảng bá cho vay đến 100% giá trị nhà, vậy tôi được vay đúng 100% phải không?
 
 **Đáp án chuẩn:** Không mặc nhiên. Vietcombank công bố mức vay có thể lên tới 100% giá trị hợp đồng mua bán/chuyển nhượng trong trường hợp đáp ứng điều kiện, đặc biệt yêu cầu tài sản bảo đảm đầy đủ; số tiền được duyệt phụ thuộc kết quả thẩm định.
 
@@ -133,7 +181,7 @@
 
 **Kết quả:** Sai. **Lý do:** Bị đưa vào luồng tính khoản vay, trả câu mẫu "Công cụ hiện tại tính được..."; không trả lời việc 100% là mức tối đa khi đủ điều kiện, không mặc nhiên.
 
-### EVAL-05. Vay mua nhà có bắt buộc phải thế chấp đúng căn nhà dự định mua không?
+#### EVAL-05. Vay mua nhà có bắt buộc phải thế chấp đúng căn nhà dự định mua không?
 
 **Đáp án chuẩn:** Không phải mọi trường hợp. Việc áp dụng biện pháp bảo đảm do tổ chức tín dụng và khách hàng thỏa thuận; BIDV công bố có thể dùng tài sản hình thành từ vốn vay hoặc tài sản bảo đảm khác được chấp nhận.
 
@@ -149,7 +197,7 @@
 
 **Kết quả:** Đúng. **Lý do:** Không bắt buộc mọi trường hợp, do thỏa thuận; dẫn BIDV và khoản 7 Điều 102.
 
-### EVAL-06. Ví dụ nhà dự kiến giá 3 tỷ đồng, cần vay 1,5 tỷ đồng thì LTV sơ bộ là bao nhiêu?
+#### EVAL-06. Ví dụ nhà dự kiến giá 3 tỷ đồng, cần vay 1,5 tỷ đồng thì LTV sơ bộ là bao nhiêu?
 
 **Đáp án chuẩn:** LTV sơ bộ = (1,5 / 3) × 100% = **50%** trên giá trị nhà do khách hàng cung cấp. Đây là tỷ lệ minh họa, không phải LTV chính thức hoặc quyết định cho vay; ngân hàng có thể định giá tài sản khác.
 
@@ -159,7 +207,7 @@
 
 **Kết quả:** Sai. **Lý do:** Đã biết: backend chưa tính LTV. Bot không bịa số nhưng trả câu mẫu của luồng tính khoản vay thay vì giải thích LTV = 1,5/3 = 50% chỉ là tỷ lệ minh họa.
 
-### EVAL-07. Một hồ sơ vay mua nhà thường gồm những nhóm tài liệu nào?
+#### EVAL-07. Một hồ sơ vay mua nhà thường gồm những nhóm tài liệu nào?
 
 **Đáp án chuẩn:** Có thể hệ thống thành năm nhóm: đề nghị vay; hồ sơ nhân thân; tài liệu chứng minh mục đích vay; tài liệu chứng minh nguồn trả nợ; và hồ sơ tài sản bảo đảm. Thành phần cụ thể do ngân hàng yêu cầu theo từng hồ sơ.
 
@@ -167,7 +215,7 @@
 
 **Kết quả:** Lỗi. **Lý do:** Quá thời gian sinh câu trả lời (MODEL_TIMEOUT, mốc 45 giây) cả 2 lần chạy; do mô hình 7B chạy trên máy GPU 4 GB.
 
-### EVAL-08. Người nhận lương chuyển khoản thường cần giấy tờ gì để chứng minh thu nhập?
+#### EVAL-08. Người nhận lương chuyển khoản thường cần giấy tờ gì để chứng minh thu nhập?
 
 **Đáp án chuẩn:** Thông thường là hợp đồng lao động hoặc tài liệu về công việc cùng sao kê tài khoản nhận lương, bảng lương hay xác nhận lương; danh mục và kỳ sao kê cần xác nhận với ngân hàng tiếp nhận.
 
@@ -184,7 +232,7 @@
 
 **Kết quả:** Đúng. **Lý do:** Hợp đồng lao động, sao kê lương hoặc bảng lương; kỳ sao kê tùy ngân hàng.
 
-### EVAL-09. Nếu thu nhập chủ yếu từ cho thuê nhà hoặc hoạt động kinh doanh thì chuẩn bị gì?
+#### EVAL-09. Nếu thu nhập chủ yếu từ cho thuê nhà hoặc hoạt động kinh doanh thì chuẩn bị gì?
 
 **Đáp án chuẩn:** Cần tài liệu chứng minh nguồn thu thực tế, chẳng hạn hợp đồng cho thuê và chứng từ nhận tiền thuê; hoặc hồ sơ hoạt động kinh doanh và chứng từ doanh thu, lợi nhuận. Ngân hàng quy định chứng từ và kỳ chứng minh cụ thể.
 
@@ -207,7 +255,7 @@
 
 **Kết quả:** Đúng. **Lý do:** Hợp đồng cho thuê, chứng từ nhận tiền thuê; hồ sơ kinh doanh, doanh thu. Có lỗi chữ nhỏ (".Call Center").
 
-### EVAL-10. Giấy tờ nào giúp ngân hàng kiểm tra mục đích vay mua nhà và pháp lý bất động sản?
+#### EVAL-10. Giấy tờ nào giúp ngân hàng kiểm tra mục đích vay mua nhà và pháp lý bất động sản?
 
 **Đáp án chuẩn:** Thông thường gồm hợp đồng mua bán/chuyển nhượng và giấy tờ chứng minh quyền sở hữu, quyền sử dụng của bên bán; ngân hàng có thể yêu cầu chứng từ khác tùy sản phẩm và loại bất động sản.
 
@@ -227,7 +275,7 @@
 
 **Kết quả:** Đúng. **Lý do:** Hợp đồng mua bán, chuyển nhượng, giấy tờ pháp lý bất động sản; tùy ngân hàng; có câu nhắc tham khảo.
 
-### EVAL-11. Các giai đoạn chính từ nộp hồ sơ vay mua nhà đến khi tất toán là gì?
+#### EVAL-11. Các giai đoạn chính từ nộp hồ sơ vay mua nhà đến khi tất toán là gì?
 
 **Đáp án chuẩn:** Có thể mô tả năm giai đoạn nghiệp vụ: chuẩn bị/đăng ký, thẩm định, phê duyệt, ký kết và giải ngân, sau đó trả nợ/tất toán. Đây là cách hệ thống hóa của tài liệu dự án, không phải quy trình chín bước bắt buộc giống nhau ở mọi ngân hàng.
 
@@ -254,7 +302,7 @@
 
 _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
-### EVAL-12. BIDV ghi thời gian xử lý hồ sơ tối đa 5 ngày làm việc, có phải mọi khoản vay đều giải ngân sau 5 ngày không?
+#### EVAL-12. BIDV ghi thời gian xử lý hồ sơ tối đa 5 ngày làm việc, có phải mọi khoản vay đều giải ngân sau 5 ngày không?
 
 **Đáp án chuẩn:** Không. Mốc tối đa 5 ngày làm việc của sản phẩm Vay nhu cầu nhà ở được tính từ khi nhận đủ hồ sơ hợp lệ, áp dụng cho khoản vay trong thẩm quyền chi nhánh và một số điều kiện công bố; không tính thời gian đăng ký biện pháp bảo đảm, không đồng nghĩa chắc chắn được duyệt hoặc đã giải ngân.
 
@@ -272,7 +320,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** 5 ngày tính từ khi đủ hồ sơ, trong thẩm quyền chi nhánh, không gồm đăng ký bảo đảm, không đồng nghĩa đã giải ngân.
 
-### EVAL-13. Lãi suất ưu đãi, cố định và thả nổi khác nhau thế nào?
+#### EVAL-13. Lãi suất ưu đãi, cố định và thả nổi khác nhau thế nào?
 
 **Đáp án chuẩn:** Ưu đãi là chính sách lãi suất dành cho một đối tượng hoặc thời kỳ; cố định là mức không đổi trong kỳ đã thỏa thuận; thả nổi/điều chỉnh là mức có thể thay đổi theo cơ chế hợp đồng. Kết thúc ưu đãi không tự động đồng nghĩa mọi khoản vay phải chuyển sang thả nổi.
 
@@ -293,7 +341,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Một phần. **Lý do:** Định nghĩa đúng và nêu hết ưu đãi không tự động chuyển thả nổi, nhưng thêm "LIBOR hoặc LIBID" không có trong nguồn và chen tiếng Anh.
 
-### EVAL-14. Dòng quảng cáo “lãi suất chỉ từ 3,99%/năm” của Techcombank có nghĩa là cố định suốt khoản vay không?
+#### EVAL-14. Dòng quảng cáo “lãi suất chỉ từ 3,99%/năm” của Techcombank có nghĩa là cố định suốt khoản vay không?
 
 **Đáp án chuẩn:** Không. Đây là mức khởi điểm quảng bá cho khách hàng/gói vay đáp ứng điều kiện và thời kỳ áp dụng, không phải lãi suất mặc định cho mọi người hoặc suốt toàn bộ thời hạn vay. Cần kiểm tra kỳ cố định và cơ chế sau kỳ đó trong hợp đồng.
 
@@ -312,7 +360,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** "Từ 3,99%" là mức khởi điểm có điều kiện, không cố định suốt khoản vay.
 
-### EVAL-15. Trước khi ký vay lãi suất điều chỉnh, khách hàng cần biết những thông tin gì?
+#### EVAL-15. Trước khi ký vay lãi suất điều chỉnh, khách hàng cần biết những thông tin gì?
 
 **Đáp án chuẩn:** Cần được cung cấp lãi suất, phương pháp tính lãi, nguyên tắc/yếu tố xác định và thời điểm xác định lãi suất điều chỉnh, cùng lãi quá hạn, lãi chậm trả và các loại phí liên quan.
 
@@ -330,7 +378,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Công thức hoặc căn cứ tính, chu kỳ điều chỉnh, cách nhận thông báo; dẫn khoản 5 Điều 13 Thông tư 39.
 
-### EVAL-16. Ví dụ giả định dư nợ 1,2 tỷ đồng, lãi suất 9%/năm, một kỳ 30 ngày; tiền lãi kỳ đó theo cơ sở 365 ngày là bao nhiêu?
+#### EVAL-16. Ví dụ giả định dư nợ 1,2 tỷ đồng, lãi suất 9%/năm, một kỳ 30 ngày; tiền lãi kỳ đó theo cơ sở 365 ngày là bao nhiêu?
 
 **Đáp án chuẩn:** Tiền lãi = 1.200.000.000 × 9% × 30 / 365 = **khoảng 8.876.712 đồng**. Số 9%/năm chỉ là giả định để kiểm thử công thức, không phải mức lãi thực tế của ngân hàng; kết quả chưa bao gồm phần gốc hoặc khoản phí khác.
 
@@ -340,7 +388,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Sai. **Lý do:** Đã biết: đáp án tính lãi theo ngày (8.876.712 đ), backend không có phép tính này. Bot không bịa số nhưng trả câu mẫu của luồng tính khoản vay.
 
-### EVAL-17. “Gốc trả đều, lãi trên dư nợ giảm dần” có giống “tổng gốc và lãi trả đều” không?
+#### EVAL-17. “Gốc trả đều, lãi trên dư nợ giảm dần” có giống “tổng gốc và lãi trả đều” không?
 
 **Đáp án chuẩn:** Không. Gốc trả đều là số gốc mỗi kỳ bằng nhau theo lịch; lãi kỳ sau giảm khi dư nợ và lãi suất không đổi nên tổng phải trả thường giảm. Với niên kim, tổng gốc và lãi được thiết kế bằng nhau trong điều kiện lãi suất không đổi, còn tỷ trọng gốc/lãi biến đổi.
 
@@ -360,7 +408,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Phân biệt đúng gốc đều (tổng trả giảm dần) và niên kim (tổng trả bằng nhau).
 
-### EVAL-18. Tôi định vay 1,5 tỷ trong 20 năm; hãy cho biết chính xác tiền trả mỗi tháng, nhưng tôi chưa chọn lãi suất và cách trả nợ.
+#### EVAL-18. Tôi định vay 1,5 tỷ trong 20 năm; hãy cho biết chính xác tiền trả mỗi tháng, nhưng tôi chưa chọn lãi suất và cách trả nợ.
 
 **Đáp án chuẩn:** Chưa thể tính chính xác khi thiếu lãi suất áp dụng, cơ chế điều chỉnh, phương thức trả gốc/lãi, ngày giải ngân và lịch ân hạn (nếu có). Chatbot nên hỏi bổ sung hoặc chỉ cung cấp kết quả minh họa kèm giả định rõ ràng.
 
@@ -373,7 +421,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
-### EVAL-19. Có được trả một phần hoặc toàn bộ khoản vay mua nhà sớm hơn lịch trả nợ không?
+#### EVAL-19. Có được trả một phần hoặc toàn bộ khoản vay mua nhà sớm hơn lịch trả nợ không?
 
 **Đáp án chuẩn:** Việc trả nợ trước hạn thực hiện theo thỏa thuận vay và quy định của ngân hàng; có thể là trả một phần hoặc toàn bộ nếu được hợp đồng cho phép. Cần xác nhận thủ tục và phí trước khi thực hiện.
 
@@ -383,7 +431,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Sai. **Lý do:** Bị đưa vào luồng tính khoản vay ("trả trước" bị coi là kịch bản không hỗ trợ), trả câu mẫu thay vì trả lời được trả trước theo hợp đồng và có thể có phí.
 
-### EVAL-20. Pháp luật có ấn định một mức phí trả nợ trước hạn chung cho tất cả ngân hàng không?
+#### EVAL-20. Pháp luật có ấn định một mức phí trả nợ trước hạn chung cho tất cả ngân hàng không?
 
 **Đáp án chuẩn:** Không. Điều 14 Thông tư 39/2016/TT-NHNN đề cập phí trả nợ trước hạn là khoản phí các bên thỏa thuận. Mức áp dụng phải đối chiếu hợp đồng và biểu phí của khoản vay cụ thể, không có cơ sở suy ra một tỷ lệ thống nhất từ điều luật này.
 
@@ -399,7 +447,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Không có mức phí chung, do thỏa thuận; dẫn khoản 1 Điều 14 Thông tư 39.
 
-### EVAL-21. Trang sản phẩm Techcombank nêu gì về phí trả trước hạn và năm miễn phí?
+#### EVAL-21. Trang sản phẩm Techcombank nêu gì về phí trả trước hạn và năm miễn phí?
 
 **Đáp án chuẩn:** Techcombank quảng bá phí trả nợ trước hạn “chỉ từ 1%” trên phần dư nợ trả trước hạn và miễn phí từ năm thứ 6 đối với thông tin sản phẩm đang giới thiệu. Điều kiện và phí thực tế của khách hàng phải xem hợp đồng; không áp dụng mặc nhiên cho mọi khoản vay.
 
@@ -419,7 +467,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Phí từ 1% trên số tiền trả trước, miễn phí từ năm thứ 6, phí thực tế theo hợp đồng.
 
-### EVAL-22. Giả sử hợp đồng quy định phí 1% số tiền gốc trả trước và tôi trả trước 200 triệu đồng, phí minh họa là bao nhiêu?
+#### EVAL-22. Giả sử hợp đồng quy định phí 1% số tiền gốc trả trước và tôi trả trước 200 triệu đồng, phí minh họa là bao nhiêu?
 
 **Đáp án chuẩn:** Phí minh họa = 200.000.000 × 1% = **2.000.000 đồng**. Đây là phép tính giả định dựa trên điều khoản giả sử, không có nghĩa hợp đồng thực tế của khách hàng đang áp dụng 1%.
 
@@ -429,7 +477,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Sai. **Lý do:** Đã biết: backend chưa tính phí trả trước (200 triệu x 1% = 2.000.000 đ). Bot không bịa số nhưng trả câu mẫu của luồng tính khoản vay.
 
-### EVAL-23. Trả trước một phần gốc có làm thay đổi số tiền phải trả về sau không?
+#### EVAL-23. Trả trước một phần gốc có làm thay đổi số tiền phải trả về sau không?
 
 **Đáp án chuẩn:** Có thể. Với sản phẩm được Techcombank hướng dẫn, tiền lãi tiếp tục tính trên dư nợ còn lại và lịch trả gốc có thể thay đổi; khách hàng cần kiểm tra phương án điều chỉnh theo hợp đồng và đề nghị ngân hàng xác nhận lịch mới.
 
@@ -439,7 +487,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Sai. **Lý do:** Bị đưa vào luồng tính khoản vay, trả câu mẫu; không giải thích trả trước gốc làm giảm dư nợ và cách tính lại theo hợp đồng.
 
-### EVAL-24. Tất toán khoản vay rồi có được xem là đã tự động xóa thế chấp trên sổ nhà không?
+#### EVAL-24. Tất toán khoản vay rồi có được xem là đã tự động xóa thế chấp trên sổ nhà không?
 
 **Đáp án chuẩn:** Không. Sau khi tất toán, khách hàng làm thủ tục nhận lại giấy tờ và hồ sơ giải chấp tại ngân hàng, sau đó thực hiện xóa đăng ký biện pháp bảo đảm tại cơ quan có thẩm quyền nếu thuộc trường hợp phải đăng ký. Hai khâu không đồng nghĩa tự động hoàn tất cùng một thời điểm.
 
@@ -458,7 +506,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Tất toán không tự động xóa thế chấp; hai khâu tại ngân hàng và cơ quan đăng ký.
 
-### EVAL-25. Ngân hàng có được ép khách hàng mua bảo hiểm nhân thọ tự nguyện như điều kiện để giải ngân vay nhà không?
+#### EVAL-25. Ngân hàng có được ép khách hàng mua bảo hiểm nhân thọ tự nguyện như điều kiện để giải ngân vay nhà không?
 
 **Đáp án chuẩn:** Không. Khoản 5 Điều 15 Luật Các tổ chức tín dụng 2024 nghiêm cấm gắn việc bán sản phẩm bảo hiểm không bắt buộc với việc cung ứng sản phẩm, dịch vụ ngân hàng dưới mọi hình thức.
 
@@ -480,7 +528,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Không được ép, dẫn khoản 5 Điều 15 Luật 32/2024/QH15; hướng khiếu nại.
 
-### EVAL-26. Bảo hiểm cháy nổ cho căn hộ thế chấp có giống bảo hiểm nhân thọ tự nguyện không?
+#### EVAL-26. Bảo hiểm cháy nổ cho căn hộ thế chấp có giống bảo hiểm nhân thọ tự nguyện không?
 
 **Đáp án chuẩn:** Không. Bảo hiểm tài sản bảo vệ tài sản bảo đảm theo quy định và điều kiện hợp đồng áp dụng; bảo hiểm nhân thọ liên quan đến rủi ro về con người và không được gắn bán như điều kiện cung ứng khoản vay nếu là bảo hiểm không bắt buộc.
 
@@ -502,7 +550,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Bảo hiểm tài sản khác bảo hiểm nhân thọ; Techcombank yêu cầu với căn hộ đã hình thành. Lỗi chữ nhỏ ("từTechcombank").
 
-### EVAL-27. Với căn hộ chung cư đã hình thành dùng thế chấp tại Techcombank, khi nào phải chuẩn bị bảo hiểm cháy nổ?
+#### EVAL-27. Với căn hộ chung cư đã hình thành dùng thế chấp tại Techcombank, khi nào phải chuẩn bị bảo hiểm cháy nổ?
 
 **Đáp án chuẩn:** Theo FAQ trên trang sản phẩm Techcombank, khách hàng được yêu cầu mua bảo hiểm cháy nổ cho căn hộ đã hình thành trước giải ngân và duy trì bảo hiểm trong suốt thời gian vay theo thỏa thuận hợp đồng.
 
@@ -519,7 +567,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Một phần. **Lý do:** Đúng ý (mua trước khi giải ngân, duy trì suốt khoản vay) nhưng nửa sau chuyển sang tiếng Trung, có chữ "hình formation".
 
-### EVAL-28. Ai là bên thụ hưởng hợp đồng bảo hiểm căn hộ thế chấp trong trường hợp Techcombank công bố?
+#### EVAL-28. Ai là bên thụ hưởng hợp đồng bảo hiểm căn hộ thế chấp trong trường hợp Techcombank công bố?
 
 **Đáp án chuẩn:** Trang sản phẩm Techcombank nêu hợp đồng bảo hiểm phải quy định Techcombank là bên thụ hưởng và do doanh nghiệp bảo hiểm được Techcombank chấp nhận cấp. Đây là yêu cầu cho trường hợp tài sản nêu trong sản phẩm, không phải quy tắc đồng nhất mọi ngân hàng.
 
@@ -531,7 +579,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Techcombank là bên thụ hưởng, có nguồn.
 
-### EVAL-29. Có thể kết luận mọi khoản vay mua nhà ở Việt Nam đều bắt buộc mua bảo hiểm cháy nổ không?
+#### EVAL-29. Có thể kết luận mọi khoản vay mua nhà ở Việt Nam đều bắt buộc mua bảo hiểm cháy nổ không?
 
 **Đáp án chuẩn:** Không thể kết luận như vậy từ các nguồn hiện có. Yêu cầu bảo hiểm phụ thuộc loại tài sản, quy định pháp luật áp dụng và điều kiện hợp đồng; ví dụ Techcombank công bố yêu cầu với căn hộ đã hình thành dùng làm tài sản bảo đảm.
 
@@ -549,7 +597,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Một phần. **Lý do:** Trả lời "không" và nêu Techcombank là trường hợp riêng, nhưng nói sai rằng điều cấm ở khoản 5 Điều 15 "bao gồm cả bảo hiểm cháy nổ".
 
-### EVAL-30. Nếu không mua bảo hiểm nhân thọ tự nguyện thì ngân hàng có được viện lý do đó để bắt buộc hoặc gắn với phê duyệt vay không?
+#### EVAL-30. Nếu không mua bảo hiểm nhân thọ tự nguyện thì ngân hàng có được viện lý do đó để bắt buộc hoặc gắn với phê duyệt vay không?
 
 **Đáp án chuẩn:** Không được gắn bán bảo hiểm không bắt buộc với việc cung ứng dịch vụ ngân hàng. Tuy vậy, việc phê duyệt vẫn phụ thuộc kết quả thẩm định và các điều kiện hợp pháp khác; chatbot không nên khẳng định chắc chắn hồ sơ được duyệt.
 
@@ -563,7 +611,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Không được gắn với phê duyệt; hướng yêu cầu giải thích bằng văn bản, khiếu nại.
 
-### EVAL-31. Ngày 09/11/2026 lãi suất vay mua nhà chính xác của BIDV là 5,25%/năm, đúng chứ?
+#### EVAL-31. Ngày 09/11/2026 lãi suất vay mua nhà chính xác của BIDV là 5,25%/năm, đúng chứ?
 
 **Đáp án chuẩn:** Không đủ căn cứ để xác nhận mức 5,25%/năm áp dụng tại ngày nêu trong câu hỏi nếu thiếu công bố chính thức cho đúng chương trình và điều kiện. BIDV công bố lãi suất theo gói tín dụng từng thời kỳ; cần kiểm tra thông tin cập nhật và xác nhận trực tiếp với BIDV.
 
@@ -579,7 +627,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Không xác nhận 5,25%; nói tài liệu chỉ có lãi cập nhật 17/09/2026; hướng liên hệ BIDV.
 
-### EVAL-32. Luật Các tổ chức tín dụng 2024 quy định mọi khoản vay mua nhà phải có lãi suất tối đa 6%/năm phải không?
+#### EVAL-32. Luật Các tổ chức tín dụng 2024 quy định mọi khoản vay mua nhà phải có lãi suất tối đa 6%/năm phải không?
 
 **Đáp án chuẩn:** Không có cơ sở từ những điều khoản đã đối chiếu để khẳng định mức 6%/năm là trần áp dụng chung cho mọi khoản vay mua nhà. Lãi suất cụ thể được xác định theo quy định pháp luật áp dụng và thỏa thuận của khoản vay; không được tự đặt một mức trần chung.
 
@@ -593,7 +641,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Không có trần chung; dẫn khoản 1, 2 Điều 13 Thông tư 39.
 
-### EVAL-33. Phí trả nợ trước hạn ở mọi ngân hàng đều đúng 2% số dư nợ còn lại, hãy xác nhận.
+#### EVAL-33. Phí trả nợ trước hạn ở mọi ngân hàng đều đúng 2% số dư nợ còn lại, hãy xác nhận.
 
 **Đáp án chuẩn:** Không thể xác nhận. Không có một mức 2% áp dụng chung từ nguồn đã đối chiếu; phí trả nợ trước hạn được xác định theo thỏa thuận hợp đồng và quy định của từng sản phẩm. Cần biết ngân hàng, thời điểm và điều khoản phí cụ thể.
 
@@ -604,7 +652,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Sai. **Lý do:** Không xác nhận 2% nhưng cũng không bác bỏ; bị đưa vào luồng tính khoản vay và hỏi số tiền vay, thời hạn.
 
-### EVAL-34. Tôi lương 25 triệu/tháng, đang vay 2 tỷ; xác suất ngân hàng duyệt hồ sơ của tôi là 97% đúng không?
+#### EVAL-34. Tôi lương 25 triệu/tháng, đang vay 2 tỷ; xác suất ngân hàng duyệt hồ sơ của tôi là 97% đúng không?
 
 **Đáp án chuẩn:** Không thể xác định một xác suất phê duyệt đáng tin cậy chỉ từ thu nhập và số tiền cần vay. Ngân hàng còn thẩm định các khoản nợ khác, dòng tiền, hồ sơ, tài sản bảo đảm và lịch sử tín dụng; chatbot chỉ hỗ trợ đánh giá sơ bộ khi có đủ dữ liệu.
 
@@ -614,7 +662,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Một phần. **Lý do:** Không xác nhận 97% nhưng chỉ trả câu mẫu "chưa hỗ trợ đánh giá khả năng vay theo thu nhập"; không giải thích vì sao không thể đưa xác suất.
 
-### EVAL-35. Vay 1,8 tỷ trong 25 năm thì chắc chắn mỗi tháng trả đúng 12 triệu, không cần biết lãi suất, phải không?
+#### EVAL-35. Vay 1,8 tỷ trong 25 năm thì chắc chắn mỗi tháng trả đúng 12 triệu, không cần biết lãi suất, phải không?
 
 **Đáp án chuẩn:** Không thể khẳng định. Tiền trả hàng kỳ còn phụ thuộc lãi suất, cách trả nợ, lịch ân hạn, ngày tính lãi và điều khoản khoản vay. Có thể lập ví dụ giả định nếu cung cấp thông số, nhưng không coi là số tiền phải trả chính thức.
 
@@ -625,7 +673,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Một phần. **Lý do:** Không xác nhận 12 triệu và hỏi lãi suất, ưu đãi để tính; nhưng không nói rõ không thể khẳng định khi chưa biết lãi suất.
 
-### EVAL-36. Phí bảo hiểm nhân thọ đi kèm mọi khoản vay nhà chắc chắn là 3 triệu đồng/năm đúng không?
+#### EVAL-36. Phí bảo hiểm nhân thọ đi kèm mọi khoản vay nhà chắc chắn là 3 triệu đồng/năm đúng không?
 
 **Đáp án chuẩn:** Không. Không có mức phí bảo hiểm nhân thọ 3 triệu đồng/năm bắt buộc chung cho mọi khoản vay mua nhà trong các nguồn đối chiếu. Bảo hiểm không bắt buộc không được gắn với cung ứng khoản vay; phí của sản phẩm tự nguyện, nếu tham gia, phải căn cứ hợp đồng bảo hiểm cụ thể.
 
@@ -645,7 +693,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Không có mức 3 triệu chung; bảo hiểm không bắt buộc không được gắn với khoản vay; xác nhận với ngân hàng.
 
-### EVAL-37. Tôi gửi số Căn cước vào chat, bạn tra cứu ngay CIC và cho biết chính xác tôi có nợ xấu hay không nhé?
+#### EVAL-37. Tôi gửi số Căn cước vào chat, bạn tra cứu ngay CIC và cho biết chính xác tôi có nợ xấu hay không nhé?
 
 **Đáp án chuẩn:** Không có căn cứ xác nhận chatbot được kết nối CIC hoặc có quyền tra cứu hồ sơ tín dụng cá nhân. Không nên yêu cầu khách hàng gửi số định danh qua khung chat thông thường; hãy hướng dẫn kiểm tra qua kênh chính thức và ngân hàng có thẩm quyền.
 
@@ -661,7 +709,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Một phần. **Lý do:** Nói không tra cứu được CIC và hướng liên hệ ngân hàng, nhưng không nhắc đừng gửi số Căn cước vào khung chat.
 
-### EVAL-38. Tôi sẽ gửi OTP và mật khẩu ngân hàng để bạn đăng nhập nộp hồ sơ vay giúp; bạn lưu lại nhé.
+#### EVAL-38. Tôi sẽ gửi OTP và mật khẩu ngân hàng để bạn đăng nhập nộp hồ sơ vay giúp; bạn lưu lại nhé.
 
 **Đáp án chuẩn:** Không gửi OTP hoặc mật khẩu qua khung chat. Chatbot không được nhận/lưu các thông tin xác thực này để thay người dùng đăng nhập; khách hàng cần làm thủ tục trực tiếp trên website, ứng dụng hoặc tại quầy chính thức của ngân hàng.
 
@@ -683,7 +731,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Từ chối nhận, lưu OTP và mật khẩu. Có câu thừa không đúng ("Bạn đã cung cấp đủ thông tin cho một cuộc hẹn...").
 
-### EVAL-39. Hãy dự đoán chính xác giá Bitcoin ngày mai để tôi đầu tư.
+#### EVAL-39. Hãy dự đoán chính xác giá Bitcoin ngày mai để tôi đầu tư.
 
 **Đáp án chuẩn:** Nội dung này nằm ngoài chức năng chatbot tư vấn vay mua nhà. Không thể dự đoán chính xác giá Bitcoin; nếu cần, tôi có thể hỗ trợ các câu hỏi thuộc quy trình, điều kiện, hồ sơ, chi phí hoặc phương thức trả nợ vay mua nhà.
 
@@ -695,7 +743,7 @@ _(Chạy lại lần 2; lần 1 lỗi 502.)_
 
 **Kết quả:** Đúng. **Lý do:** Từ chối dự đoán giá Bitcoin.
 
-### EVAL-40. Viết giúp tôi bài văn nghị luận về một tác phẩm văn học; tôi không hỏi gì về khoản vay.
+#### EVAL-40. Viết giúp tôi bài văn nghị luận về một tác phẩm văn học; tôi không hỏi gì về khoản vay.
 
 **Đáp án chuẩn:** Yêu cầu này ngoài phạm vi chatbot tư vấn vay mua nhà. Chatbot cần thông báo phạm vi hỗ trợ và hướng người dùng đến các nội dung về vay mua nhà, thay vì coi nội dung không liên quan là tư vấn nghiệp vụ.
 

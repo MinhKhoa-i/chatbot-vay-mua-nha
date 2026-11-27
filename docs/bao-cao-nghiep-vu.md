@@ -104,4 +104,4 @@ Chất lượng được đo bằng [bộ câu hỏi kiểm thử](eval-question
 | Lần 1 (15/11/2026) | Qwen 2.5 7B chạy trên máy | 40 | 24 | 7 | 8 | 1 | khoảng 55 giây/câu |
 | Lần 2 (18/11/2026) | Mô hình trực tuyến, sau các bản sửa lỗi | 50 | 44 | 5 | 1 | 0 | trung bình 12 giây/câu |
 
-Ở lần 2, các câu gài đều đạt: chatbot không xác nhận số liệu bịa và không nhận thông tin nhạy cảm. Các lỗi còn lại là chatbot nhận một yêu cầu ngoài phạm vi và quên thông tin khoản vay khi chuyển từ luồng tra cứu sang luồng tính (đang sửa). Kết quả lần 1 xem tại [eval-results.md](eval-results.md); kết quả lần 2 do trợ lý AI chấm sơ bộ theo cùng thang điểm, nhóm rà lại trước khi đưa vào báo cáo cuối kỳ.
+Ở lần 2, các câu gài đều đạt: chatbot không xác nhận số liệu bịa và không nhận thông tin nhạy cảm. Các lỗi còn lại là chatbot nhận một yêu cầu ngoài phạm vi và quên thông tin khoản vay khi chuyển từ luồng tra cứu sang luồng tính (đang sửa). Kết quả lần 1 xem tại [eval-results.md](eval-results.md); kết quả lần 2 do nhóm chấm sơ bộ theo cùng thang điểm, nhóm rà lại trước khi đưa vào báo cáo cuối kỳ.
