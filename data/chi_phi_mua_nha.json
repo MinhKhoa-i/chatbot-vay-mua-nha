@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-11-26",
+  "description": "Danh mục các khoản thuế, phí và chi phí phát sinh liên quan trong quá trình mua nhà và vay vốn ngân hàng tại Việt Nam. Phục vụ chatbot giải thích chi phí thực tế cho khách hàng ngoài tiền mua nhà.",
+  "cost_groups": [
+    {
+      "group_id": "taxes_and_state_fees",
+      "group_name": "Thuế và lệ phí nhà nước khi chuyển nhượng bất động sản",
+      "items": [
+        {
+          "code": "personal_income_tax",
+          "name": "Thuế thu nhập cá nhân (TNCN)",
+          "rate_description": "2% trên giá trị chuyển nhượng ghi trên hợp đồng công chứng (hoặc giá tính thuế theo quy định nhà nước nếu giá ghi thấp hơn)",
+          "payer_typical": "Người bán (thỏa thuận trong hợp đồng chuyển nhượng)",
+          "legal_basis": "Luật Thuế thu nhập cá nhân và các văn bản hướng dẫn hiện hành",
+          "as_of": "2026-11-26",
+          "source_url": "https://www.gdt.gov.vn"
+        },
+        {
+          "code": "registration_fee",
+          "name": "Lệ phí trước bạ nhà đất",
+          "rate_description": "0,5% trên giá trị nhà đất theo biểu giá quy định của UBND cấp tỉnh hoặc giá trị ghi trên hợp đồng chuyển nhượng",
+          "payer_typical": "Người mua (bên nhận chuyển nhượng quyền sử dụng, sở hữu)",
+          "legal_basis": "Nghị định số 10/2022/NĐ-CP về lệ phí trước bạ",
+          "as_of": "2026-11-26",
+          "source_url": "https://www.gdt.gov.vn"
+        },
+        {
+          "code": "cadastral_and_cert_fee",
+          "name": "Lệ phí cấp Giấy chứng nhận và phí thẩm định hồ sơ địa chính",
+          "rate_description": "Từ 500.000 đến 5.000.000 VND tùy theo quy định từng tỉnh/thành phố và loại tài sản (nhà riêng lẻ hay chung cư)",
+          "payer_typical": "Người mua khi làm thủ tục sang tên đổi sổ",
+          "as_of": "2026-11-26",
+          "source_url": "https://dichvucong.gov.vn"
+        }
+      ]
+    },
+    {
+      "group_id": "notary_and_legal_fees",
+      "group_name": "Phí công chứng và đăng ký giao dịch bảo đảm",
+      "items": [
+        {
+          "code": "notary_fee_contract",
+          "name": "Phí công chứng hợp đồng mua bán / chuyển nhượng",
+          "rate_description": "Tính theo biểu phí bậc thang theo Thông tư liên tịch 257/2016/TT-BTC (từ 0,05% - 0,1% giá trị hợp đồng, tối thiểu từ vài trăm nghìn đến tối đa theo khung quy định)",
+          "payer_typical": "Hai bên thỏa thuận (thông thường người mua trả)",
+          "as_of": "2026-11-26",
+          "source_url": "https://moj.gov.vn"
+        },
+        {
+          "code": "mortgage_registration_fee",
+          "name": "Phí công chứng hợp đồng thế chấp và đăng ký biện pháp bảo đảm",
+          "rate_description": "Phí công chứng hợp đồng thế chấp (theo biểu phí công chứng) + Phí đăng ký giao dịch bảo đảm tại Văn phòng Đăng ký Đất đai (khoảng 80.000 - 150.000 VND/hồ sơ)",
+          "payer_typical": "Bên vay thế chấp",
+          "as_of": "2026-11-26",
+          "source_url": "https://dichvucong.gov.vn"
+        }
+      ]
+    },
+    {
+      "group_id": "bank_loan_fees",
+      "group_name": "Các chi phí liên quan đến khoản vay ngân hàng",
+      "items": [
+        {
+          "code": "valuation_fee",
+          "name": "Phí thẩm định giá tài sản bảo đảm",
+          "rate_description": "Khoảng 1.500.000 - 5.000.000 VND/bất động sản (tùy ngân hàng hoặc công ty thẩm định giá chỉ định; một số gói khuyến mại miễn phí này)",
+          "payer_typical": "Khách hàng vay vốn",
+          "as_of": "2026-11-26",
+          "source_url": "https://www.sbv.gov.vn"
+        },
+        {
+          "code": "property_insurance_fee",
+          "name": "Bảo hiểm cháy nổ / bảo hiểm công trình xây dựng",
+          "rate_description": "Khoảng 0,05% - 0,1%/năm tính trên giá trị công trình xây dựng (bắt buộc theo quy định thế chấp nhà chung cư hoặc nhà xây dựng)",
+          "payer_typical": "Khách hàng vay vốn",
+          "as_of": "2026-11-26",
+          "source_url": "https://www.sbv.gov.vn"
+        },
+        {
+          "code": "life_credit_insurance_fee",
+          "name": "Bảo hiểm nhân thọ / bảo hiểm tiền gửi tín dụng (tùy chọn)",
+          "rate_description": "Không bắt buộc theo quy định tại Khoản 5 Điều 15 Luật Các tổ chức tín dụng 2024. Khách hàng có quyền từ chối mua bảo hiểm kèm gói vay.",
+          "payer_typical": "Tùy chọn tự nguyện của khách hàng",
+          "as_of": "2026-11-26",
+          "source_url": "https://www.sbv.gov.vn"
+        },
+        {
+          "code": "early_repayment_penalty_fee",
+          "name": "Phí phạt trả nợ / tất toán trước hạn",
+          "rate_description": "Thu theo % trên số tiền gốc trả trước (thường từ 0,5% đến 4,0% trong 1 - 5 năm đầu, miễn phí từ năm thứ 5 hoặc 6 trở đi tùy chính sách từng ngân hàng)",
+          "payer_typical": "Khách hàng khi trả nợ trước hạn",
+          "as_of": "2026-11-26",
+          "source_url": "https://www.sbv.gov.vn"
+        }
+      ]
+    }
+  ]
+}

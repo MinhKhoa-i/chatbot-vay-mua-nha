@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-11-26",
+  "description": "Các ngưỡng tham khảo tài chính cá nhân trong tư vấn vay mua nhà (DTI, LTV, tỷ lệ vốn tự có, quỹ dự phòng). Dùng làm cơ sở đối chiếu cho bot tư vấn, đánh giá rủi ro và các kịch bản kiểm thử (EVAL-54, EVAL-55). Đây là các khuyến nghị chuyên môn và thực tiễn ngân hàng, không phải quy định pháp lý bắt buộc áp dụng chung cho mọi hồ sơ.",
+  "thresholds": {
+    "dti": {
+      "name": "Tỷ lệ nợ trên thu nhập (Debt-to-Income)",
+      "unit": "percent",
+      "formula": "(Tổng nghĩa vụ trả nợ hằng tháng / Thu nhập ròng hằng tháng) * 100",
+      "safe_range": {
+        "max_percent": 40.0,
+        "recommendation": "Ngưỡng an toàn tài chính cá nhân khuyến nghị (quy tắc 40%). Đảm bảo khả năng thanh toán nợ mà không gây áp lực lên chi tiêu sinh hoạt thiết yếu."
+      },
+      "acceptable_range": {
+        "min_percent": 40.1,
+        "max_percent": 50.0,
+        "recommendation": "Ngưỡng phổ biến được nhiều ngân hàng chấp thuận làm hạn mức tối đa khi phê duyệt tín dụng (DTI trần 50%). Khách hàng cần có kế hoạch quản lý chi tiêu chặt chẽ."
+      },
+      "risky_range": {
+        "min_percent": 50.1,
+        "recommendation": "Ngưỡng rủi ro cao. Khách hàng dễ rơi vào mất cân đối tài chính nếu thu nhập biến động hoặc lãi suất thả nổi tăng."
+      },
+      "notes": "Mẫu số tính toán khuyến nghị là thu nhập ròng (thực nhận sau thuế) của hộ gia đình.",
+      "as_of": "2026-11-26",
+      "source_url": "https://www.sbv.gov.vn"
+    },
+    "ltv": {
+      "name": "Tỷ lệ cho vay trên giá trị tài sản bảo đảm (Loan-to-Value)",
+      "unit": "percent",
+      "formula": "(Số tiền vay / Giá trị định giá của tài sản bảo đảm) * 100",
+      "standard_secured": {
+        "typical_percent": 70.0,
+        "max_percent": 80.0,
+        "recommendation": "Mức cho vay phổ biến của các ngân hàng thương mại khi tài sản bảo đảm là chính căn nhà/bất động sản dự định mua (tối đa 70% - 80% giá trị định giá của ngân hàng, không phải giá hợp đồng mua bán)."
+      },
+      "additional_secured": {
+        "max_percent": 100.0,
+        "recommendation": "Có thể lên đến 100% nhu cầu vốn hoặc giá trị HĐMB nếu khách hàng bổ sung thêm bất động sản độc lập khác hoặc giấy tờ có giá có tính thanh khoản cao."
+      },
+      "notes": "Giá trị định giá của ngân hàng thường thấp hơn 10% - 20% so với giá giao dịch thị trường.",
+      "as_of": "2026-11-26",
+      "source_url": "https://www.sbv.gov.vn"
+    },
+    "equity_ratio": {
+      "name": "Tỷ lệ vốn tự có tối thiểu",
+      "unit": "percent",
+      "formula": "(Vốn tự có tích lũy / Tổng giá trị phương án mua nhà) * 100",
+      "recommended_min_percent": 30.0,
+      "ideal_percent": 40.0,
+      "recommendation": "Khuyến nghị chuẩn bị tối thiểu 30% - 40% giá trị căn nhà bằng vốn tự có để giảm áp lực trả nợ lãi và chi phí vốn vay dài hạn.",
+      "as_of": "2026-11-26",
+      "source_url": "https://www.sbv.gov.vn"
+    },
+    "emergency_fund": {
+      "name": "Quỹ dự phòng tài chính khẩn cấp",
+      "unit": "months_of_living_expenses",
+      "recommended_months": 6,
+      "min_months": 3,
+      "recommendation": "Khách hàng nên duy trì quỹ dự phòng tương đương 3 đến 6 tháng chi tiêu sinh hoạt và trả nợ vay trước khi giải ngân, phòng ngừa biến cố việc làm hoặc lãi suất tăng.",
+      "as_of": "2026-11-26",
+      "source_url": "https://www.sbv.gov.vn"
+    }
+  }
+}

@@ -93,6 +93,27 @@ BANK_SCHEMA: Dict[str, Any] = {
                                     },
                                 },
                             },
+                            "floating_reference": {
+                                "type": "object",
+                                "required": [
+                                    "reference_name",
+                                    "reference_rate_percent",
+                                    "margin_min_percent",
+                                    "margin_max_percent",
+                                    "formula_description",
+                                    "as_of",
+                                    "source_url",
+                                ],
+                                "properties": {
+                                    "reference_name": {"type": "string"},
+                                    "reference_rate_percent": {"type": ["number", "null"], "minimum": 0},
+                                    "margin_min_percent": {"type": ["number", "null"], "minimum": 0},
+                                    "margin_max_percent": {"type": ["number", "null"], "minimum": 0},
+                                    "formula_description": {"type": "string"},
+                                    "as_of": {"type": "string"},
+                                    "source_url": {"type": "string"},
+                                },
+                            },
                         },
                     },
                     "promotions": {
@@ -314,6 +335,26 @@ def validate_business_rules(data: Dict[str, Any]) -> Tuple[List[str], List[str]]
             floating_est = ir.get("floating_rate_estimated")
             if floating_est is not None and not isinstance(floating_est, (int, float)):
                 errors.append(f"{prefix} 'interest_rate.floating_rate_estimated' phải là số hoặc null")
+
+            # Kiểm tra floating_reference nếu có
+            fref = ir.get("floating_reference")
+            if fref is not None:
+                if not isinstance(fref, dict):
+                    errors.append(f"{prefix} 'interest_rate.floating_reference' phải là object")
+                else:
+                    for req_f in ["reference_name", "formula_description", "as_of", "source_url"]:
+                        if req_f not in fref or not isinstance(fref[req_f], str) or not fref[req_f].strip():
+                            errors.append(f"{prefix} 'floating_reference.{req_f}' bắt buộc và phải là chuỗi không rỗng")
+                    as_of_val = fref.get("as_of")
+                    if as_of_val and not is_valid_date(as_of_val):
+                        errors.append(f"{prefix} 'floating_reference.as_of' ('{as_of_val}') không đúng định dạng YYYY-MM-DD")
+                    f_url = fref.get("source_url")
+                    if f_url and not is_valid_url(f_url):
+                        errors.append(f"{prefix} 'floating_reference.source_url' ('{f_url}') không phải URL hợp lệ")
+                    for num_f in ["reference_rate_percent", "margin_min_percent", "margin_max_percent"]:
+                        val = fref.get(num_f)
+                        if val is not None and (not isinstance(val, (int, float)) or val < 0):
+                            errors.append(f"{prefix} 'floating_reference.{num_f}' phải là số >= 0 hoặc null")
         else:
             errors.append(f"{prefix} 'interest_rate' phải là object")
 

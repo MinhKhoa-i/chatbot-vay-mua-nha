@@ -2,8 +2,8 @@
 
 > **Tài liệu phục vụ Dự án:** Chatbot Tư vấn Vay Mua Nhà  
 > **Người thực hiện:** Vương (Nhóm Dữ liệu)  
-> **Ngày rà soát & cập nhật:** 18/11/2026  
-> **Trạng thái:** Hoàn thành nhiệm vụ rà soát dữ liệu ngân hàng tuần 3 (Việc 12)
+> **Ngày rà soát & cập nhật:** 16/11/2026 (cập nhật phiên bản 1.4.0 ngày 26/11/2026)  
+> **Trạng thái:** Hoàn thành Phần B (Việc 12 tuần 3: bổ sung floating_reference 8 ngân hàng, ngưỡng tài chính tham khảo và chi phí mua nhà)
 
 ---
 

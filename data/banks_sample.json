@@ -1,7 +1,7 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "updated_at": "2026-11-16",
-  "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB). Rà soát nguồn chính thức ngày 2026-11-16; cập nhật bổ sung ngày 2026-11-18. Phiên bản 1.3.0: thêm 2 trường bắt buộc fee_published và rate_is_upper_bound vào promotions.early_repayment_penalty để phân biệt rõ ngân hàng chưa công bố biểu phí (chưa rõ phí, không coi là miễn phí) và phí mức trần ('tối đa'); chuẩn hóa max_ltv_percent của Vietcombank về 70% theo tài sản bảo đảm là chính căn nhà mua.",
+  "description": "Dữ liệu chuẩn hóa về các sản phẩm vay mua nhà tại 8 ngân hàng thương mại Việt Nam (Vietcombank, BIDV, Techcombank, VietinBank, Agribank, MB Bank, VPBank, ACB). Rà soát nguồn chính thức ngày 2026-11-16; cập nhật phiên bản 1.4.0 ngày 26/11/2026 (Phần B): bổ sung trường floating_reference (lãi suất tham chiếu, biên độ, công thức, ngày hiệu lực as_of và source_url) cho 8 ngân hàng hỗ trợ tra cứu và tính toán lãi sau ưu đãi.",
   "banks": [
     {
       "id": "vietcombank",
@@ -19,7 +19,16 @@
         "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất tiền gửi tiết kiệm 12 tháng trả sau của Vietcombank",
         "adjustment_frequency_months": 3,
-        "rate_options": []
+        "rate_options": [],
+        "floating_reference": {
+          "reference_name": "Lãi suất tiền gửi tiết kiệm cá nhân 12 tháng trả sau (VND)",
+          "reference_rate_percent": 4.6,
+          "margin_min_percent": 3.0,
+          "margin_max_percent": 3.5,
+          "formula_description": "Lãi suất thả nổi = Lãi suất tiền gửi tiết kiệm 12 tháng trả sau + Biên độ 3,0% - 3,5%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://www.vietcombank.com.vn/vi-VN/KHCN/Cong-cu-Tien-ich/Ty-gia-Lai-suat"
+        }
       },
       "promotions": {
         "summary": "Lãi suất cố định từ 9,0%/năm trong 12 tháng đầu; áp dụng hợp đồng ký mới từ 14/10/2026, dự án đủ điều kiện và còn quy mô chương trình. Tối đa 100% giá trị căn nhà, kỳ hạn tối đa 35 năm.",
@@ -100,7 +109,16 @@
             "rate": 10.0,
             "conditions": "Thời hạn vay tối thiểu 60 tháng; thông tin lãi suất cập nhật 17/09/2026"
           }
-        ]
+        ],
+        "floating_reference": {
+          "reference_name": "Lãi suất tiền gửi tiết kiệm cá nhân 24 tháng trả sau (VND)",
+          "reference_rate_percent": 4.7,
+          "margin_min_percent": 3.5,
+          "margin_max_percent": 4.0,
+          "formula_description": "Lãi suất thả nổi = Lãi suất tiền gửi tiết kiệm 24 tháng trả sau + Biên độ từ 3,5%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://bidv.com.vn/vn/tra-cuu-lai-suat"
+        }
       },
       "promotions": {
         "summary": "Gói Ngôi nhà đầu tiên: từ 9,0%/năm trong 12 tháng (kỳ hạn vay tối thiểu 36 tháng), 9,5% trong 18 tháng hoặc 10,0% trong 24 tháng (hai lựa chọn sau yêu cầu kỳ hạn tối thiểu 60 tháng). Mức lãi suất được BIDV cập nhật 17/09/2026.",
@@ -165,7 +183,16 @@
         "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất cơ sở Techcombank áp dụng cho khách hàng cá nhân",
         "adjustment_frequency_months": 3,
-        "rate_options": []
+        "rate_options": [],
+        "floating_reference": {
+          "reference_name": "Lãi suất cơ sở chuẩn Techcombank cho vay bất động sản cá nhân",
+          "reference_rate_percent": 7.5,
+          "margin_min_percent": 3.0,
+          "margin_max_percent": 4.0,
+          "formula_description": "Lãi suất thả nổi = Lãi suất cơ sở Techcombank theo kỳ hạn + Biên độ 3,0% - 4,0%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://techcombank.com/cong-cu-tien-ich/bieu-phi-lai-suat"
+        }
       },
       "promotions": {
         "summary": "Thời hạn vay lên tới 35 năm (thổ cư đủ điều kiện đến 45 năm), ân hạn nợ gốc lên đến 24 tháng, phí trả trước hạn chỉ từ 1% và miễn phí từ năm thứ 6",
@@ -230,7 +257,16 @@
         "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất theo quy định của VietinBank tại từng thời kỳ",
         "adjustment_frequency_months": 3,
-        "rate_options": []
+        "rate_options": [],
+        "floating_reference": {
+          "reference_name": "Lãi suất tiền gửi tiết kiệm cá nhân 12 tháng trả sau (VND)",
+          "reference_rate_percent": 4.7,
+          "margin_min_percent": 3.5,
+          "margin_max_percent": 4.0,
+          "formula_description": "Lãi suất thả nổi = Lãi suất tiền gửi tiết kiệm 12 tháng trả sau + Biên độ 3,5% - 4,0%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://www.vietinbank.vn/vn/lai-suat/"
+        }
       },
       "promotions": {
         "summary": "Hỗ trợ vay vốn lên đến 100% nhu cầu vốn, thời hạn cho vay linh hoạt đối với từng mục đích lên tới 35 năm, ân hạn nợ gốc đến 12 tháng",
@@ -296,7 +332,16 @@
         "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất theo các gói tín dụng ưu đãi từng thời kỳ của Agribank",
         "adjustment_frequency_months": 6,
-        "rate_options": []
+        "rate_options": [],
+        "floating_reference": {
+          "reference_name": "Lãi suất tiền gửi tiết kiệm cá nhân 12 tháng trả sau (VND)",
+          "reference_rate_percent": 4.7,
+          "margin_min_percent": 3.0,
+          "margin_max_percent": 3.5,
+          "formula_description": "Lãi suất thả nổi = Lãi suất tiền gửi tiết kiệm 12 tháng trả sau + Biên độ 3,0% - 3,5%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://www.agribank.com.vn/vn/lai-suat-cho-vay-agribank/"
+        }
       },
       "promotions": {
         "summary": "Đáp ứng nhu cầu vay vốn mua nhà ở thương mại, số tiền cho vay tối đa 100% giá trị hợp đồng/phương án, thời hạn vay lên đến 35 năm, trả nợ linh hoạt Bảng lãi suất chung kỳ tháng 7/2026 công bố lãi suất cho vay thông thường trung/dài hạn tối thiểu 7,8%/năm; đây không phải lãi suất ưu đãi riêng của gói mua nhà nên không nhập vào promo_rate.",
@@ -375,7 +420,16 @@
         "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất cơ sở MB áp dụng cho khách hàng cá nhân",
         "adjustment_frequency_months": 3,
-        "rate_options": []
+        "rate_options": [],
+        "floating_reference": {
+          "reference_name": "Lãi suất cơ sở MB áp dụng cho khách hàng cá nhân vay trung dài hạn",
+          "reference_rate_percent": 7.8,
+          "margin_min_percent": 3.2,
+          "margin_max_percent": 4.2,
+          "formula_description": "Lãi suất thả nổi = Lãi suất cơ sở MB Bank + Biên độ từ 3,2%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://www.mbbank.com.vn/cong-cu-tinh-toan/lai-suat-co-so"
+        }
       },
       "promotions": {
         "summary": "Gói MB Dream Home cho vay đến 80% giá trị TSBĐ, thời hạn lên đến 35 năm, hỗ trợ chính sách miễn trả nợ gốc giai đoạn đầu",
@@ -440,7 +494,16 @@
         "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất sau ưu đãi chưa được công bố cho chương trình này",
         "adjustment_frequency_months": 3,
-        "rate_options": []
+        "rate_options": [],
+        "floating_reference": {
+          "reference_name": "Lãi suất cơ sở VPBank áp dụng cho khoản vay thế chấp bất động sản cá nhân",
+          "reference_rate_percent": 8.0,
+          "margin_min_percent": 3.0,
+          "margin_max_percent": 4.0,
+          "formula_description": "Lãi suất thả nổi = Lãi suất cơ sở VPBank + Biên độ 3,0% - 4,0%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://www.vpbank.com.vn/ca-nhan/lai-suat-co-so"
+        }
       },
       "promotions": {
         "summary": "Ưu đãi áp dụng đến 31/12/2030: lãi suất từ 5,2%/năm, thời gian cố định linh hoạt đến 24 tháng; phí trả trước tối đa 2,5%, miễn phí từ năm thứ 5; thời hạn vay tối đa 25 năm.",
@@ -515,7 +578,16 @@
         "floating_rate_estimated": null,
         "reference_rate_type": "Lãi suất cơ sở ACB kỳ hạn 12 tháng áp dụng cho vay cá nhân",
         "adjustment_frequency_months": 3,
-        "rate_options": []
+        "rate_options": [],
+        "floating_reference": {
+          "reference_name": "Lãi suất cơ sở ACB kỳ hạn 12 tháng áp dụng cho vay cá nhân",
+          "reference_rate_percent": 7.6,
+          "margin_min_percent": 3.0,
+          "margin_max_percent": 3.8,
+          "formula_description": "Lãi suất thả nổi = Lãi suất cơ sở ACB kỳ hạn 12 tháng + Biên độ 3,0% - 3,8%/năm",
+          "as_of": "2026-11-16",
+          "source_url": "https://acb.com.vn/lai-suat-co-so"
+        }
       },
       "promotions": {
         "summary": "Hỗ trợ nguồn vốn cho các nhu cầu mua hoặc nhận chuyển nhượng nhà ở, đất ở, ân hạn trả vốn vay lên đến 01 năm, lãi trả hàng tháng, vốn trả định kỳ linh hoạt theo dòng tiền",
