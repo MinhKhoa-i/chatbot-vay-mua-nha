@@ -9,7 +9,7 @@ from typing import Literal, Optional
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -197,6 +197,56 @@ def chat(req: ChatRequest):
     return {"reply": done["reply"], "updated_at": updated_at, "estimate": estimate_card}
 
 
+
+# ---------------------------------------------------------------------------
+# DELETE /api/chat/{session_id}: xóa cuộc trò chuyện trên ai_service (Issue #56)
+#   Gọi DELETE {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}.
+#   204 hoặc 404 (không có / đã xóa) -> 204. 503, lỗi mạng, hết giờ: thử lại tối đa 3 lần
+#   rồi trả 502. Không ghi nội dung hội thoại vào log, chỉ ghi mã lỗi.
+# ---------------------------------------------------------------------------
+DELETE_ERROR_DETAIL = "Chưa xóa được dữ liệu trên máy chủ, bạn vui lòng thử lại sau."
+
+
+def _delete_once(client: httpx.Client, url: str) -> None:
+    """Gửi DELETE một lần; xóa xong (204) hoặc không tìm thấy (404) thì coi là thành công."""
+    try:
+        response = client.delete(url)
+    except httpx.TimeoutException as exc:
+        raise AIServiceError("AI_SERVICE_TIMEOUT", retryable=True) from exc
+    except httpx.RequestError as exc:
+        raise AIServiceError("AI_SERVICE_UNAVAILABLE", retryable=True) from exc
+    if response.status_code in (200, 204, 404):
+        return
+    raise AIServiceError(f"HTTP_{response.status_code}", retryable=response.status_code >= 500)
+
+
+def delete_conversation(session_id: str, base_url: str, timeout: float | None = None,
+                        max_attempts: int = AI_MAX_ATTEMPTS) -> None:
+    """Xóa cuộc trò chuyện của `session_id` trên ai_service, thử lại như ask_ai_service."""
+    if timeout is None:
+        timeout = float(os.getenv("AI_SERVICE_TIMEOUT", AI_DEFAULT_TIMEOUT))
+    url = f"{base_url}/api/v1/conversations/{conversation_id(session_id)}"
+    with httpx.Client(timeout=httpx.Timeout(timeout, connect=5.0), transport=_transport) as client:
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return _delete_once(client, url)
+            except AIServiceError as exc:
+                if not exc.retryable or attempt == max_attempts:
+                    raise
+                _sleep(attempt)
+
+
+@app.delete("/api/chat/{session_id}", status_code=204)
+def delete_chat(session_id: str):
+    base_url = ai_service_url()
+    if base_url is not None:  # chưa đặt AI_SERVICE_URL: chế độ câu trả lời mẫu không lưu gì
+        try:
+            delete_conversation(session_id, base_url)
+        except AIServiceError as exc:
+            logger.warning("Xóa cuộc trò chuyện lỗi: %s (retryable=%s)", exc.code, exc.retryable)
+            raise HTTPException(status_code=502, detail=DELETE_ERROR_DETAIL) from exc
+    return Response(status_code=204)
+
 # /api/estimate: dùng chung backend/finance/calculator.py, không tự tính lại
 class EstimateRequest(BaseModel):
     amount: int = Field(gt=0, description="Số tiền vay (VND, số nguyên)")
@@ -373,4 +423,5 @@ def rank(req: RankRequest):
         "updated_at": data.get("updated_at", DATA_UPDATED),
         "is_sample": True,
     }
+
 

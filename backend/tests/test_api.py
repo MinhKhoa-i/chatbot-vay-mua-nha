@@ -324,6 +324,50 @@ def test_session_id_khong_phai_uuid_van_giu_ngu_canh(ai):
 
 
 # ---------------------------------------------------------------------------
+# DELETE /api/chat/{session_id}: xóa cuộc trò chuyện (Issue #56)
+# ---------------------------------------------------------------------------
+def delete_chat(session_id=SESSION):
+    return client.delete(f"/api/chat/{session_id}")
+
+
+def test_xoa_chua_dat_ai_service_url_thi_204(monkeypatch):
+    monkeypatch.delenv("AI_SERVICE_URL", raising=False)
+    res = delete_chat()
+    assert res.status_code == 204 and res.content == b""
+
+
+@pytest.mark.parametrize("status", [204, 404])
+def test_xoa_thanh_cong_hoac_khong_co_thi_204(ai, status):
+    ai.responses = [status]
+    assert delete_chat().status_code == 204
+    req = ai.requests[0]
+    assert req.method == "DELETE"
+    assert req.url == f"{AI_URL}/api/v1/conversations/{SESSION}"
+
+
+def test_xoa_loi_tam_thoi_thi_thu_lai(ai):
+    ai.responses = [503, httpx.ConnectError("mat ket noi"), 204]
+    assert delete_chat().status_code == 204
+    assert len(ai.requests) == 3
+
+
+@pytest.mark.parametrize("error", [503, httpx.ReadTimeout("het gio"), httpx.ConnectError("mat ket noi")])
+def test_xoa_loi_het_so_lan_thi_502_cau_tieng_viet(ai, error):
+    ai.responses = [error] * main_module.AI_MAX_ATTEMPTS
+    res = delete_chat()
+    assert res.status_code == 502
+    assert res.json()["detail"] == main_module.DELETE_ERROR_DETAIL
+    assert len(ai.requests) == main_module.AI_MAX_ATTEMPTS
+
+
+def test_xoa_session_id_khong_phai_uuid_doi_giong_post_chat(ai):
+    ai.responses = [sse(done()), 204]
+    ask_chat(session_id="phien-1")
+    delete_chat("phien-1")
+    chat_path, delete_path = (r.url.path for r in ai.requests)
+    assert delete_path == chat_path.removesuffix("/messages")
+
+# ---------------------------------------------------------------------------
 # /api/chat trả estimate lấy từ event done (STT 18)
 # ---------------------------------------------------------------------------
 ESTIMATE = {"amount": 1_000_000_000, "years": 20, "rate": 9.5, "method": "annuity",
@@ -461,4 +505,5 @@ def test_rank_dau_vao_sai(payload):
 def test_rank_ranking_tu_choi_thi_bao_cau_tieng_viet(payload):
     res = rank(**payload)
     assert res.status_code == 422 and isinstance(res.json()["detail"], str)
+
 
