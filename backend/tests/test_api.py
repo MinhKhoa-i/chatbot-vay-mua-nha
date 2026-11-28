@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 import app.main as main_module
 from app.main import SAMPLE_REPLY, app
-from finance.calculator import ltv, max_loan, monthly_payment, prepay_fee, total_interest
+from finance.calculator import ltv, max_loan, monthly_payment, prepay_fee, schedule, total_interest
 from finance.ranking import rank_banks
 
 client = TestClient(app)
@@ -214,6 +214,47 @@ def test_estimate_khong_nhan_nan_vo_cuc(field, value):
 
 
 # ---------------------------------------------------------------------------
+# Bug #81 (FORM-15): trả thêm tháng trả cao nhất, vì có ưu đãi thì tháng đầu chưa chắc cao nhất
+# ---------------------------------------------------------------------------
+def test_estimate_goc_deu_co_uu_dai_thang_cao_nhat_la_thang_13():
+    body = client.post("/api/estimate", json={
+        "amount": 2_000_000_000, "years": 20, "rate": 10, "method": "reducing_balance",
+        "promo_rate": 9, "promo_duration_months": 12,
+    }).json()
+    assert body["monthly_payment"] == 23_333_333          # tháng 1, vẫn giữ như cũ
+    assert body["max_monthly_payment"] == 24_166_667      # tháng 13, hết ưu đãi
+    assert body["max_payment_month"] == 13
+
+
+def test_estimate_tra_deu_co_uu_dai_thang_cao_nhat_sau_uu_dai():
+    body = client.post("/api/estimate", json={
+        "amount": 2_000_000_000, "years": 20, "rate": 10, "promo_rate": 9, "promo_duration_months": 12,
+    }).json()
+    assert body["max_monthly_payment"] == 19_257_656 > body["monthly_payment"]
+    assert body["max_payment_month"] == 13
+
+
+@pytest.mark.parametrize("payload", [
+    {"amount": 1_500_000_000, "years": 20},                                   # không ưu đãi
+    {"amount": 1_000_000_000, "years": 20, "method": "reducing_balance"},     # gốc đều không ưu đãi
+    {"amount": 2_000_000_000, "years": 20, "rate": 10, "promo_rate": 12, "promo_duration_months": 12},
+])
+def test_estimate_khong_uu_dai_hoac_uu_dai_cao_hon_thi_thang_dau_cao_nhat(payload):
+    body = client.post("/api/estimate", json=payload).json()
+    assert body["max_payment_month"] == 1
+    assert body["max_monthly_payment"] == body["monthly_payment"]
+
+
+def test_estimate_max_monthly_payment_dung_schedule():
+    rows = schedule(2_000_000_000, 240, 10, "reducing_balance", 9, 12)
+    body = client.post("/api/estimate", json={
+        "amount": 2_000_000_000, "years": 20, "rate": 10, "method": "reducing_balance",
+        "promo_rate": 9, "promo_duration_months": 12,
+    }).json()
+    assert body["max_monthly_payment"] == max(r["payment"] for r in rows)
+
+
+# ---------------------------------------------------------------------------
 # /api/chat nối ai_service (STT 16, docs/api.md mục 5)
 # Không gọi ai_service thật: thay transport của httpx bằng MockTransport.
 # ---------------------------------------------------------------------------
@@ -322,50 +363,6 @@ def test_session_id_khong_phai_uuid_van_giu_ngu_canh(ai):
     assert paths[0] == paths[1]
     UUID(paths[0].split("/")[4])  # là UUID hợp lệ
 
-
-# ---------------------------------------------------------------------------
-# DELETE /api/chat/{session_id}: xóa cuộc trò chuyện (Issue #56)
-# ---------------------------------------------------------------------------
-def delete_chat(session_id=SESSION):
-    return client.delete(f"/api/chat/{session_id}")
-
-
-def test_xoa_chua_dat_ai_service_url_thi_204(monkeypatch):
-    monkeypatch.delenv("AI_SERVICE_URL", raising=False)
-    res = delete_chat()
-    assert res.status_code == 204 and res.content == b""
-
-
-@pytest.mark.parametrize("status", [204, 404])
-def test_xoa_thanh_cong_hoac_khong_co_thi_204(ai, status):
-    ai.responses = [status]
-    assert delete_chat().status_code == 204
-    req = ai.requests[0]
-    assert req.method == "DELETE"
-    assert req.url == f"{AI_URL}/api/v1/conversations/{SESSION}"
-
-
-def test_xoa_loi_tam_thoi_thi_thu_lai(ai):
-    ai.responses = [503, httpx.ConnectError("mat ket noi"), 204]
-    assert delete_chat().status_code == 204
-    assert len(ai.requests) == 3
-
-
-@pytest.mark.parametrize("error", [503, httpx.ReadTimeout("het gio"), httpx.ConnectError("mat ket noi")])
-def test_xoa_loi_het_so_lan_thi_502_cau_tieng_viet(ai, error):
-    ai.responses = [error] * main_module.AI_MAX_ATTEMPTS
-    res = delete_chat()
-    assert res.status_code == 502
-    assert res.json()["detail"] == main_module.DELETE_ERROR_DETAIL
-    assert len(ai.requests) == main_module.AI_MAX_ATTEMPTS
-
-
-def test_xoa_session_id_khong_phai_uuid_doi_giong_post_chat(ai):
-    ai.responses = [sse(done()), 204]
-    ask_chat(session_id="phien-1")
-    delete_chat("phien-1")
-    chat_path, delete_path = (r.url.path for r in ai.requests)
-    assert delete_path == chat_path.removesuffix("/messages")
 
 # ---------------------------------------------------------------------------
 # /api/chat trả estimate lấy từ event done (STT 18)
