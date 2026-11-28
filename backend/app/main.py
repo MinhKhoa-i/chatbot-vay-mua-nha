@@ -9,7 +9,7 @@ from typing import Literal, Optional
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 import httpx
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -197,56 +197,6 @@ def chat(req: ChatRequest):
     return {"reply": done["reply"], "updated_at": updated_at, "estimate": estimate_card}
 
 
-
-# ---------------------------------------------------------------------------
-# DELETE /api/chat/{session_id}: xóa cuộc trò chuyện trên ai_service (Issue #56)
-#   Gọi DELETE {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}.
-#   204 hoặc 404 (không có / đã xóa) -> 204. 503, lỗi mạng, hết giờ: thử lại tối đa 3 lần
-#   rồi trả 502. Không ghi nội dung hội thoại vào log, chỉ ghi mã lỗi.
-# ---------------------------------------------------------------------------
-DELETE_ERROR_DETAIL = "Chưa xóa được dữ liệu trên máy chủ, bạn vui lòng thử lại sau."
-
-
-def _delete_once(client: httpx.Client, url: str) -> None:
-    """Gửi DELETE một lần; xóa xong (204) hoặc không tìm thấy (404) thì coi là thành công."""
-    try:
-        response = client.delete(url)
-    except httpx.TimeoutException as exc:
-        raise AIServiceError("AI_SERVICE_TIMEOUT", retryable=True) from exc
-    except httpx.RequestError as exc:
-        raise AIServiceError("AI_SERVICE_UNAVAILABLE", retryable=True) from exc
-    if response.status_code in (200, 204, 404):
-        return
-    raise AIServiceError(f"HTTP_{response.status_code}", retryable=response.status_code >= 500)
-
-
-def delete_conversation(session_id: str, base_url: str, timeout: float | None = None,
-                        max_attempts: int = AI_MAX_ATTEMPTS) -> None:
-    """Xóa cuộc trò chuyện của `session_id` trên ai_service, thử lại như ask_ai_service."""
-    if timeout is None:
-        timeout = float(os.getenv("AI_SERVICE_TIMEOUT", AI_DEFAULT_TIMEOUT))
-    url = f"{base_url}/api/v1/conversations/{conversation_id(session_id)}"
-    with httpx.Client(timeout=httpx.Timeout(timeout, connect=5.0), transport=_transport) as client:
-        for attempt in range(1, max_attempts + 1):
-            try:
-                return _delete_once(client, url)
-            except AIServiceError as exc:
-                if not exc.retryable or attempt == max_attempts:
-                    raise
-                _sleep(attempt)
-
-
-@app.delete("/api/chat/{session_id}", status_code=204)
-def delete_chat(session_id: str):
-    base_url = ai_service_url()
-    if base_url is not None:  # chưa đặt AI_SERVICE_URL: chế độ câu trả lời mẫu không lưu gì
-        try:
-            delete_conversation(session_id, base_url)
-        except AIServiceError as exc:
-            logger.warning("Xóa cuộc trò chuyện lỗi: %s (retryable=%s)", exc.code, exc.retryable)
-            raise HTTPException(status_code=502, detail=DELETE_ERROR_DETAIL) from exc
-    return Response(status_code=204)
-
 # /api/estimate: dùng chung backend/finance/calculator.py, không tự tính lại
 class EstimateRequest(BaseModel):
     amount: int = Field(gt=0, description="Số tiền vay (VND, số nguyên)")
@@ -255,6 +205,7 @@ class EstimateRequest(BaseModel):
     method: Literal["annuity", "reducing_balance"] = ANNUITY
     promo_rate: Optional[float] = Field(None, ge=0, allow_inf_nan=False, description="Lãi ưu đãi %/năm")
     promo_duration_months: int = Field(0, ge=0, description="Số tháng ưu đãi")
+    grace_period_months: int = Field(0, ge=0, description="Số tháng đầu chỉ trả lãi (ân hạn nợ gốc), nhỏ hơn years * 12")
     # Có giá trị nhà thì trả thêm LTV; gửi đủ giá trị nhà và thu nhập thì tính thêm hạn mức vay tối đa
     property_value: Optional[int] = Field(None, gt=0, description="Giá trị nhà / tài sản bảo đảm (VND)")
     monthly_income: Optional[int] = Field(None, gt=0, description="Thu nhập ròng hằng tháng (VND)")
@@ -284,7 +235,7 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
     if req.property_value is None:
         raise ValueError("Cần nhập cả giá trị nhà và thu nhập hằng tháng để tính hạn mức vay tối đa")
     result = max_loan(req.property_value, req.monthly_income, req.years * 12, req.rate,
-                      req.method, req.promo_rate, req.promo_duration_months,
+                      req.method, req.promo_rate, req.promo_duration_months, req.grace_period_months,
                       existing_monthly_debt=req.existing_monthly_debt,
                       max_ltv=req.max_ltv_percent, max_dti=req.max_dti_percent / 100)
     return {**result, "max_ltv_percent": float(req.max_ltv_percent),
@@ -356,11 +307,13 @@ def _estimate_from_done(raw) -> Optional[dict]:
 def estimate(req: EstimateRequest):
     try:
         rows = schedule(req.amount, req.years * 12, req.rate, req.method,
-                        req.promo_rate, req.promo_duration_months)
+                        req.promo_rate, req.promo_duration_months, req.grace_period_months)
         limit = _max_loan(req)
         prepay = _prepay(req)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    highest = max(rows, key=lambda r: r["payment"])  # tháng trả cao nhất, bằng nhau thì lấy tháng sớm nhất
+    grace = req.grace_period_months  # Issue #87: tháng ân hạn chỉ trả lãi, tháng grace + 1 bắt đầu trả gốc
     return {
         "amount": req.amount,
         "years": req.years,
@@ -368,7 +321,13 @@ def estimate(req: EstimateRequest):
         "method": req.method,
         "promo_rate": req.promo_rate,
         "promo_duration_months": req.promo_duration_months,
-        "monthly_payment": rows[0]["payment"],  # tháng đầu (gốc đều: tháng cao nhất)
+        "grace_period_months": grace,
+        "monthly_payment": rows[0]["payment"],  # tháng đầu tiên
+        # Bug #81: có ưu đãi thì tháng đầu chưa chắc cao nhất; form dùng số này cho tỷ lệ trả nợ / thu nhập
+        "max_monthly_payment": highest["payment"],
+        "max_payment_month": highest["month"],
+        "grace_monthly_payment": rows[0]["payment"] if grace else None,
+        "after_grace_monthly_payment": rows[grace]["payment"] if grace else None,
         "total_interest": sum(r["interest"] for r in rows),
         "max_loan": limit,
         "ltv_percent": _ltv_percent(req),
@@ -423,5 +382,4 @@ def rank(req: RankRequest):
         "updated_at": data.get("updated_at", DATA_UPDATED),
         "is_sample": True,
     }
-
 

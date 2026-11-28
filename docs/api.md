@@ -87,21 +87,6 @@ Trả về:
 
 Lỗi riêng của endpoint này: `ai_service` lỗi, không kết nối được hoặc thử lại hết số lần thì trả **`502`** với `detail` là một câu tiếng Việt. Frontend hiện câu báo lỗi chung.
 
-### 3.2.1. `DELETE /api/chat/{session_id}`
-
-Xóa cuộc trò chuyện trên máy chủ, dùng cho nút "Xóa dữ liệu của tôi". Frontend gọi một lần cho mỗi `session_id` đang có. Không cần đăng nhập: ai giữ mã cuộc trò chuyện thì xóa được cuộc đó, giống cách đọc.
-
-Backend đổi `session_id` sang `conversation_id` bằng cùng cách với `POST /api/chat` (mục 5, bước 2), rồi gọi `DELETE {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}` của `ai_service`. Lệnh này xóa tin nhắn, hồ sơ, sổ ghi yêu cầu và đánh dấu cuộc trò chuyện `deleted`.
-
-| `ai_service` trả | Backend trả | Ghi chú |
-|---|---|---|
-| `204` | `204` (không có nội dung) | Đã xóa |
-| `404` | `204` | Không có hoặc đã xóa rồi vẫn coi là xóa xong (bấm xóa 2 lần không báo lỗi) |
-| `503`, lỗi mạng, quá thời gian | `502` + `detail`: "Chưa xóa được dữ liệu trên máy chủ, bạn vui lòng thử lại sau." | Thử lại tối đa 3 lần như `POST /api/chat` |
-| Chưa đặt `AI_SERVICE_URL` | `204` | Chế độ câu trả lời mẫu không lưu gì |
-
-Backend không ghi nội dung hội thoại vào log, chỉ ghi mã lỗi.
-
 ### 3.3. `POST /api/estimate`
 
 Tính khoản trả hàng tháng bằng `backend/finance/calculator.py`.
@@ -116,10 +101,11 @@ Gửi lên:
 | `method` | string | Không | `"annuity"` | `"annuity"` hoặc `"reducing_balance"` |
 | `promo_rate` | number | Không | `null` | ≥ 0, lãi ưu đãi %/năm |
 | `promo_duration_months` | integer | Không | `0` | ≥ 0, không vượt quá `years * 12` |
+| `grace_period_months` | integer | Không | `0` | Từ 0 đến `years * 12 - 1`. Số tháng đầu chỉ trả lãi (ân hạn nợ gốc), nằm **trong** kỳ hạn |
 
 `promo_rate` và `promo_duration_months` phải đi cùng nhau: có cái này thì phải có cái kia, nếu không sẽ bị lỗi 422.
 
-LTV và hạn mức vay tối đa (không bắt buộc). Gửi `property_value` thì backend trả thêm `ltv_percent`. Gửi **cả** `property_value` và `monthly_income` thì tính thêm `max_loan` bằng `max_loan()` của `calculator.py`, dùng cùng `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` ở trên. Gửi `monthly_income` mà thiếu `property_value` thì lỗi 422.
+LTV và hạn mức vay tối đa (không bắt buộc). Gửi `property_value` thì backend trả thêm `ltv_percent`. Gửi **cả** `property_value` và `monthly_income` thì tính thêm `max_loan` bằng `max_loan()` của `calculator.py`, dùng cùng `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`, `grace_period_months` ở trên. Gửi `monthly_income` mà thiếu `property_value` thì lỗi 422.
 
 | Trường | Kiểu | Bắt buộc | Mặc định | Ràng buộc |
 |---|---|---|---|---|
@@ -154,7 +140,12 @@ Trả về:
   "method": "annuity",
   "promo_rate": null,
   "promo_duration_months": 0,
+  "grace_period_months": 0,
   "monthly_payment": 13017349,
+  "max_monthly_payment": 13017349,
+  "max_payment_month": 1,
+  "grace_monthly_payment": null,
+  "after_grace_monthly_payment": null,
   "total_interest": 1624163639,
   "max_loan": null,
   "ltv_percent": null,
@@ -184,8 +175,12 @@ và `"ltv_percent": 50.0` (1,5 tỷ / 3 tỷ). Khi gửi thêm `"prepay_amount":
 
 | Trường | Ghi chú |
 |---|---|
-| `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months` | Trả lại đúng giá trị đã gửi. `ai_service` dùng các trường này để kiểm tra response có đúng là của request mình gửi không |
-| `monthly_payment` | Tiền trả **tháng đầu tiên**, VND, số nguyên. Niên kim: số tiền đều hằng tháng (trong thời gian ưu đãi). Gốc đều: tháng cao nhất |
+| `amount`, `years`, `rate`, `method`, `promo_rate`, `promo_duration_months`, `grace_period_months` | Trả lại đúng giá trị đã gửi. `ai_service` dùng các trường này để kiểm tra response có đúng là của request mình gửi không |
+| `monthly_payment` | Tiền trả **tháng đầu tiên**, VND, số nguyên. Niên kim: số tiền đều hằng tháng (trong thời gian ưu đãi). Gốc đều không ưu đãi: tháng cao nhất. Tháng cao nhất xem `max_monthly_payment` |
+| `max_monthly_payment` | Tiền trả của tháng **cao nhất** trong cả kỳ hạn, VND, số nguyên (= `max(payment)` của `schedule()`). Có ưu đãi thì tháng đầu chưa chắc cao nhất: gốc đều vay 2 tỷ, 20 năm, ưu đãi 9% 12 tháng rồi 10% thì tháng 1 là 23.333.333 đ, tháng 13 là 24.166.667 đ. Form dùng số này cho tỷ lệ trả nợ / thu nhập và cảnh báo 50% (bug #81, FORM-15), khớp với `by_dti` của `max_loan` |
+| `max_payment_month` | Tháng có `max_monthly_payment` (bắt đầu từ 1). Nhiều tháng bằng nhau thì lấy tháng sớm nhất |
+| `grace_monthly_payment` | `null` nếu `grace_period_months` = 0. Nếu có: tiền trả mỗi tháng ân hạn (chỉ có lãi, tháng 1), VND |
+| `after_grace_monthly_payment` | `null` nếu `grace_period_months` = 0. Nếu có: tiền trả tháng đầu sau ân hạn (tháng `grace_period_months + 1`), VND. Ví dụ EVAL-47 (1,2 tỷ, 20 năm, 9%, gốc đều, ân hạn 12 tháng): ân hạn 9.000.000 đ, tháng 13 là 14.263.158 đ (1,2 tỷ / 228 tháng + lãi 9 triệu). Issue #87 |
 | `total_interest` | Tổng lãi cả kỳ hạn, VND, số nguyên |
 | `max_loan` | `null` nếu không gửi `property_value` và `monthly_income`. Nếu có: `max_loan` = hạn mức tối đa (VND) = min(`by_ltv`, `by_dti`); `by_ltv` = theo giá trị nhà; `by_dti` = theo thu nhập (tính với tháng phải trả **cao nhất**); `limited_by` = `"ltv"` hoặc `"dti"` cho biết bị giới hạn bởi cái nào; kèm hai tỷ lệ đã dùng |
 | `ltv_percent` | `null` nếu không gửi `property_value`. Nếu có: `ltv(amount, property_value) * 100` (hàm `ltv()` trả tỷ lệ 0,5 = 50%), làm tròn 2 chữ số thập phân. Dùng cho EVAL-06 |
@@ -365,5 +360,4 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 ## 7. Việc còn mở
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.
-
 
