@@ -87,6 +87,21 @@ Trả về:
 
 Lỗi riêng của endpoint này: `ai_service` lỗi, không kết nối được hoặc thử lại hết số lần thì trả **`502`** với `detail` là một câu tiếng Việt. Frontend hiện câu báo lỗi chung.
 
+### 3.2.1. `DELETE /api/chat/{session_id}`
+
+Xóa cuộc trò chuyện trên máy chủ, dùng cho nút "Xóa dữ liệu của tôi". Frontend gọi một lần cho mỗi `session_id` đang có. Không cần đăng nhập: ai giữ mã cuộc trò chuyện thì xóa được cuộc đó, giống cách đọc.
+
+Backend đổi `session_id` sang `conversation_id` bằng cùng cách với `POST /api/chat` (mục 5, bước 2), rồi gọi `DELETE {AI_SERVICE_URL}/api/v1/conversations/{conversation_id}` của `ai_service`. Lệnh này xóa tin nhắn, hồ sơ, sổ ghi yêu cầu và đánh dấu cuộc trò chuyện `deleted`.
+
+| `ai_service` trả | Backend trả | Ghi chú |
+|---|---|---|
+| `204` | `204` (không có nội dung) | Đã xóa |
+| `404` | `204` | Không có hoặc đã xóa rồi vẫn coi là xóa xong (bấm xóa 2 lần không báo lỗi) |
+| `503`, lỗi mạng, quá thời gian | `502` + `detail`: "Chưa xóa được dữ liệu trên máy chủ, bạn vui lòng thử lại sau." | Thử lại tối đa 3 lần như `POST /api/chat` |
+| Chưa đặt `AI_SERVICE_URL` | `204` | Chế độ câu trả lời mẫu không lưu gì |
+
+Backend không ghi nội dung hội thoại vào log, chỉ ghi mã lỗi.
+
 ### 3.3. `POST /api/estimate`
 
 Tính khoản trả hàng tháng bằng `backend/finance/calculator.py`.
@@ -350,4 +365,5 @@ Lưu ý: `max_ltv_percent` tính theo **%** (70), còn `ltv()` trả về **tỷ
 ## 7. Việc còn mở
 - Chế độ mock của frontend tính bằng `schedule()` trong `frontend/src/lib/loan.js`, bản chép của `calculator.py`. Sửa công thức hay câu báo lỗi ở `calculator.py` thì sửa cả bản JS (Định, Sang).
 - `DATA_UPDATED` đang khai báo hai nơi (`backend/app/main.py`, `frontend/src/config.js`). Đổi ngày thì sửa cả hai.
+
 
