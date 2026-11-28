@@ -205,6 +205,7 @@ class EstimateRequest(BaseModel):
     method: Literal["annuity", "reducing_balance"] = ANNUITY
     promo_rate: Optional[float] = Field(None, ge=0, allow_inf_nan=False, description="Lãi ưu đãi %/năm")
     promo_duration_months: int = Field(0, ge=0, description="Số tháng ưu đãi")
+    grace_period_months: int = Field(0, ge=0, description="Số tháng đầu chỉ trả lãi (ân hạn nợ gốc), nhỏ hơn years * 12")
     # Có giá trị nhà thì trả thêm LTV; gửi đủ giá trị nhà và thu nhập thì tính thêm hạn mức vay tối đa
     property_value: Optional[int] = Field(None, gt=0, description="Giá trị nhà / tài sản bảo đảm (VND)")
     monthly_income: Optional[int] = Field(None, gt=0, description="Thu nhập ròng hằng tháng (VND)")
@@ -234,7 +235,7 @@ def _max_loan(req: EstimateRequest) -> Optional[dict]:
     if req.property_value is None:
         raise ValueError("Cần nhập cả giá trị nhà và thu nhập hằng tháng để tính hạn mức vay tối đa")
     result = max_loan(req.property_value, req.monthly_income, req.years * 12, req.rate,
-                      req.method, req.promo_rate, req.promo_duration_months,
+                      req.method, req.promo_rate, req.promo_duration_months, req.grace_period_months,
                       existing_monthly_debt=req.existing_monthly_debt,
                       max_ltv=req.max_ltv_percent, max_dti=req.max_dti_percent / 100)
     return {**result, "max_ltv_percent": float(req.max_ltv_percent),
@@ -306,12 +307,13 @@ def _estimate_from_done(raw) -> Optional[dict]:
 def estimate(req: EstimateRequest):
     try:
         rows = schedule(req.amount, req.years * 12, req.rate, req.method,
-                        req.promo_rate, req.promo_duration_months)
+                        req.promo_rate, req.promo_duration_months, req.grace_period_months)
         limit = _max_loan(req)
         prepay = _prepay(req)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     highest = max(rows, key=lambda r: r["payment"])  # tháng trả cao nhất, bằng nhau thì lấy tháng sớm nhất
+    grace = req.grace_period_months  # Issue #87: tháng ân hạn chỉ trả lãi, tháng grace + 1 bắt đầu trả gốc
     return {
         "amount": req.amount,
         "years": req.years,
@@ -319,10 +321,13 @@ def estimate(req: EstimateRequest):
         "method": req.method,
         "promo_rate": req.promo_rate,
         "promo_duration_months": req.promo_duration_months,
+        "grace_period_months": grace,
         "monthly_payment": rows[0]["payment"],  # tháng đầu tiên
         # Bug #81: có ưu đãi thì tháng đầu chưa chắc cao nhất; form dùng số này cho tỷ lệ trả nợ / thu nhập
         "max_monthly_payment": highest["payment"],
         "max_payment_month": highest["month"],
+        "grace_monthly_payment": rows[0]["payment"] if grace else None,
+        "after_grace_monthly_payment": rows[grace]["payment"] if grace else None,
         "total_interest": sum(r["interest"] for r in rows),
         "max_loan": limit,
         "ltv_percent": _ltv_percent(req),
@@ -377,5 +382,4 @@ def rank(req: RankRequest):
         "updated_at": data.get("updated_at", DATA_UPDATED),
         "is_sample": True,
     }
-
 

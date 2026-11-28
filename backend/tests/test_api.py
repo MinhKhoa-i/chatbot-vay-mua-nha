@@ -255,6 +255,63 @@ def test_estimate_max_monthly_payment_dung_schedule():
 
 
 # ---------------------------------------------------------------------------
+# Issue #87 (EVAL-47): ân hạn nợ gốc, các tháng đầu chỉ trả lãi
+# ---------------------------------------------------------------------------
+EVAL_47 = {"amount": 1_200_000_000, "years": 20, "rate": 9, "method": "reducing_balance",
+           "grace_period_months": 12}
+
+
+def test_estimate_an_han_goc_dung_dap_an_eval_47():
+    body = client.post("/api/estimate", json=EVAL_47).json()
+    assert body["grace_period_months"] == 12
+    assert body["grace_monthly_payment"] == 9_000_000             # chỉ trả lãi 1,2 tỷ × 9% / 12
+    assert body["after_grace_monthly_payment"] == 14_263_158      # 1,2 tỷ / 228 tháng + lãi 9 triệu
+    assert body["monthly_payment"] == 9_000_000
+    assert body["max_monthly_payment"] == 14_263_158 and body["max_payment_month"] == 13
+
+
+def test_estimate_an_han_goc_dung_schedule():
+    rows = schedule(1_200_000_000, 240, 9, "reducing_balance", grace_period_months=12)
+    body = client.post("/api/estimate", json=EVAL_47).json()
+    assert body["total_interest"] == sum(r["interest"] for r in rows)
+    assert body["after_grace_monthly_payment"] == rows[12]["payment"]
+
+
+def test_estimate_an_han_goc_tra_deu():
+    body = client.post("/api/estimate", json={**EVAL_47, "method": "annuity"}).json()
+    rows = schedule(1_200_000_000, 240, 9, "annuity", grace_period_months=12)
+    assert body["grace_monthly_payment"] == 9_000_000
+    assert body["after_grace_monthly_payment"] == rows[12]["payment"]
+
+
+def test_estimate_khong_an_han_thi_null():
+    body = client.post("/api/estimate", json={"amount": 1_500_000_000, "years": 20}).json()
+    assert body["grace_period_months"] == 0
+    assert body["grace_monthly_payment"] is None and body["after_grace_monthly_payment"] is None
+
+
+def test_estimate_an_han_tinh_ca_han_muc_vay():
+    payload = {**EVAL_47, "property_value": 3_000_000_000, "monthly_income": 40_000_000}
+    limit = client.post("/api/estimate", json=payload).json()["max_loan"]
+    expected = max_loan(3_000_000_000, 40_000_000, 240, 9, "reducing_balance", grace_period_months=12)
+    assert limit["by_dti"] == expected["by_dti"]
+
+
+@pytest.mark.parametrize("months, detail", [
+    (240, "Số tháng ân hạn gốc phải nhỏ hơn số tháng vay"),
+    (300, "Số tháng ân hạn gốc phải nhỏ hơn số tháng vay"),
+])
+def test_estimate_an_han_bang_hoac_qua_ky_han_thi_422(months, detail):
+    res = client.post("/api/estimate", json={**EVAL_47, "grace_period_months": months})
+    assert res.status_code == 422 and res.json()["detail"] == detail
+
+
+@pytest.mark.parametrize("value", [-1, 1.5, True])
+def test_estimate_an_han_sai_kieu_thi_422(value):
+    assert client.post("/api/estimate", json={**EVAL_47, "grace_period_months": value}).status_code == 422
+
+
+# ---------------------------------------------------------------------------
 # /api/chat nối ai_service (STT 16, docs/api.md mục 5)
 # Không gọi ai_service thật: thay transport của httpx bằng MockTransport.
 # ---------------------------------------------------------------------------
@@ -502,5 +559,4 @@ def test_rank_dau_vao_sai(payload):
 def test_rank_ranking_tu_choi_thi_bao_cau_tieng_viet(payload):
     res = rank(**payload)
     assert res.status_code == 422 and isinstance(res.json()["detail"], str)
-
 
